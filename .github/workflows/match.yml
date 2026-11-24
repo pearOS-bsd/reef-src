@@ -15,4 +15,4 @@ jobs:
           echo '17890f00b785a0a2c1566e80390915d75e1dce52b2f6f8f0db35ad936dcb7d8c  /tmp/r.deb' | sha256sum -c
           dpkg-deb -x /tmp/r.deb /tmp/orig
       - run: docker build -t reef-build docker
-      - run: docker run --rm -v "$PWD:/w:ro" -v /tmp/orig/usr:/o:ro reef-build sh /w/tools/build-match.sh /o /w
+      - run: docker run --rm -v "$PWD:/w:ro" -v /tmp/orig/usr:/o:ro reef-build sh -c "sh /w/tools/build-match.sh /o /w && python3 /w/tests/small.py /o /tmp/b"

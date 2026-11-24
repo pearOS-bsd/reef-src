@@ -59,74 +59,80 @@ static bool isMachO(const char *path)
             || magic == 0xcafebabe || magic == 0xbebafeca);
 }
 
-// The error of starting `command`, 0 once it runs.
-static int start(char **command, int io)
-{
-    int status[2];
-    pipe2(status, O_CLOEXEC);
-    pid_t child = fork();
-    if (child == 0) {
-        setsid();
-        if (io >= 0) {
-            dup2(io, 0);
-            dup2(io, 1);
-        }
-        signal(SIGCHLD, SIG_DFL);
-        signal(SIGPIPE, SIG_DFL);
-        execv(command[0], command);
-        int error = errno;
-        write(status[1], &error, sizeof(error));
-        _exit(127);
-    }
-    close(status[1]);
-    int error = 0;
-    if (child < 0)
-        error = errno;
-    else if (read(status[0], &error, sizeof(error)) != sizeof(error))
-        error = 0;
-    close(status[0]);
-    return error;
-}
-
+// Serves one request: the cookie, the number of arguments, the size of their text, the text.  Descriptors may come with
+// any part; the last one becomes the program's standard input and output.  Answers with an errno value, 0 on success.
 static void serve(int connection, const unsigned char *cookie, char *loader)
 {
     unsigned char received[CookieSize];
     uint32_t count = 0;
     int io = -1;
     int32_t result = EPERM;
-    if (receive(connection, received, sizeof(received), &io) && memcmp(received, cookie, CookieSize) == 0
-        && receive(connection, &count, sizeof(count), &io) && count >= 1 && count <= MaxArguments) {
-        uint32_t size = 0;
-        if (receive(connection, &size, sizeof(size), &io) && size <= MaxData) {
-            char *data = malloc((size_t)size + 1);
-            if (receive(connection, data, size, &io)) {
-                data[size] = '\0';
-                char **args = calloc((size_t)count + 2, sizeof(char *));
-                uint32_t n = 0;
-                for (size_t offset = 0; n < count && offset < size;) {
-                    args[n++] = data + offset;
-                    offset += strlen(data + offset) + 1;
-                }
-                char **command = args;
-                if (isMachO(args[0])) {
-                    command = calloc((size_t)count + 2, sizeof(char *));
-                    command[0] = loader;
-                    for (uint32_t i = 0; i < n; i++)
-                        command[i + 1] = args[i];
-                }
-                result = start(command, io);
-                if (io >= 0)
-                    close(io);
-                write(connection, &result, sizeof(result));
-                if (command != args)
-                    free(command);
-                free(args);
-                free(data);
-                return;
-            }
-            free(data);
-        }
+    if (!receive(connection, received, sizeof(received), &io) || memcmp(received, cookie, CookieSize) != 0
+        || !receive(connection, &count, sizeof(count), &io) || count < 1 || count > MaxArguments) {
+        if (io >= 0)
+            close(io);
+        write(connection, &result, sizeof(result));
+        return;
     }
+    uint32_t size = 0;
+    bool fits = receive(connection, &size, sizeof(size), &io) && size <= MaxData;
+    if (!fits) {
+        if (io >= 0)
+            close(io);
+        write(connection, &result, sizeof(result));
+        return;
+    }
+    char *data = malloc(size + 1);
+    if (receive(connection, data, size, &io)) {
+        data[size] = 0;
+        char **args = calloc(count + 2, sizeof(char *));
+        uint32_t n = 0;
+        for (size_t offset = 0; n < count && offset < size;) {
+            args[n++] = data + offset;
+            offset += strlen(data + offset) + 1;
+        }
+        char **command = args;
+        if (isMachO(args[0])) {
+            command = calloc(count + 2, sizeof(char *));
+            command[0] = loader;
+            for (uint32_t i = 0; i < n; i++)
+                command[i + 1] = args[i];
+        }
+
+        int status[2];
+        pipe2(status, O_CLOEXEC);
+        pid_t child = fork();
+        if (child == 0) {
+            setsid();
+            if (io >= 0) {
+                dup2(io, 0);
+                dup2(io, 1);
+            }
+            signal(SIGCHLD, SIG_DFL);
+            signal(SIGPIPE, SIG_DFL);
+            execv(command[0], command);
+            int error = errno;
+            write(status[1], &error, sizeof(error));
+            _exit(127);
+        }
+        close(status[1]);
+        // The pipe closes without a message when the program starts.
+        result = 0;
+        if (child < 0)
+            result = errno;
+        else if (read(status[0], &result, sizeof(result)) != sizeof(result))
+            result = 0;
+        close(status[0]);
+        if (io >= 0)
+            close(io);
+        write(connection, &result, sizeof(result));
+        if (command != args)
+            free(command);
+        free(args);
+        free(data);
+        return;
+    }
+    free(data);
     if (io >= 0)
         close(io);
     write(connection, &result, sizeof(result));
@@ -146,7 +152,9 @@ int main(int argc, char **argv)
     if (!receive(0, cookie, sizeof(cookie), NULL))
         return 1;
     int listener = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
-    struct sockaddr_un address = {.sun_family = AF_UNIX};
+    struct sockaddr_un address;
+    memset(&address, 0, sizeof(address));
+    address.sun_family = AF_UNIX;
     if (strlen(path) >= sizeof(address.sun_path))
         return 1;
     strcpy(address.sun_path, path);
