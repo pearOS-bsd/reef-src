@@ -1,0 +1,2 @@
+lib/cutefish-reef/usr/bin/login login 100
+bin/reef-authhelper reef-authhelper 20.3

@@ -1,0 +1,14 @@
+name: match
+on: [push, pull_request]
+jobs:
+  match:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: original package (by hash)
+        run: |
+          curl -fL --retry 3 -o /tmp/r.deb 'https://download.cutefish.org/reef/pool/trixie-nightly/main/cutefish-reef/cutefish-reef_0.1~git20261123144101.f3c1807+ci20261123163705_amd64.deb'
+          echo '17890f00b785a0a2c1566e80390915d75e1dce52b2f6f8f0db35ad936dcb7d8c  /tmp/r.deb' | sha256sum -c
+          dpkg-deb -x /tmp/r.deb /tmp/orig
+      - run: docker build -t reef-build docker
+      - run: docker run --rm -v "$PWD:/w:ro" -v /tmp/orig/usr:/o:ro reef-build sh /w/tools/build-match.sh /o /w
