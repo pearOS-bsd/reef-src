@@ -17,7 +17,8 @@ jobs:
           gh release download original-f3c1807 -R "$GITHUB_REPOSITORY" -p toolkit.deb -O /tmp/t.deb
           echo 'e80f9350da2a1cbcc0a063770ecfbb694c6aa9ef6c050496f4dfa3a928e525e4  /tmp/t.deb' | sha256sum -c
           dpkg-deb -x /tmp/t.deb /tmp/tk
-          git clone -q https://github.com/cutefishos/cutefish-toolkit /tmp/tksrc
-          git -C /tmp/tksrc checkout -q 7e25ddc841153bd4e999de368e0d79bab0ae90ff
+          gh release download original-f3c1807 -R "$GITHUB_REPOSITORY" -p toolkit-7e25ddc.tar.gz -O /tmp/ts.tar.gz
+          echo 'a7a01a39a3ad2663a714fad706ccd1dcb91db69e32c0ac3540b16428699b9b67  /tmp/ts.tar.gz' | sha256sum -c
+          mkdir /tmp/tksrc && tar xzf /tmp/ts.tar.gz -C /tmp/tksrc
       - run: docker build -t reef-build docker
       - run: docker run --rm -v "$PWD:/w:ro" -v /tmp/orig/usr:/o:ro -v /tmp/tksrc:/t:ro -v /tmp/tk/usr/lib/x86_64-linux-gnu:/l:ro reef-build sh -c "sh /w/tools/build-match.sh /o /w /t /l && python3 /w/tests/small.py /o /tmp/b"
