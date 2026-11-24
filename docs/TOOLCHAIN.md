@@ -23,3 +23,7 @@ The Metal libraries and the host library have not been checked yet.
 - A loop that appears twice is one loop unswitched by `-O3`.
 - Values kept in registers across calls that could change memory were passed by value or held in a `string_view`.
 - The author uses `memset` rather than `= {}` for C structs; order of conditions matters.
+- RTTI names tell the namespace: `7Content` is global, `*N12_GLOBAL__N_1...` anonymous. It decides what is inlined.
+- A `const` local captured by a lambda is copied where a non-const one is moved.
+- Tools: `tools/ndiff.py` (listing diff with stack offsets masked), `tools/variants.py` (ranks source variants).
+- Code that matches nothing still has to behave the same: the test found a wrong layout hint in a function that looked right.

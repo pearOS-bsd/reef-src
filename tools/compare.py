@@ -157,4 +157,5 @@ def main():
                     for x in na[f][0][i:j]: print('  -', describe(x))
                     for x in nb[g][0][k:l]: print('  +', describe(x))
     return 0 if ok * 100 >= a.min * total else 1
-sys.exit(main())
+if __name__ == "__main__":
+    sys.exit(main())

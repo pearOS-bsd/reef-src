@@ -39,13 +39,15 @@ using namespace cutefish;
 namespace {
 
 // SHA-256 of Apple Root CA and Apple Root CA - G3.
-constexpr unsigned char kAppleRoot[32] = {
-    0xb0, 0xb1, 0x73, 0x0e, 0xcb, 0xc7, 0xff, 0x45, 0x05, 0x14, 0x2c, 0x49, 0xf1, 0x29, 0x5e, 0x6e,
-    0xda, 0x6b, 0xca, 0xed, 0x7e, 0x2c, 0x68, 0xc5, 0xbe, 0x91, 0xb5, 0xa1, 0x10, 0x01, 0xf0, 0x24,
-};
-constexpr unsigned char kAppleRootG3[32] = {
-    0x63, 0x34, 0x3a, 0xbf, 0xb8, 0x9a, 0x6a, 0x03, 0xeb, 0xb5, 0x7e, 0x9b, 0x3f, 0x5f, 0xa7, 0xbe,
-    0x7c, 0x4f, 0x5c, 0x75, 0x6f, 0x30, 0x17, 0xb3, 0xa8, 0xc4, 0x88, 0xc3, 0x65, 0x3e, 0x91, 0x79,
+constexpr unsigned char kAppleRoots[][32] = {
+    {
+        0xb0, 0xb1, 0x73, 0x0e, 0xcb, 0xc7, 0xff, 0x45, 0x05, 0x14, 0x2c, 0x49, 0xf1, 0x29, 0x5e, 0x6e,
+        0xda, 0x6b, 0xca, 0xed, 0x7e, 0x2c, 0x68, 0xc5, 0xbe, 0x91, 0xb5, 0xa1, 0x10, 0x01, 0xf0, 0x24,
+    },
+    {
+        0x63, 0x34, 0x3a, 0xbf, 0xb8, 0x9a, 0x6a, 0x03, 0xeb, 0xb5, 0x7e, 0x9b, 0x3f, 0x5f, 0xa7, 0xbe,
+        0x7c, 0x4f, 0x5c, 0x75, 0x6f, 0x30, 0x17, 0xb3, 0xa8, 0xc4, 0x88, 0xc3, 0x65, 0x3e, 0x91, 0x79,
+    },
 };
 
 struct Free
@@ -66,9 +68,13 @@ bool isAppleRoot(X509* certificate)
 {
     unsigned char digest[EVP_MAX_MD_SIZE];
     unsigned int size = 0;
-    if (!X509_digest(certificate, EVP_sha256(), digest, &size) || size != sizeof(kAppleRoot))
+    if (!X509_digest(certificate, EVP_sha256(), digest, &size) || size != sizeof(kAppleRoots[0]))
         return false;
-    return memcmp(digest, kAppleRoot, sizeof(kAppleRoot)) == 0 || memcmp(digest, kAppleRootG3, sizeof(kAppleRootG3)) == 0;
+    for (const auto& root : kAppleRoots) {
+        if (memcmp(digest, root, sizeof(root)) == 0)
+            return true;
+    }
+    return false;
 }
 
 // Who the signer is, as the dialog says it; empty when Apple does not vouch for the signature.
@@ -112,6 +118,8 @@ std::string developer(const std::optional<reef::Signature>& signature)
     return name;
 }
 
+} // namespace
+
 // The window moves by its content.
 class Content : public ui::ColumnLayout
 {
@@ -142,8 +150,6 @@ private:
     ui::PointF m_position;
 };
 
-} // namespace
-
 int main(int argc, char** argv)
 {
     if (argc < 5) {
@@ -153,24 +159,21 @@ int main(int argc, char** argv)
     const std::string identifier = argv[1];
     const std::string executable = argv[2];
     const std::string loader = argv[3];
+    char** arguments = argv + 4;
     const std::optional<reef::Signature> signature = reef::readSignature(executable);
     const std::string team = signature && !signature->adhoc ? signature->team : std::string();
     const std::string signer = developer(signature);
 
     std::string name = std::filesystem::path(executable).filename().string();
     std::string icon = "application-x-executable";
-    std::string version;
     const std::string bundle = base::bundle::bundleOfProgram(executable);
-    const std::optional<base::DesktopEntry> entry =
-        bundle.empty() ? std::nullopt : base::bundle::read(bundle, base::DesktopEntry{});
-    if (entry) {
+    std::string version;
+    if (const auto entry = bundle.empty() ? std::nullopt : base::bundle::read(bundle, base::DesktopEntry{})) {
         name = entry->name;
         if (!entry->icon.empty())
             icon = entry->icon;
     }
-    const std::optional<std::string> info =
-        bundle.empty() ? std::nullopt : base::file::read(bundle + "/Contents/Info.plist");
-    if (info) {
+    if (const auto info = bundle.empty() ? std::nullopt : base::file::read(bundle + "/Contents/Info.plist")) {
         if (const auto strings = base::plist::rootStrings(*info)) {
             for (const char* key : {"CFBundleShortVersionString", "CFBundleVersion"}) {
                 const auto found = strings->find(key);
@@ -232,7 +235,6 @@ int main(int argc, char** argv)
     auto* cancelButton = buttons->addChild<ui::DialogButton>("Cancel");
     cancelButton->onClicked = cancel;
     auto* openButton = buttons->addChild<ui::DialogButton>("Open", true);
-    char** arguments = argv + 4;
     const auto open = [&window, &identifier, &team, &loader, arguments] {
         {
             base::Settings settings(base::paths::cutefishConfig("reef"));
