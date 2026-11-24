@@ -1,8 +1,22 @@
 cmake_minimum_required(VERSION 3.22)
 project(reef-src LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 include(CheckPIESupported)
 check_pie_supported()
 add_executable(login src/login/login.c)
 add_executable(reef-authhelper src/authhelper/authhelper.c)
+
+# Needs the toolkit's headers (commit 7e25ddc) and libraries; left out without them.
+set(TOOLKIT_SRC "" CACHE PATH "checkout of cutefish-toolkit")
+set(TOOLKIT_LIB "" CACHE PATH "directory of libcutefish-toolkit*.so.1")
+if(TOOLKIT_SRC AND TOOLKIT_LIB)
+    find_package(OpenSSL REQUIRED)
+    add_executable(reef-open src/open/main.cpp src/open/signature.cpp)
+    target_include_directories(reef-open PRIVATE ${TOOLKIT_SRC}/src)
+    target_link_libraries(reef-open PRIVATE ${TOOLKIT_LIB}/libcutefish-toolkit.so.1
+        ${TOOLKIT_LIB}/libcutefish-toolkit-base.so.1 OpenSSL::Crypto)
+    target_link_options(reef-open PRIVATE -Wl,--unresolved-symbols=ignore-in-shared-libs)
+endif()

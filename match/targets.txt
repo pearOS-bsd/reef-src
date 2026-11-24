@@ -1,2 +1,3 @@
 lib/cutefish-reef/usr/bin/login login 100
 bin/reef-authhelper reef-authhelper 100
+libexec/cutefish-reef/reef-open reef-open 48.4

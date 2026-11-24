@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <cstring>
 #include <fcntl.h>
+#include <string_view>
 #include <unistd.h>
 #include <vector>
 
@@ -132,22 +133,23 @@ std::optional<Signature> readSignature(const std::string& path)
     close(fd);
     if (!data)
         return std::nullopt;
-    if (data->size() < 12 || big32(data->data()) != kEmbeddedSignature)
+    const std::string_view bytes = *data;
+    if (bytes.size() < 12 || big32(bytes.data()) != kEmbeddedSignature)
         return std::nullopt;
 
     Signature signature;
     bool found = false;
-    const uint32_t count = big32(data->data() + 8);
+    const uint32_t count = big32(bytes.data() + 8);
     for (uint32_t i = 0; i < count; i++) {
-        if (data->size() < 12 + size_t(i) * 8 + 8)
+        if (bytes.size() < 12 + size_t(i) * 8 + 8)
             break;
-        const uint32_t slot = big32(data->data() + 12 + i * 8);
-        const uint32_t offset = big32(data->data() + 12 + i * 8 + 4);
-        if (data->size() < size_t(offset) + 8)
+        const uint32_t slot = big32(bytes.data() + 12 + i * 8);
+        const uint32_t offset = big32(bytes.data() + 12 + i * 8 + 4);
+        if (bytes.size() < size_t(offset) + 8)
             return std::nullopt;
-        const char* blob = data->data() + offset;
+        const char* blob = bytes.data() + offset;
         const uint32_t length = big32(blob + 4);
-        if (length < 8 || data->size() < size_t(offset) + length)
+        if (length < 8 || bytes.size() < size_t(offset) + length)
             return std::nullopt;
         if (slot == kCodeDirectorySlot && big32(blob) == kCodeDirectory) {
             signature.codeDirectory.assign(blob, length);
@@ -159,7 +161,7 @@ std::optional<Signature> readSignature(const std::string& path)
     if (!found || signature.codeDirectory.size() < 44)
         return std::nullopt;
 
-    const std::string& directory = signature.codeDirectory;
+    const std::string_view directory = signature.codeDirectory;
     signature.adhoc = (big32(directory.data() + 12) & kAdhoc) != 0;
     if (big32(directory.data() + 8) >= kSupportsTeam && directory.size() >= 52) {
         const uint32_t team = big32(directory.data() + 48);
