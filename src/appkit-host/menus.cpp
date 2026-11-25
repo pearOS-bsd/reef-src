@@ -4,25 +4,15 @@
 // Reconstructed from the published binary.
 // Menus: exported on the session bus, or the toolkit's, and status items.
 
-#include "host.h"
+#include "menus.h"
 
+#include "host.h"
 #include "menu_bus.h"
 #include "status_item.h"
 
 #include "ui/menu.h"
 
 #include <map>
-
-// As MenuExporter::Item. Strings may be null.
-struct reef_ui_menu_item
-{
-    const char* title;
-    void* item;
-    int depth;
-    unsigned flags;
-    const char* key;
-    unsigned modifiers;
-};
 
 struct reef_ui_menu_level
 {

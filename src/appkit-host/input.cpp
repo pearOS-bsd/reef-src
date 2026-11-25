@@ -4,28 +4,12 @@
 // Reconstructed from the published binary.
 // Scrolling, pointers and text input, and input that tests make.
 
+#include "input.h"
+
 #include "views.h"
 
 #include "ui/scroller.h"
 #include "ui/test_input.h"
-
-struct reef_ui_scroll_axis
-{
-    double minimum;
-    double maximum;
-    double viewport;
-    int enabled;
-};
-
-// What a scroller moves.
-struct reef_ui_scroller_callbacks
-{
-    void* context;
-    void (*axes)(void* context, reef_ui_scroll_axis* horizontal, reef_ui_scroll_axis* vertical);
-    void (*position)(void* context, double* x, double* y);
-    void (*applyPosition)(void* context, double x, double y);
-    void (*movingChanged)(void* context, int moving);
-};
 
 struct reef_ui_scroller : cutefish::ui::Scroller::Target
 {

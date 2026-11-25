@@ -164,9 +164,12 @@ struct PlacedGlyph
 struct RunKey
 {
     std::vector<std::tuple<const Mask*, int, int>> glyphs;
-    std::array<uint64_t, 4> color;
+    std::array<double, 4> color;
 
-    bool operator==(const RunKey& other) const { return glyphs == other.glyphs && color == other.color; }
+    bool operator==(const RunKey& other) const
+    {
+        return glyphs == other.glyphs && memcmp(color.data(), other.color.data(), sizeof color) == 0;
+    }
 };
 
 struct RunHash
@@ -179,8 +182,8 @@ struct RunHash
             add(reinterpret_cast<uint64_t>(mask));
             add(uint64_t(uint32_t(x)) << 32 | uint32_t(y));
         }
-        for (uint64_t channel : key.color)
-            add(channel);
+        for (double channel : key.color)
+            add(std::bit_cast<uint64_t>(channel));
         return hash;
     }
 };
@@ -917,10 +920,10 @@ static void readMetrics(reef_ui_face* face)
         metrics.underlinePosition = -metrics.unitsPerEm / 10;
         metrics.underlineThickness = metrics.unitsPerEm / 14;
     }
-    metrics.left = ftFace->bbox.xMin * face->key.stretch;
-    metrics.bottom = ftFace->bbox.yMin;
-    metrics.right = ftFace->bbox.xMax * face->key.stretch;
-    metrics.top = ftFace->bbox.yMax;
+    metrics.bounds[0] = ftFace->bbox.xMin * face->key.stretch;
+    metrics.bounds[1] = ftFace->bbox.yMin;
+    metrics.bounds[2] = ftFace->bbox.xMax * face->key.stretch;
+    metrics.bounds[3] = ftFace->bbox.yMax;
     metrics.glyphCount = uint32_t(ftFace->num_glyphs);
     uint32_t flags = 0;
     if (ftFace->style_flags & FT_STYLE_FLAG_ITALIC)
@@ -1705,17 +1708,13 @@ reef_ui_face* faceFallback(reef_ui_face* face, uint32_t character, const char* l
     std::lock_guard lock(mutex);
     const bool hasLanguage = language && *language;
     const auto remember = [&](reef_ui_face* found) {
-        if (hasLanguage) {
-            if (face->languageFallbacks.size() >= mostFallbacks)
-                return;
-            faceRetain(found);
+        if ((hasLanguage ? face->languageFallbacks.size() : face->fallbacks.size()) >= mostFallbacks)
+            return;
+        faceRetain(found);
+        if (hasLanguage)
             face->languageFallbacks[{character, language}] = found;
-        } else {
-            if (face->fallbacks.size() >= mostFallbacks)
-                return;
-            faceRetain(found);
+        else
             face->fallbacks[character] = found;
-        }
     };
     if (hasLanguage) {
         const auto it = face->languageFallbacks.find({character, language});
@@ -2081,15 +2080,14 @@ static void drawRun(ui::Canvas2D& canvas, const std::vector<const PlacedGlyph*>&
     key.glyphs.reserve(glyphs.size());
     for (const PlacedGlyph* glyph : glyphs)
         key.glyphs.emplace_back(glyph->mask, glyph->x - left, glyph->y - top);
-    key.color = {std::bit_cast<uint64_t>(color.red), std::bit_cast<uint64_t>(color.green), std::bit_cast<uint64_t>(color.blue),
-                 std::bit_cast<uint64_t>(color.alpha)};
+    key.color = {color.red, color.green, color.blue, color.alpha};
     const auto it = runs.find(key);
     if (it != runs.end()) {
         runOrder.splice(runOrder.begin(), runOrder, it->second.position);
         canvas.drawBitmap(it->second.bitmap, rect);
         return;
     }
-    std::vector<uint32_t> pixels(size_t(width) * height);
+    std::vector<uint32_t> pixels(size_t(width) * height, 0);
     const double alpha = std::clamp(color.alpha, 0.0, 1.0);
     const double red = std::clamp(color.red, 0.0, 1.0);
     const double green = std::clamp(color.green, 0.0, 1.0);

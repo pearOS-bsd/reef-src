@@ -49,8 +49,9 @@ struct reef_ui_pdf_outline_item
 {
     const char* title;
     int level;
-    // Counted from 1; NaN for a place that stays as it is.
+    // Counted from 1.
     int page;
+    // NaN where the viewer stays, and for the top of the page.
     double x;
     double y;
     // In place of a page.

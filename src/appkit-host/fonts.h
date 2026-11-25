@@ -46,10 +46,8 @@ struct reef_ui_face_metrics
     double italicAngle;
     double underlinePosition;
     double underlineThickness;
-    double left;
-    double bottom;
-    double right;
-    double top;
+    // Left, bottom, right and top.
+    double bounds[4];
     double weight;
     double width;
     uint32_t glyphCount;

@@ -26,7 +26,7 @@
 
 namespace cutefish::reef {
 
-// The first point is x' = a x + c y + e, y' = b x + d y + f.
+// x' = a x + c y + e, y' = b x + d y + f.
 struct PdfMatrix
 {
     double a = 1;
@@ -157,7 +157,7 @@ struct Element
 
 } // namespace
 
-static std::string text(const char* value)
+static std::string given(const char* value)
 {
     return value ? value : "";
 }
@@ -199,7 +199,7 @@ static std::string rectangle(const PdfRect& rect)
     return "[" + numbers({rect.x, rect.y, rect.x + rect.width, rect.y + rect.height}) + "]";
 }
 
-static std::string array(const std::vector<double>& values)
+static std::string numberArray(const std::vector<double>& values)
 {
     std::string text;
     for (double value : values)
@@ -209,7 +209,7 @@ static std::string array(const std::vector<double>& values)
 
 static const char hexDigits[] = "0123456789ABCDEF";
 
-static std::string name(const std::string& text)
+static std::string pdfName(const std::string& text)
 {
     std::string result = "/";
     for (char c : text) {
@@ -234,19 +234,19 @@ static std::string hexString(const std::string& bytes)
     return text + ">";
 }
 
-static std::string xml(const std::string& text)
+static std::string xmlText(const std::string& text)
 {
     std::string result;
     for (char c : text) {
         switch (c) {
+        case '&':
+            result += "&amp;";
+            break;
         case '<':
             result += "&lt;";
             break;
         case '>':
             result += "&gt;";
-            break;
-        case '&':
-            result += "&amp;";
             break;
         case '"':
             result += "&quot;";
@@ -263,25 +263,20 @@ static std::u32string decoded(const std::string& text, std::vector<size_t>* offs
 {
     std::u32string result;
     for (size_t i = 0; i < text.size();) {
-        const char byte = text[i];
-        char32_t c = byte;
+        const unsigned char lead = text[i];
+        char32_t c = 0xfffd;
         size_t size = 1;
-        if (byte < 0) {
-            c = 0xfffd;
-            if ((byte & 0xe0) == 0xc0) {
-                if (i + 1 < text.size()) {
-                    c = (byte & 0x1f) << 6 | (text[i + 1] & 0x3f);
-                    size = 2;
-                }
-            } else if ((byte & 0xf0) == 0xe0) {
-                if (i + 2 < text.size()) {
-                    c = (byte & 0x0f) << 12 | (text[i + 1] & 0x3f) << 6 | (text[i + 2] & 0x3f);
-                    size = 3;
-                }
-            } else if ((byte & 0xf8) == 0xf0 && i + 3 < text.size()) {
-                c = (byte & 0x07) << 18 | (text[i + 1] & 0x3f) << 12 | (text[i + 2] & 0x3f) << 6 | (text[i + 3] & 0x3f);
-                size = 4;
-            }
+        if (lead < 0x80) {
+            c = lead;
+        } else if ((lead & 0xe0) == 0xc0 && i + 1 < text.size()) {
+            c = (lead & 0x1f) << 6 | (text[i + 1] & 0x3f);
+            size = 2;
+        } else if ((lead & 0xf0) == 0xe0 && i + 2 < text.size()) {
+            c = (lead & 0x0f) << 12 | (text[i + 1] & 0x3f) << 6 | (text[i + 2] & 0x3f);
+            size = 3;
+        } else if ((lead & 0xf8) == 0xf0 && i + 3 < text.size()) {
+            c = (lead & 0x07) << 18 | (text[i + 1] & 0x3f) << 12 | (text[i + 2] & 0x3f) << 6 | (text[i + 3] & 0x3f);
+            size = 4;
         }
         if (offsets)
             offsets->push_back(i);
@@ -296,15 +291,16 @@ static std::u32string decoded(const std::string& text, std::vector<size_t>* offs
 static void appendUtf16(std::u16string& text, char32_t c)
 {
     if (c >= 0x10000) {
-        text += char16_t(0xd800 + ((c - 0x10000) >> 10));
-        text += char16_t(0xdc00 + ((c - 0x10000) & 0x3ff));
+        c -= 0x10000;
+        text += char16_t(0xd800 + (c >> 10));
+        text += char16_t(0xdc00 + (c & 0x3ff));
     } else {
         text += char16_t(c);
     }
 }
 
 // The bytes of a string object: ASCII as it is, other text as UTF-16.
-static std::string encoded(const std::string& text)
+static std::string encodedText(const std::string& text)
 {
     bool ascii = true;
     for (char c : text)
@@ -475,8 +471,10 @@ static bool isRightToLeft(char32_t c)
 
 static const char* blendMode(int composite)
 {
-    static const char* const modes[] = {"Normal",    "Multiply",  "Screen",     "Overlay",   "Darken", "Lighten",    "ColorDodge", "ColorBurn",
-                                        "SoftLight", "HardLight", "Difference", "Exclusion", "Hue",    "Saturation", "Color",      "Luminosity"};
+    static const char* const modes[] = {
+        "Normal",    "Multiply",  "Screen",     "Overlay",   "Darken", "Lighten",    "ColorDodge", "ColorBurn",
+        "SoftLight", "HardLight", "Difference", "Exclusion", "Hue",    "Saturation", "Color",      "Luminosity",
+    };
     if (composite >= 0 && composite < 16)
         return modes[composite];
     if (composite == 26)
@@ -492,26 +490,16 @@ static bool hasShadow(const State& state)
     return shadow[6] > 0 && (shadow[2] > 0 || shadow[0] != 0 || shadow[1] != 0);
 }
 
-static ui::ColorF toColor(const double* components)
+static ui::ColorF colorOf(const double* components)
 {
     return {components[0], components[1], components[2], components[3]};
-}
-
-static ui::LineCap toLineCap(int cap)
-{
-    return cap == 1 ? ui::LineCap::Round : cap == 2 ? ui::LineCap::Square : ui::LineCap::Butt;
-}
-
-static ui::LineJoin toLineJoin(int join)
-{
-    return join == 1 ? ui::LineJoin::Round : join == 2 ? ui::LineJoin::Bevel : ui::LineJoin::Miter;
 }
 
 static void setStroke(ui::Canvas2D& canvas, const State& state)
 {
     canvas.setLineWidth(state.lineWidth);
-    canvas.setLineCap(toLineCap(state.lineCap));
-    canvas.setLineJoin(toLineJoin(state.lineJoin));
+    canvas.setLineCap(lineCapOf(state.lineCap));
+    canvas.setLineJoin(lineJoinOf(state.lineJoin));
     canvas.setMiterLimit(state.miterLimit);
     canvas.setLineDash(state.dashes, state.dashOffset);
 }
@@ -519,7 +507,8 @@ static void setStroke(ui::Canvas2D& canvas, const State& state)
 // From the page onto a bitmap of an area of it.
 static base::AffineTransform onBitmap(const PdfMatrix& matrix, const PdfRect& area, double scale)
 {
-    return {matrix.a * scale, matrix.b * scale, matrix.c * scale, matrix.d * scale, (matrix.e - area.x) * scale, (matrix.f - area.y) * scale};
+    return base::AffineTransform(matrix.a * scale, matrix.b * scale, matrix.c * scale, matrix.d * scale, (matrix.e - area.x) * scale,
+                                 (matrix.f - area.y) * scale);
 }
 
 // Images are upside down in their unit square.
@@ -528,7 +517,7 @@ static PdfMatrix imageMatrix(const PdfRect& rect)
     return {rect.width, 0, 0, -rect.height, rect.x, rect.y + rect.height};
 }
 
-static PdfMatrix toMatrix(const double* matrix)
+static PdfMatrix matrixOf(const double* matrix)
 {
     return {matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5]};
 }
@@ -654,12 +643,14 @@ PdfMatrix PdfMatrix::inverted() const
     const double determinant = a * d - b * c;
     if (std::abs(determinant) < 1e-12)
         return {};
-    return {d / determinant,
-            -b / determinant,
-            -c / determinant,
-            a / determinant,
-            (c * f - d * e) / determinant,
-            (b * e - a * f) / determinant};
+    PdfMatrix result;
+    result.a = d / determinant;
+    result.b = -b / determinant;
+    result.c = -c / determinant;
+    result.d = a / determinant;
+    result.e = (c * f - d * e) / determinant;
+    result.f = (b * e - a * f) / determinant;
+    return result;
 }
 
 void PdfMatrix::map(double x, double y, double* mappedX, double* mappedY) const
@@ -700,9 +691,11 @@ PdfRect PdfRect::mapped(const PdfMatrix& matrix) const
     matrix.map(x + width, y, &xs[1], &ys[1]);
     matrix.map(x, y + height, &xs[2], &ys[2]);
     matrix.map(x + width, y + height, &xs[3], &ys[3]);
-    const double left = std::min({xs[0], xs[1], xs[2], xs[3]});
-    const double top = std::min({ys[0], ys[1], ys[2], ys[3]});
-    return {left, top, std::max({xs[0], xs[1], xs[2], xs[3]}) - left, std::max({ys[0], ys[1], ys[2], ys[3]}) - top};
+    const double left = *std::min_element(xs, xs + 4);
+    const double right = *std::max_element(xs, xs + 4);
+    const double top = *std::min_element(ys, ys + 4);
+    const double bottom = *std::max_element(ys, ys + 4);
+    return {left, top, right - left, bottom - top};
 }
 
 struct PdfWriter::Private
@@ -787,7 +780,7 @@ struct PdfWriter::Private
         write("\nendstream\nendobj\n");
     }
 
-    std::string string(int object, const std::string& value) const
+    std::string encryptedString(int object, const std::string& value) const
     {
         if (!document.encrypt)
             return hexString(value);
@@ -798,7 +791,7 @@ struct PdfWriter::Private
         return hexString(bytes);
     }
 
-    std::string textString(int object, const std::string& value) const { return string(object, encoded(value)); }
+    std::string textString(int object, const std::string& value) const { return encryptedString(object, encodedText(value)); }
 
     void emit(const std::string& operators)
     {
@@ -814,7 +807,7 @@ struct PdfWriter::Private
 
     std::string newName(const char* prefix) { return prefix + std::to_string(++names); }
 
-    std::string formName(int object) const
+    std::string formName(int object)
     {
         for (const auto& [name, number] : objects) {
             if (number == object && name.compare(0, 2, "Fm") == 0)
@@ -878,8 +871,8 @@ struct PdfWriter::Private
         ui::Canvas2D* canvas = raster->canvas.get();
         canvas->setTransform(onBitmap(state.transform, bounds, raster->scale));
         canvas->setGlobalAlpha(state.alpha);
-        canvas->setFillColor(toColor(state.fill));
-        canvas->setStrokeColor(toColor(state.stroke));
+        canvas->setFillColor(colorOf(state.fill));
+        canvas->setStrokeColor(colorOf(state.stroke));
         return canvas;
     }
 
@@ -905,7 +898,8 @@ struct PdfWriter::Private
     PdfRect glyphBounds(const reef_ui_face_metrics& metrics, const PdfMatrix& matrix, const double* positions, unsigned count) const
     {
         const double em = metrics.unitsPerEm > 0 ? metrics.unitsPerEm : 1000;
-        PdfRect box = {metrics.left / em, metrics.bottom / em, (metrics.right - metrics.left) / em, (metrics.top - metrics.bottom) / em};
+        PdfRect box = {metrics.bounds[0] / em, metrics.bounds[1] / em, (metrics.bounds[2] - metrics.bounds[0]) / em,
+                       (metrics.bounds[3] - metrics.bounds[1]) / em};
         if (box.isEmpty())
             box = {-0.5, -0.5, 2, 2};
         PdfRect result;
@@ -925,7 +919,7 @@ struct PdfWriter::Private
         Element& element = elements[index];
         element.marks.push_back({int(pages.size()) - 1, id});
         element.kids.push_back(-int(element.marks.size()));
-        emit(name(element.type) + " << /MCID " + std::to_string(id) + " >> BDC\n");
+        emit(pdfName(element.type) + " << /MCID " + std::to_string(id) + " >> BDC\n");
     }
 
     PdfRect pathBounds(const reef_ui_path_element* elements, unsigned count) const;
@@ -933,7 +927,7 @@ struct PdfWriter::Private
     std::string pathOperators(const reef_ui_path_element* elements, unsigned count) const;
     std::string strokeOperators() const;
     int form(const Layer& layer, const std::string& group);
-    std::string maskImage(const std::vector<uint8_t>& pixels, int width, int height);
+    std::string grayImage(const std::vector<uint8_t>& pixels, int width, int height);
     std::string image(const void* pixels, int width, int height, size_t stride, bool rgba, bool interpolated);
     void drawImage(const std::string& name, const PdfMatrix& matrix, double alpha, int composite);
     void drawShadow(const PdfRect& bounds, const std::function<void(ui::Canvas2D&)>& draw);
@@ -942,7 +936,6 @@ struct PdfWriter::Private
                   const std::u32string* texts);
     int gradientFunction(const double* offsets, const double* colors, unsigned count, int first, int components);
     void fillShading(int type, const std::string& coordinates, const double* offsets, const double* colors, unsigned count, int extend);
-    void finishPage(const Layer& content);
     void writeFont(const Font& font);
     void finish();
 };
@@ -1030,7 +1023,8 @@ std::string PdfWriter::Private::strokeOperators() const
 int PdfWriter::Private::form(const Layer& layer, const std::string& group)
 {
     const int object = newObject();
-    objects["Fm" + std::to_string(++names)] = object;
+    const std::string name = newName("Fm");
+    objects[name] = object;
     std::string dictionary = "/Type /XObject /Subtype /Form /BBox ["
         + numbers({bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height}) + "] /Resources "
         + resourceDictionary(layer.resources);
@@ -1044,7 +1038,7 @@ int PdfWriter::Private::form(const Layer& layer, const std::string& group)
 }
 
 // Returns the name of an image of one byte for each pixel.
-std::string PdfWriter::Private::maskImage(const std::vector<uint8_t>& pixels, int width, int height)
+std::string PdfWriter::Private::grayImage(const std::vector<uint8_t>& pixels, int width, int height)
 {
     const int object = newObject();
     writeStream(object,
@@ -1192,7 +1186,7 @@ void PdfWriter::Private::drawGlyphImage(reef_ui_face* face, const double* matrix
         if (!canvas.isValid())
             return;
         canvas.setTransform(onBitmap(state.transform, area, scale));
-        canvas.setFillColor(toColor(state.fill));
+        canvas.setFillColor(colorOf(state.fill));
         reef::drawGlyphs(canvas, face, matrix, glyphs, positions, count, 0);
     }
     const std::string name = image(bitmap.constBits(), width, height, bitmap.stride(), false, true);
@@ -1210,7 +1204,7 @@ void PdfWriter::Private::glyphRun(reef_ui_face* face, const PdfMatrix& matrix, c
     if (ui::Canvas2D* canvas = this->canvas())
         reef::drawGlyphs(*canvas, face, linear, glyphs, positions, count, 0);
     if (hasShadow(state)) {
-        const ui::ColorF color = toColor(state.fill);
+        const ui::ColorF color = colorOf(state.fill);
         drawShadow(glyphBounds(font.metrics, matrix, positions, count), [&](ui::Canvas2D& canvas) {
             canvas.setFillColor(color);
             reef::drawGlyphs(canvas, face, linear, glyphs, positions, count, 0);
@@ -1242,8 +1236,8 @@ void PdfWriter::Private::glyphRun(reef_ui_face* face, const PdfMatrix& matrix, c
         const double alpha = state.alpha * state.fill[3];
         if (alpha < 1 || state.composite != 0)
             operators += "/" + graphicsState(alpha, alpha, state.composite) + " gs\n";
-        operators += colorOperator(state.fill, false) + numbers(state.transform) + " cm\n" + pathOperators(path.data(), unsigned(path.size()))
-            + "f\nQ\n";
+        operators += colorOperator(state.fill, false) + numbers(state.transform) + " cm\n"
+            + pathOperators(path.data(), unsigned(path.size())) + "f\nQ\n";
         emit(operators);
         return;
     }
@@ -1311,7 +1305,7 @@ int PdfWriter::Private::gradientFunction(const double* offsets, const double* co
     std::string bounds;
     std::string encode;
     for (size_t i = 0; i + 1 < positions.size(); i++) {
-        functions += "<< /FunctionType 2 /Domain [0 1] /C0 " + array(values[i]) + " /C1 " + array(values[i + 1]) + " /N 1 >> ";
+        functions += "<< /FunctionType 2 /Domain [0 1] /C0 " + numberArray(values[i]) + " /C1 " + numberArray(values[i + 1]) + " /N 1 >> ";
         if (i > 0)
             bounds += number(positions[i]) + " ";
         encode += "0 1 ";
@@ -1331,8 +1325,8 @@ void PdfWriter::Private::fillShading(int type, const std::string& coordinates, c
     const auto shading = [&](const char* colorSpace, int function) {
         const int object = newObject();
         writeObject(object,
-                    "<< /ShadingType " + std::to_string(type) + colorSpace + coordinates + "] /Function " + std::to_string(function) + " 0 R"
-                        + extension + " >>");
+                    "<< /ShadingType " + std::to_string(type) + colorSpace + coordinates + "] /Function " + std::to_string(function)
+                        + " 0 R" + extension + " >>");
         const std::string name = newName("Sh");
         objects[name] = object;
         return name;
@@ -1355,41 +1349,6 @@ void PdfWriter::Private::fillShading(int type, const std::string& coordinates, c
         operators += "/" + graphicsState(state.alpha, state.alpha, state.composite, mask) + " gs\n";
     operators += numbers(state.transform) + " cm\n/" + name + " sh\nQ\n";
     emit(operators);
-}
-
-void PdfWriter::Private::finishPage(const Layer& content)
-{
-    const Page& page = pages.back();
-    const int contents = newObject();
-    writeStream(contents, "", "1 0 0 -1 0 " + number(pageHeight) + " cm\n" + content.content, true);
-    std::string annotations;
-    const double height = pageHeight;
-    for (const Link& link : page.links) {
-        const int object = newObject();
-        const PdfRect& rect = link.rect;
-        std::string dictionary = "<< /Type /Annot /Subtype /Link /Rect ["
-            + numbers({rect.x, height - rect.y - rect.height, rect.x + rect.width, height - rect.y}) + "] /Border [0 0 0] /F 4";
-        if (!link.url.empty())
-            dictionary += " /A << /S /URI /URI " + string(object, link.url) + " >>";
-        else
-            dictionary += " /Dest " + string(object, link.destination);
-        writeObject(object, dictionary + " >>");
-        annotations += std::to_string(object) + " 0 R ";
-    }
-    std::string dictionary =
-        "<< /Type /Page /Parent " + std::to_string(pagesObject) + " 0 R /MediaBox " + rectangle(page.mediaBox);
-    static const char* const boxNames[] = {"CropBox", "BleedBox", "TrimBox", "ArtBox"};
-    for (int i = 0; i < 4; i++) {
-        if (page.boxes[i].width > 0 && page.boxes[i].height > 0)
-            dictionary += std::string(" /") + boxNames[i] + " " + rectangle(page.boxes[i]);
-    }
-    dictionary += " /Resources " + resourceDictionary(content.resources) + " /Contents " + std::to_string(contents)
-        + " 0 R /Group << /Type /Group /S /Transparency /CS /DeviceRGB >>";
-    if (!annotations.empty())
-        dictionary += " /Annots [" + annotations + "]";
-    if (!page.marks.empty())
-        dictionary += " /StructParents " + std::to_string(pages.size() - 1) + " /Tabs /S";
-    writeObject(page.object, dictionary + " >>");
 }
 
 void PdfWriter::Private::writeFont(const Font& font)
@@ -1426,10 +1385,11 @@ void PdfWriter::Private::writeFont(const Font& font)
     if (font.metrics.flags & (FaceItalic | FaceMadeOblique))
         flags |= 64;
     const reef_ui_face_metrics& metrics = font.metrics;
-    std::string dictionary = "<< /Type /FontDescriptor /FontName " + name(baseFont) + " /Flags " + std::to_string(flags) + " /FontBBox ["
-        + number(metrics.left * 1000 / em) + " " + number(metrics.bottom * 1000 / em) + " " + number(metrics.right * 1000 / em) + " "
-        + number(metrics.top * 1000 / em) + "] /ItalicAngle " + number(metrics.italicAngle) + " /Ascent " + number(metrics.ascent * 1000 / em)
-        + " /Descent " + number(-metrics.descent * 1000 / em) + " /CapHeight "
+    std::string dictionary = "<< /Type /FontDescriptor /FontName " + pdfName(baseFont) + " /Flags " + std::to_string(flags) + " /FontBBox ["
+        + number(metrics.bounds[0] * 1000 / em) + " " + number(metrics.bounds[1] * 1000 / em) + " "
+        + number(metrics.bounds[2] * 1000 / em) + " " + number(metrics.bounds[3] * 1000 / em) + "] /ItalicAngle "
+        + number(metrics.italicAngle) + " /Ascent " + number(metrics.ascent * 1000 / em) + " /Descent "
+        + number(-metrics.descent * 1000 / em) + " /CapHeight "
         + number((metrics.capHeight > 0 ? metrics.capHeight : metrics.ascent) * 1000 / em) + " /StemV "
         + std::to_string(metrics.weight >= 600 ? 120 : 80);
     if (fontFile)
@@ -1450,7 +1410,7 @@ void PdfWriter::Private::writeFont(const Font& font)
         i = end;
     }
     const int descendant = newObject();
-    dictionary = std::string("<< /Type /Font /Subtype ") + (compact ? "/CIDFontType0" : "/CIDFontType2") + " /BaseFont " + name(baseFont)
+    dictionary = std::string("<< /Type /Font /Subtype ") + (compact ? "/CIDFontType0" : "/CIDFontType2") + " /BaseFont " + pdfName(baseFont)
         + " /CIDSystemInfo << /Registry " + textString(descendant, "Adobe") + " /Ordering " + textString(descendant, "Identity")
         + " /Supplement 0 >> /FontDescriptor " + std::to_string(descriptor) + " 0 R /DW 1000 /W [" + widths + "]";
     if (!compact)
@@ -1498,7 +1458,7 @@ void PdfWriter::Private::writeFont(const Font& font)
     const int unicode = newObject();
     writeStream(unicode, "", map, true);
     writeObject(font.object,
-                "<< /Type /Font /Subtype /Type0 /BaseFont " + name(baseFont) + " /Encoding /Identity-H /DescendantFonts ["
+                "<< /Type /Font /Subtype /Type0 /BaseFont " + pdfName(baseFont) + " /Encoding /Identity-H /DescendantFonts ["
                     + std::to_string(descendant) + " 0 R] /ToUnicode " + std::to_string(unicode) + " 0 R >>");
 }
 
@@ -1525,7 +1485,7 @@ void PdfWriter::Private::finish()
                         + " >> ";
                 }
             }
-            std::string dictionary = "<< /Type /StructElem /S " + name(element.type) + " /P "
+            std::string dictionary = "<< /Type /StructElem /S " + pdfName(element.type) + " /P "
                 + std::to_string(element.parent >= 0 ? elements[element.parent].object : root) + " 0 R /K [" + kids + "]";
             if (!element.alternateText.empty())
                 dictionary += " /Alt " + textString(element.object, element.alternateText);
@@ -1591,7 +1551,7 @@ void PdfWriter::Private::finish()
                     + std::to_string(numbers[children[i].back()]) + " 0 R /Count " + std::to_string(descendants(i));
             }
             if (item.url && *item.url) {
-                dictionary += " /A << /S /URI /URI " + string(object, item.url) + " >>";
+                dictionary += " /A << /S /URI /URI " + encryptedString(object, item.url) + " >>";
             } else if (item.page > 0 && size_t(item.page) <= pages.size()) {
                 const Page& page = pages[item.page - 1];
                 const std::string x = std::isnan(item.x) ? "null" : number(item.x);
@@ -1602,16 +1562,16 @@ void PdfWriter::Private::finish()
         }
         const std::vector<int>& top = children[outline.size()];
         writeObject(root,
-                    "<< /Type /Outlines /First " + std::to_string(numbers[top.front()]) + " 0 R /Last " + std::to_string(numbers[top.back()])
-                        + " 0 R /Count " + std::to_string(outline.size()) + " >>");
+                    "<< /Type /Outlines /First " + std::to_string(numbers[top.front()]) + " 0 R /Last "
+                        + std::to_string(numbers[top.back()]) + " 0 R /Count " + std::to_string(outline.size()) + " >>");
         catalog += " /Outlines " + std::to_string(root) + " 0 R /PageMode /UseOutlines";
     }
     if (!destinations.empty()) {
         const int object = newObject();
         std::string list;
         for (const auto& [name, place] : destinations) {
-            list += string(object, name) + " [" + std::to_string(pages[place.first].object) + " 0 R /XYZ " + number(place.second.first) + " "
-                + number(place.second.second) + " null] ";
+            list += encryptedString(object, name) + " [" + std::to_string(pages[place.first].object) + " 0 R /XYZ "
+                + number(place.second.first) + " " + number(place.second.second) + " null] ";
         }
         writeObject(object, "<< /Names [" + list + "] >>");
         catalog += " /Names << /Dests " + std::to_string(object) + " 0 R >>";
@@ -1625,15 +1585,15 @@ void PdfWriter::Private::finish()
               " xmlns:pdf=\"http://ns.adobe.com/pdf/1.3/\">"
               "<pdfaid:part>2</pdfaid:part><pdfaid:conformance>B</pdfaid:conformance>";
         if (!title.empty())
-            xmp += "<dc:title><rdf:Alt><rdf:li xml:lang=\"x-default\">" + xml(title) + "</rdf:li></rdf:Alt></dc:title>";
+            xmp += "<dc:title><rdf:Alt><rdf:li xml:lang=\"x-default\">" + xmlText(title) + "</rdf:li></rdf:Alt></dc:title>";
         if (!author.empty())
-            xmp += "<dc:creator><rdf:Seq><rdf:li>" + xml(author) + "</rdf:li></rdf:Seq></dc:creator>";
+            xmp += "<dc:creator><rdf:Seq><rdf:li>" + xmlText(author) + "</rdf:li></rdf:Seq></dc:creator>";
         if (!subject.empty())
-            xmp += "<dc:description><rdf:Alt><rdf:li xml:lang=\"x-default\">" + xml(subject) + "</rdf:li></rdf:Alt></dc:description>";
+            xmp += "<dc:description><rdf:Alt><rdf:li xml:lang=\"x-default\">" + xmlText(subject) + "</rdf:li></rdf:Alt></dc:description>";
         if (!keywords.empty())
-            xmp += "<pdf:Keywords>" + xml(keywords) + "</pdf:Keywords>";
+            xmp += "<pdf:Keywords>" + xmlText(keywords) + "</pdf:Keywords>";
         if (!creator.empty())
-            xmp += "<xmp:CreatorTool>" + xml(creator) + "</xmp:CreatorTool>";
+            xmp += "<xmp:CreatorTool>" + xmlText(creator) + "</xmp:CreatorTool>";
         const std::string date = dateText(document.date, true);
         xmp += "<xmp:CreateDate>" + date + "</xmp:CreateDate><xmp:ModifyDate>" + date + "</xmp:ModifyDate>";
         xmp += "</rdf:Description></rdf:RDF></x:xmpmeta>\n<?xpacket end=\"w\"?>";
@@ -1665,7 +1625,7 @@ void PdfWriter::Private::finish()
                     std::string bytes;
                     for (size_t j = i + 1; j + 1 < end; j += 2)
                         bytes.push_back(char(std::stoi(intents.substr(j, 2), nullptr, 16)));
-                    encrypted += string(catalogObject, bytes);
+                    encrypted += encryptedString(catalogObject, bytes);
                     i = end;
                 } else {
                     encrypted.push_back(intents[i]);
@@ -1735,13 +1695,13 @@ PdfWriter::PdfWriter(const reef_ui_pdf_document& document)
     : d(std::make_unique<Private>())
 {
     d->document = document;
-    d->title = text(document.title);
-    d->author = text(document.author);
-    d->subject = text(document.subject);
-    d->keywords = text(document.keywords);
-    d->creator = text(document.creator);
-    d->encryption = text(document.encryption);
-    d->outputIntents = text(document.outputIntents);
+    d->title = given(document.title);
+    d->author = given(document.author);
+    d->subject = given(document.subject);
+    d->keywords = given(document.keywords);
+    d->creator = given(document.creator);
+    d->encryption = given(document.encryption);
+    d->outputIntents = given(document.outputIntents);
     if (document.profile && document.profileSize)
         d->profile.assign(document.profile, document.profileSize);
     if (document.identifier) {
@@ -1813,7 +1773,37 @@ void PdfWriter::endPage()
     content.saves = 0;
     for (size_t i = 0; i < d->tags.size(); i++)
         content.content += "EMC\n";
-    d->finishPage(content);
+    const Page& page = d->pages.back();
+    const int contents = d->newObject();
+    d->writeStream(contents, "", "1 0 0 -1 0 " + number(d->pageHeight) + " cm\n" + content.content, true);
+    std::string annotations;
+    const double height = d->pageHeight;
+    for (const Link& link : page.links) {
+        const int object = d->newObject();
+        const PdfRect& rect = link.rect;
+        std::string dictionary = "<< /Type /Annot /Subtype /Link /Rect ["
+            + numbers({rect.x, height - rect.y - rect.height, rect.x + rect.width, height - rect.y}) + "] /Border [0 0 0] /F 4";
+        if (!link.url.empty())
+            dictionary += " /A << /S /URI /URI " + d->encryptedString(object, link.url) + " >>";
+        else
+            dictionary += " /Dest " + d->encryptedString(object, link.destination);
+        d->writeObject(object, dictionary + " >>");
+        annotations += std::to_string(object) + " 0 R ";
+    }
+    std::string dictionary =
+        "<< /Type /Page /Parent " + std::to_string(d->pagesObject) + " 0 R /MediaBox " + rectangle(page.mediaBox);
+    static const char* const boxNames[] = {"CropBox", "BleedBox", "TrimBox", "ArtBox"};
+    for (int i = 0; i < 4; i++) {
+        if (page.boxes[i].width > 0 && page.boxes[i].height > 0)
+            dictionary += std::string(" /") + boxNames[i] + " " + rectangle(page.boxes[i]);
+    }
+    dictionary += " /Resources " + d->resourceDictionary(content.resources) + " /Contents " + std::to_string(contents)
+        + " 0 R /Group << /Type /Group /S /Transparency /CS /DeviceRGB >>";
+    if (!annotations.empty())
+        dictionary += " /Annots [" + annotations + "]";
+    if (!page.marks.empty())
+        dictionary += " /StructParents " + std::to_string(d->pages.size() - 1) + " /Tabs /S";
+    d->writeObject(page.object, dictionary + " >>");
     d->layers.clear();
     d->inPage = false;
 }
@@ -1886,9 +1876,9 @@ void PdfWriter::setOutline(const reef_ui_pdf_outline_item* items, unsigned count
     d->outlineStrings.reserve(size_t(count) * 2);
     for (unsigned i = 0; i < count; i++) {
         reef_ui_pdf_outline_item item = items[i];
-        d->outlineStrings.push_back(text(item.title));
+        d->outlineStrings.push_back(given(item.title));
         item.title = d->outlineStrings.back().c_str();
-        d->outlineStrings.push_back(text(item.url));
+        d->outlineStrings.push_back(given(item.url));
         item.url = d->outlineStrings.back().c_str();
         d->outline.push_back(item);
     }
@@ -1928,12 +1918,13 @@ void PdfWriter::restore()
 
 void PdfWriter::concat(const double* matrix)
 {
-    d->state.transform = d->state.transform * toMatrix(matrix);
+    PdfMatrix& transform = d->state.transform;
+    transform = transform * matrixOf(matrix);
 }
 
 void PdfWriter::setTransform(const double* matrix)
 {
-    d->state.transform = toMatrix(matrix);
+    d->state.transform = matrixOf(matrix);
 }
 
 void PdfWriter::transform(double* matrix) const
@@ -1996,19 +1987,19 @@ void PdfWriter::setSmoothing(int smoothing)
 
 void PdfWriter::setFillColor(double red, double green, double blue, double alpha)
 {
-    const double color[] = {red, green, blue, alpha};
-    std::copy(color, color + 4, d->state.fill);
+    const double color[4] = {red, green, blue, alpha};
+    memcpy(d->state.fill, color, sizeof color);
 }
 
 void PdfWriter::setStrokeColor(double red, double green, double blue, double alpha)
 {
-    const double color[] = {red, green, blue, alpha};
-    std::copy(color, color + 4, d->state.stroke);
+    const double color[4] = {red, green, blue, alpha};
+    memcpy(d->state.stroke, color, sizeof color);
 }
 
 void PdfWriter::fillColor(double* color) const
 {
-    std::copy(d->state.fill, d->state.fill + 4, color);
+    memcpy(color, d->state.fill, sizeof d->state.fill);
 }
 
 void PdfWriter::setLineWidth(double width)
@@ -2039,8 +2030,8 @@ void PdfWriter::setLineDash(const double* lengths, unsigned count, double offset
 
 void PdfWriter::setShadow(double dx, double dy, double blur, double red, double green, double blue, double alpha)
 {
-    const double shadow[] = {dx, dy, blur, red, green, blue, alpha};
-    std::copy(shadow, shadow + 7, d->state.shadow);
+    const double shadow[7] = {dx, dy, blur, red, green, blue, alpha};
+    memcpy(d->state.shadow, shadow, sizeof shadow);
 }
 
 void PdfWriter::fillPath(const reef_ui_path_element* elements, unsigned count, int evenOdd)
@@ -2049,9 +2040,10 @@ void PdfWriter::fillPath(const reef_ui_path_element* elements, unsigned count, i
         return;
     const State& state = d->state;
     if (hasShadow(state)) {
-        const ui::ColorF color = toColor(state.fill);
+        double fill[4];
+        memcpy(fill, state.fill, sizeof fill);
         d->drawShadow(d->pathBounds(elements, count), [&](ui::Canvas2D& canvas) {
-            canvas.setFillColor(color);
+            canvas.setFillColor(colorOf(fill));
             canvas.fillPath(toPath(elements, count, evenOdd));
         });
     }
@@ -2077,7 +2069,7 @@ void PdfWriter::strokePath(const reef_ui_path_element* elements, unsigned count)
         bounds = {bounds.x - reach, bounds.y - reach, bounds.width + reach * 2, bounds.height + reach * 2};
         const State stroked = state;
         d->drawShadow(bounds, [&](ui::Canvas2D& canvas) {
-            canvas.setStrokeColor(toColor(stroked.stroke));
+            canvas.setStrokeColor(colorOf(stroked.stroke));
             setStroke(canvas, stroked);
             canvas.strokePath(toPath(elements, count, 0));
         });
@@ -2124,13 +2116,13 @@ void PdfWriter::drawPixels(const void* pixels, int width, int height, size_t str
     const bool rgba = format == 1;
     if (hasShadow(d->state)) {
         d->drawShadow(PdfRect{x, y, drawnWidth, drawnHeight}.mapped(d->state.transform), [&](ui::Canvas2D& canvas) {
-            canvas.drawBitmap(ui::Bitmap::wrap(const_cast<void*>(pixels), width, height, stride, ui::Bitmap::Format(rgba)),
-                              {x, y, drawnWidth, drawnHeight}, mirrored);
+            const ui::Bitmap bitmap = ui::Bitmap::wrap(const_cast<void*>(pixels), width, height, stride, ui::Bitmap::Format(rgba));
+            canvas.drawBitmap(bitmap, {x, y, drawnWidth, drawnHeight}, mirrored);
         });
     }
     if (ui::Canvas2D* canvas = d->canvas()) {
-        canvas->drawBitmap(ui::Bitmap::wrap(const_cast<void*>(pixels), width, height, stride, ui::Bitmap::Format(rgba)),
-                           {x, y, drawnWidth, drawnHeight}, mirrored);
+        const ui::Bitmap bitmap = ui::Bitmap::wrap(const_cast<void*>(pixels), width, height, stride, ui::Bitmap::Format(rgba));
+        canvas->drawBitmap(bitmap, {x, y, drawnWidth, drawnHeight}, mirrored);
     }
     const std::string name = d->image(pixels, width, height, stride, rgba, d->state.smoothing);
     PdfMatrix matrix = {drawnWidth, 0, 0, drawnHeight, x, y};
@@ -2179,12 +2171,12 @@ void PdfWriter::drawText(const std::string& text, const std::vector<PdfTextSpan>
     const double shadowAlpha = state.shadow[6];
     state.shadow[6] = 0;
     double fill[4];
-    std::copy(state.fill, state.fill + 4, fill);
+    memcpy(fill, state.fill, sizeof fill);
     std::unique_ptr<Raster> raster = std::move(d->raster);
     for (const PdfTextSpan& span : spans) {
         if (span.begin >= span.end || span.end > text.size())
             continue;
-        std::copy(span.color, span.color + 4, state.fill);
+        memcpy(state.fill, span.color, sizeof state.fill);
         const reef_ui_face_query query = {nullptr, span.family.c_str(), nullptr, span.bold ? 700.0 : 400.0, -1, span.italic, -1, nullptr};
         reef_ui_face* face = faceMatch(&query, nullptr);
         if (!face)
@@ -2284,14 +2276,19 @@ void PdfWriter::drawText(const std::string& text, const std::vector<PdfTextSpan>
             faceRelease(fallback);
         faceRelease(face);
     }
-    std::copy(fill, fill + 4, state.fill);
+    memcpy(state.fill, fill, sizeof fill);
     state.shadow[6] = shadowAlpha;
     d->raster = std::move(raster);
 }
 
 void PdfWriter::drawGlyphs(reef_ui_face* face, const double* matrix, const uint32_t* glyphs, const double* positions, uint32_t count, int)
 {
-    d->glyphRun(face, {matrix[0], matrix[1], matrix[2], matrix[3], 0, 0}, glyphs, positions, count, nullptr);
+    PdfMatrix linear;
+    linear.a = matrix[0];
+    linear.b = matrix[1];
+    linear.c = matrix[2];
+    linear.d = matrix[3];
+    d->glyphRun(face, linear, glyphs, positions, count, nullptr);
 }
 
 void PdfWriter::beginGroup()
@@ -2299,7 +2296,7 @@ void PdfWriter::beginGroup()
     Group group;
     group.alpha = d->state.alpha;
     group.composite = d->state.composite;
-    std::copy(d->state.shadow, d->state.shadow + 7, group.shadow);
+    memcpy(group.shadow, d->state.shadow, sizeof group.shadow);
     if (ui::Canvas2D* canvas = d->canvas())
         canvas->beginGroup();
     if (d->inPage && hasShadow(d->state) && !d->raster) {
@@ -2334,7 +2331,7 @@ void PdfWriter::endGroup()
     d->layers.pop_back();
     d->state.alpha = group.alpha;
     d->state.composite = group.composite;
-    std::copy(group.shadow, group.shadow + 7, d->state.shadow);
+    memcpy(d->state.shadow, group.shadow, sizeof group.shadow);
     std::unique_ptr<Raster> raster;
     if (group.raster)
         raster = std::move(d->raster);
@@ -2384,7 +2381,7 @@ void PdfWriter::endMaskedGroup(const void* pixels, int width, int height, size_t
     d->layers.pop_back();
     if (ui::Canvas2D* canvas = d->canvas()) {
         canvas->save();
-        canvas->setTransform(onBitmap(toMatrix(matrix), d->bounds, d->raster->scale));
+        canvas->setTransform(onBitmap(matrixOf(matrix), d->bounds, d->raster->scale));
         canvas->setGlobalAlpha(1);
         if (pixels && width > 0 && height > 0) {
             ui::Path outside;
@@ -2411,14 +2408,14 @@ void PdfWriter::endMaskedGroup(const void* pixels, int width, int height, size_t
         for (int j = 0; j < width; j++)
             alphas[size_t(i) * width + j] = uint8_t(row[j] >> 24);
     }
-    const std::string image = d->maskImage(alphas, width, height);
+    const std::string image = d->grayImage(alphas, width, height);
     PdfMatrix place = {drawnWidth, 0, 0, drawnHeight, x, y};
     if (!mirrored) {
         place.d = -drawnHeight;
         place.f = y + drawnHeight;
     }
     Layer mask;
-    mask.content = numbers(toMatrix(matrix) * place) + " cm\n/" + image + " Do\n";
+    mask.content = numbers(matrixOf(matrix) * place) + " cm\n/" + image + " Do\n";
     mask.resources.insert(image);
     const int maskObject = d->form(mask, "<< /Type /Group /S /Transparency /CS /DeviceGray >>");
     const int object = d->form(layer, "<< /Type /Group /S /Transparency >>");
