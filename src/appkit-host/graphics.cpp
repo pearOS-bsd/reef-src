@@ -5,16 +5,11 @@
 
 #include "graphics.h"
 
+#include "images.h"
 #include "paths.h"
 
 #include <algorithm>
 #include <cmath>
-
-// Bitmaps of the GPU's, that programs keep (images.cpp).
-struct reef_ui_image
-{
-    cutefish::ui::RetainedBitmap bitmap;
-};
 
 namespace cutefish::reef {
 

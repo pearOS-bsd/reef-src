@@ -27,8 +27,8 @@ struct reef_ui_dma_buf
 
 namespace cutefish::reef {
 
-// Pixels are 0xAARRGGBB with premultiplied alpha. Those that a program gets are for pixelsFree; the rows have no gaps, and
-// there is null when they cannot be had.
+// Pixels are 0xAARRGGBB with premultiplied alpha. Those that a program gets have no gaps between the rows and go back to
+// pixelsFree; null when there are none.
 
 reef_ui_image* imageCreate(const void* pixels, int width, int height, size_t stride);
 void imageDestroy(reef_ui_image* image);
@@ -54,14 +54,14 @@ void pixelsFree(void* pixels);
 
 // An icon of the theme, the one for the size.
 void* iconPixels(const char* name, int size, int* width, int* height);
-// The same drawn larger or smaller.
+// The one for the size, drawn with another number of pixels.
 void* iconPixelsScaled(const char* name, int size, int pixelSize, int* width, int* height);
 
-// Symbols are files next to the library, drawn in lines on 24 units.
+// Symbols are files next to the library, drawings of lines on 24 units.
 int symbolExists(const char* name);
-// Of its lines as if they had no width: x, y, width and height.
+// Of the middle of its lines, in those units: x, y, width and height.
 int symbolBounds(const char* name, double* bounds);
-// Fits the lines, `weight` pixels wide, into the rectangle of a picture that has a margin on all sides.
+// Fits the lines, `weight` pixels wide, into the rectangle of a picture that gets a margin on all sides.
 void* symbolPixels(const char* name, int width, int height, const double* rect, double weight, int filled, int margin,
                    int* pixelWidth, int* pixelHeight);
 

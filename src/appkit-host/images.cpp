@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // Reconstructed from the published binary.
+// Images that the GPU keeps, DMA-BUFs, the files of images, the icons of the theme, and symbols.
 
 #include "images.h"
 
@@ -179,7 +180,7 @@ void* iconPixelsScaled(const char* name, int size, int pixelSize, int* width, in
     return pixelsOf(ui::Bitmap::decodeFile(path, {pixelSize, pixelSize}), width, height);
 }
 
-// The symbols are drawn anew in other sizes by changing their files.
+// A drawing of lines, as the text of its file.
 struct Symbol
 {
     std::string svg;
@@ -208,7 +209,7 @@ static std::string symbolPath(const char* name)
     return symbolsDirectory() + name + ".svg";
 }
 
-// Attributes of the root.
+// Attributes of the root element.
 static std::string attribute(const std::string& svg, const char* name)
 {
     const size_t begin = svg.find("<svg");
