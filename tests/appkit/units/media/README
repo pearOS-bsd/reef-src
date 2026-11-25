@@ -1,0 +1,6 @@
+Behaviour tests of sound, camera, displays, jpeg2000 and gpu_activity: the original library and ours get the same calls; the logs must be equal.
+  docker exec rb bash /tk/app/media/test/build.sh     builds ours.so (our objects and export.cpp, a table as the original's), drivers, fakes, stubs in /tmp/media/test
+  docker exec rb bash /tk/app/media/test/sound.sh     stub_pulse.cpp, stub_sndfile.cpp (logging, gated writes; variants with missing functions), fake_clock.cpp
+  docker exec rb bash /tk/app/media/test/dev.sh 60 150    cameras and DRM devices made up from seeds (fake_dev.cpp): seeds of the cameras, seeds of the displays
+  docker exec rb bash /tk/app/media/test/jp2.sh 3000  stub_openjp2.cpp (made up images, failures) and the real libopenjp2 (apt install libopenjp2-7) with images/
+  docker exec rb bash /tk/app/media/test/gpu.sh 40    fake_gpu.cpp: EGL fences, clock, sleeping, home folder; the text of the log file

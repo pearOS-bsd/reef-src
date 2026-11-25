@@ -1,0 +1,16 @@
+Behaviour test of desktop.cpp (table functions 84-87, 201, 213, 215, 234, 305) against the published library. All in the container, build
+output in /tmp/desktop (the /tk mount is read-only there).
+
+  docker exec rb bash /tk/app/desktop/test/run.sh [scenario...]     builds, runs original and ours, compares the logs
+  docker exec rb bash /tk/app/desktop/test/cover.sh [scenario...]   ours with gcov, log compared with the original's of run.sh
+  docker exec rb bash /tk/app/desktop/test/san.sh [scenario...]     ours with ASan/UBSan, log compared the same way
+
+scenarios: files open show claim object forward owner playing busgone (all without one named)
+driver.cpp  loads a library, calls its table by lines of stdin, polls the loop's descriptor, prints results and callbacks; counts nanosleep
+export.cpp  test only: our functions behind reef_appkit_host_interface
+client.py   a private dbus-daemon with dbus-monitor; plays the file manager, the other instance, the callers; writes one log with
+            everything that went over the bus, unique names and serials replaced
+files.py    the home: files of several types, desktop entries, mimeapps.list; mime/ is a shared-mime-info database
+fakehome.c  LD_PRELOAD: the home directory is $TEST_HOME (the toolkit reads the password file)
+
+one.sh (folder above) builds only desktop.cpp and lists the range; ord.py shows how the source order changes the emitted order.

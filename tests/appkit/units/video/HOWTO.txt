@@ -1,0 +1,15 @@
+Behaviour test of the video unit: the original library and ours decode the same streams, libva is a stub that logs every call with
+the bytes of its buffers (va_stub.c), the driver logs what the table functions 240-246, 248 and 306 give back (drv.cpp, built twice).
+The logs must be the same.
+
+On the host:
+  ./mkstreams.sh                     real streams with ffmpeg (H.264, HEVC, VP9), turned into streams/*.case
+  python3 synth.py synth 2 120       headers that encoders do not write (long-term pictures, MMCO, tiles, resizing, ...)
+  python3 synth.py synth2 7 150 1.0  the same with wrong values and parameter sets that change
+In the container (outputs in /out/video/test):
+  bash /tk/app/video/test/build.sh                     stubs and both drivers (ours from src/appkit-host/video*.cpp)
+  bash /tk/app/video/test/full.sh                      everything: streams, synth, dropped frames, calls that fail, other drivers
+  bash /tk/app/video/test/synthrun.sh synth2 synth2    one set with a table of what it reached
+  bash /tk/app/video/test/fuzz.sh FIRST COUNT SHARDS case...   changed configurations and frames, failing calls (hash of each log)
+  bash /tk/app/video/test/cov.sh                       lines of ours that are not reached (gcov)
+run.sh NAME --full --fuzz N 1 case... writes the whole log of one fuzzed case.

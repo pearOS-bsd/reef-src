@@ -1,0 +1,2 @@
+# clean.sh LO HI : cleaned disassembly of the original
+awk -v lo=$(printf %d 0x$1) -v hi=$(printf %d 0x$2) '/^ +[0-9a-f]+:\t/{a=strtonum("0x" substr($1,1,length($1)-1)); if(a>=lo&&a<hi) print}' ~/.pear/tmp/tk/app/text/all.dis | grep -v "endbr64\|nop" | sed -e 's/<_ZN[^>]*>//; s/# \([0-9a-f]*\) <.*/# \1/; s/<\([^+]*\)@plt>/<\1>/; s/ <std::.*@@Base[^>]*>//; s/ <std::thread.*//; s/std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >/string/g; s/cutefish:://g; s/^ *//'

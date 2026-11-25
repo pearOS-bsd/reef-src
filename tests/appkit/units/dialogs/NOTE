@@ -1,0 +1,7 @@
+drag.cpp / dialogs.cpp of src/appkit-host. All in the container rb (/tk is read-only there: builds go to /tmp/dialogs).
+  c.sh LO HI            compile the two units alone, link with stub.cpp, list the original functions in [LO,HI)
+  dd.sh ADDR SYMBOL     diff of one function (host shell)
+  var.py                similarity of a function for variants of a piece of its source
+  test/build.sh         test driver, hooks.so (LD_PRELOAD: View::startDrag and ui::FileChooser replaced by loggers), mine.so (our two objects)
+  test/run.sh           runs the driver with the published library and with ours and compares the logs (19749 lines)
+  test/mutate.py        60 small changes of our source: each must show in the log (59 do; the 60th cannot be seen from outside)

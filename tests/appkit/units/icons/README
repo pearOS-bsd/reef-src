@@ -1,0 +1,11 @@
+Behaviour test of images.cpp (table functions 63 64 65 81 82 83 120 210 211 212 237 238 239 257 301 308).
+On the host once: python3 pictures.py files; python3 symbols.py files/symbols   (needs Pillow; done)
+In the container:
+  bash /tk/app/icons/test/build.sh                          ours.so (images.cpp + jpeg2000.cpp), the driver, the preload, into /tmp/icons/test
+  bash /tk/app/icons/test/run.sh images dmabuf encode decode icons
+  bash /tk/app/icons/test/run.sh allsymbols threads         the symbols of the package (SEED=n for other numbers)
+  NAME=odd SYMBOLS=/tk/app/icons/test/files/symbols bash /tk/app/icons/test/run.sh allsymbols threads
+  bash /tk/app/icons/test/folder.sh                         where the symbols are looked for, by what dladdr says
+  bash /tk/app/icons/test/cov.sh                            lines of images.cpp that are reached
+malloc.cpp (LD_PRELOAD): the home folder of the user database (icon themes), malloc that fails for one of the two libraries, dladdr.
+Not reached: Bitmap::converted in pixelsOf (the decoder always gives Argb32Premultiplied), drawing a DMA-BUF (no GPU canvas).

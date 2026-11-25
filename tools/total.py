@@ -11,6 +11,7 @@ import compare
 usr, build, targets = sys.argv[1:4]
 status = 0
 functions = [0, 0]
+written = 0
 bytes_ = [0, 0]
 for line in open(targets):
     original, ours, least = line.split()
@@ -19,6 +20,8 @@ for line in open(targets):
     functions[1] += len(A.funcs)
     bytes_[1] += size
     name = os.path.basename(original)
+    if ours != '-':
+        written += len(A.funcs)
     path = os.path.join(build, ours)
     if ours == '-' or not os.path.exists(path):
         print('%s: %s, %d functions, %d bytes' % (name, 'not started' if ours == '-' else 'not built here', len(A.funcs), size), flush=True)
@@ -31,5 +34,6 @@ for line in open(targets):
     if same * 100 < float(least) * size:
         print('%s: less than %s %%' % (name, least))
         status = 1
+print('written: %d/%d functions = %.2f%%' % (written, functions[1], 100 * written / functions[1]))
 print('total: %d/%d functions, %d/%d bytes = %.2f%%' % (functions[0], functions[1], bytes_[0], bytes_[1], 100 * bytes_[0] / bytes_[1]))
 sys.exit(status)

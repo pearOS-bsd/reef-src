@@ -1,0 +1,9 @@
+Behaviour test of PdfWriter (pdf.cpp) against the original library, in the container rb:
+
+  bash /tk/app/pdf/test/build.sh          builds /tmp/pdf/driver (driver.cpp with pdf.cpp of the repository)
+  bash /tk/app/pdf/test/run.sh GROUP...   document structure paths images gradients groups shadows glyphs matched text more fuzz=1-2000
+  bash /tk/app/pdf/test/extra.sh          the same driver for gcov (/tmp/pdf/cov) and with sanitizers (/tmp/pdf/asan, run by asan.sh)
+
+Each document is drawn into the original's PDF context (table 168-178, 33-67, 147-150; drawText by address) and into PdfWriter with the same
+arguments; the two byte streams, and the results of transform, clipBounds and fillColor, must be equal. The fonts functions that PdfWriter
+needs are the original's. What differs is written to /out/pdf (KEEP=1: every document). time() is fixed, the random identifier is masked.

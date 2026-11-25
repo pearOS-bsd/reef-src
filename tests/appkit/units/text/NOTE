@@ -1,0 +1,10 @@
+Differential test of text.cpp and paragraph.cpp against the original library (run in the container rb).
+  docker exec rb bash /tk/app/text/cc.sh                 compile the two units into /tmp/text (REAL=1: fonts.h as it is, else with the array bounds[4])
+  docker exec rb bash /tk/app/text/run.sh 240 1          build the driver and run it: ROUNDS SEED [FontMetrics|Families|Text|Paragraph|Pdf|Glyphs]
+  docker exec -e THEMES=3 rb bash /tk/app/text/go.sh 100 2          the system font is Menlo, monospace, not installed, none
+  docker exec rb bash /tk/app/text/go2.sh fonts2.conf 100 3         Monaco and Courier are installed (rename.py made them)
+  docker exec rb bash /tk/app/text/run_fonts.sh 100 4 Paragraph     our side on our fonts unit (objects of appc.sh in /tmp/textall)
+  docker exec rb bash /tk/app/text/cov.sh 120 5                     with gcov: the lines that were not run
+The functions of the other units come from the original library by address (tramp.py). Fonts: fonts.conf, fonts/.
+Documents are finished together, because the order of the fonts in them is that of the addresses of the faces.
+Kind 4 paragraphs (runs that do not cover the text, odd numbers) are tried in a child first: some do not end, in the original as in ours.
