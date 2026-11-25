@@ -101,16 +101,21 @@ bool readBinds(const std::string& path, const std::string& key, std::vector<uint
     return false;
 }
 
-std::string cachePath(const std::string& key)
+// The home folder, as Mac programs see it.
+static std::string homeFolder()
 {
     const char* home = secure_getenv("CFFIXED_USER_HOME");
-    if (!home || *home != '/') {
-        const passwd* user = getpwuid(getuid());
-        if (!user || !user->pw_dir || !*user->pw_dir)
-            return {};
-        home = user->pw_dir;
-    }
-    const std::string folder = home;
+    if (home && *home == '/')
+        return home;
+    const passwd* user = getpwuid(getuid());
+    if (user && user->pw_dir && *user->pw_dir)
+        return user->pw_dir;
+    return {};
+}
+
+std::string cachePath(const std::string& key)
+{
+    const std::string folder = homeFolder();
     if (folder.empty())
         return {};
     // FNV-1a.

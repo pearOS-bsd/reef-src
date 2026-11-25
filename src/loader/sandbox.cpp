@@ -389,13 +389,12 @@ bool findSandboxToken(const SandboxTokens& tokens, const std::string& token, std
 static std::string homeFolder()
 {
     const char* home = secure_getenv("CFFIXED_USER_HOME");
-    if (!home || *home != '/') {
-        const passwd* user = getpwuid(getuid());
-        if (!user || !user->pw_dir || !*user->pw_dir)
-            return {};
-        home = user->pw_dir;
-    }
-    return home;
+    if (home && *home == '/')
+        return home;
+    const passwd* user = getpwuid(getuid());
+    if (user && user->pw_dir && *user->pw_dir)
+        return user->pw_dir;
+    return {};
 }
 
 // What every program needs to run.
@@ -502,12 +501,12 @@ std::string issueSandboxToken(SandboxTokens& tokens, const std::string& name, co
 bool SandboxPolicy::mayLookUp(const std::string& name) const
 {
     for (const SandboxLayer& layer : layers) {
-        if (layer.unconfined || layer.names.count(name))
+        if (layer.unconfined)
             continue;
-        bool matched = false;
-        for (size_t i = 0; i < layer.regexes.size() && !matched; i++)
-            matched = std::regex_search(name, layer.regexes[i]);
-        if (!matched)
+        bool known = layer.names.count(name);
+        for (size_t i = 0; !known && i < layer.regexes.size(); i++)
+            known = std::regex_search(name, layer.regexes[i]);
+        if (!known)
             return false;
     }
     return true;
@@ -586,9 +585,7 @@ static std::vector<std::string> pathsOf(const Filter& filter)
         if (!stream)
             return found;
         while (const dirent* entry = readdir(stream)) {
-            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-                continue;
-            if (strncmp(entry->d_name, name.c_str(), name.size()) == 0)
+            if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0 && strncmp(entry->d_name, name.c_str(), name.size()) == 0)
                 found.push_back(host + "/" + entry->d_name);
         }
         closedir(stream);
@@ -598,7 +595,8 @@ static std::vector<std::string> pathsOf(const Filter& filter)
     return found;
 }
 
-static std::vector<Expanded> expand(const std::vector<Filter>& filters)
+// The rules of the filters: a later refusal takes a part of what an earlier filter allows.
+static void addFilters(const Ruleset& ruleset, const std::vector<Filter>& filters, std::string& policy)
 {
     std::vector<Expanded> expanded;
     for (size_t i = 0; i < filters.size(); i++) {
@@ -608,13 +606,6 @@ static std::vector<Expanded> expand(const std::vector<Filter>& filters)
                 expanded.push_back({i, &filters[i], real});
         }
     }
-    return expanded;
-}
-
-// The rules of the filters: a later refusal takes a part of what an earlier filter allows.
-static void addFilters(const Ruleset& ruleset, const std::vector<Filter>& filters, std::string& policy)
-{
-    const std::vector<Expanded> expanded = expand(filters);
     for (const Expanded& allowed : expanded) {
         if (allowed.filter->deny)
             continue;
@@ -661,7 +652,7 @@ static void addFilter(Profile& profile, const std::string& line)
     const size_t first = line.find(' ');
     if (first == std::string::npos)
         return;
-    std::string letters = line.substr(0, first);
+    std::string letters(line, 0, first);
     const size_t second = line.find(' ', first + 1);
     if (second == std::string::npos)
         return;

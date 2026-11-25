@@ -77,13 +77,12 @@ static bool sessionVariable(const std::string& name)
 static std::string homeFolder()
 {
     const char* home = secure_getenv("CFFIXED_USER_HOME");
-    if (!home || *home != '/') {
-        const passwd* user = getpwuid(getuid());
-        if (!user || !user->pw_dir || !*user->pw_dir)
-            return {};
-        home = user->pw_dir;
-    }
-    return home;
+    if (home && *home == '/')
+        return home;
+    const passwd* user = getpwuid(getuid());
+    if (user && user->pw_dir && *user->pw_dir)
+        return user->pw_dir;
+    return {};
 }
 
 static bool makeFolders(const std::string& folder)
