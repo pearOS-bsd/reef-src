@@ -1,3 +1,5 @@
 The sources here are reconstructed from the published binaries of cutefish-reef 0.1~git20261123144101.f3c1807
 (Copyright 2026 Reion Wong, BSD-3-Clause) and are treated as derived from them: BSD-3-Clause, notice kept, see LICENSE.
 No original binary and no raw decompiler output belongs in this repository.
+
+upstream/ holds third-party code taken unchanged, with its own licence; see upstream/PROVENANCE.md.
