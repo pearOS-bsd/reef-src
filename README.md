@@ -8,9 +8,11 @@ Source of the ELF programs and libraries of Reef, reconstructed function by func
 | `reef-open` | 74/78 functions, 48.4 % of bytes; open: `main`, `readSignature` and their cold parts |
 | `reef-unsupported` | 105/107 functions, 60.2 % of bytes; open: `main` and its cold part |
 | `libreef-webkit-host.so` | 213/260 functions, 45.2 % of bytes; all 100 table entries written, the same output as the original in `tests/webkit.py` (JSON, input, data, find, screens); views, downloads and dialogs not run yet |
-| the other 7 | not started |
+| `reef-install-package` | 175/210 functions, 38.9 % of bytes; everything written, the same output as the original in `tests/package.py` (listing and command line installation); the window and the D-Bus helper not run yet |
+| the other 6 | not started |
 
-Behaviour: `tests/small.py` 25 cases (login, authhelper), `tests/dialogs.py` 1444 cases (the two dialogs, 2026-11-25): no difference.
+Behaviour: `tests/small.py` 25 cases (login, authhelper), `tests/dialogs.py` 1444 cases (the two dialogs, 2026-11-25),
+`tests/package.py` 540 cases (packages made there, good and broken: what is listed and the installed tree): no difference.
 The dialogs run without a display: `tests/uishim.cpp` prints what they would show. Of the reef-open cases 393 ended in a
 verified developer (CotEditor, also with harmless damage) and 922 in a refusal. Not covered: a Mac App Store signature,
 colours, real windows. CI has no signed applications, so it runs only the part without them.
