@@ -47,11 +47,7 @@ static bool readNumber(const std::string& path, long& value)
     const std::string text = trimmed(readFile(path));
     if (text.empty() || text[0] < '0' || text[0] > '9')
         return false;
-    try {
-        value = std::stol(text);
-    } catch (const std::exception&) {
-        return false;
-    }
+    value = std::stol(text);
     return true;
 }
 

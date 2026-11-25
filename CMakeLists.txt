@@ -45,6 +45,14 @@ if(TOOLKIT_SRC AND TOOLKIT_LIB)
     target_link_libraries(reef-install-package PRIVATE ${TOOLKIT_LIB}/libcutefish-toolkit.so.1
         ${TOOLKIT_LIB}/libcutefish-toolkit-base.so.1 LibXml2::LibXml2 LibLZMA::LibLZMA ZLIB::ZLIB)
     target_link_options(reef-install-package PRIVATE -Wl,--unresolved-symbols=ignore-in-shared-libs)
+    # The report of a machine's graphics; reef-gpu-probe, which it runs, is a program of the platform.
+    file(GLOB diagnose src/diagnose/*.cpp)
+    add_executable(reef-diagnose ${diagnose})
+    target_compile_definitions(reef-diagnose PRIVATE REEF_VERSION="0.1")
+    target_include_directories(reef-diagnose PRIVATE ${TOOLKIT_SRC}/src)
+    target_link_libraries(reef-diagnose PRIVATE ${TOOLKIT_LIB}/libcutefish-toolkit.so.1
+        ${TOOLKIT_LIB}/libcutefish-toolkit-base.so.1 EGL GLESv2)
+    target_link_options(reef-diagnose PRIVATE -Wl,--unresolved-symbols=ignore-in-shared-libs)
     add_library(uishim SHARED tests/uishim.cpp)
     target_include_directories(uishim PRIVATE ${TOOLKIT_SRC}/src)
 endif()
