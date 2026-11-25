@@ -217,4 +217,9 @@ constexpr uint16_t DYLD_CHAINED_PTR_64 = 2;
 constexpr uint16_t DYLD_CHAINED_PTR_64_OFFSET = 6;
 constexpr uint16_t DYLD_CHAINED_PTR_START_NONE = 0x8000;
 
+constexpr uint32_t SECTION_TYPE = 0xff;
+constexpr uint32_t S_THREAD_LOCAL_REGULAR = 0x11;
+constexpr uint32_t S_THREAD_LOCAL_ZEROFILL = 0x12;
+constexpr uint32_t S_THREAD_LOCAL_VARIABLES = 0x13;
+
 } // namespace cutefish::reef

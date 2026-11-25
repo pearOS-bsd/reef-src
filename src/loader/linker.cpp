@@ -452,22 +452,41 @@ std::string Linker::expand(Image* loader, const std::string& path)
     return path;
 }
 
+// The descriptors of the thread-local variables lead to the function that finds them, with the image's entry as the key.
 bool Linker::registerThreadLocals(Image& image)
 {
     const Section* variables = nullptr;
     uint64_t start = UINT64_MAX;
     uint64_t end = 0;
+    uint64_t initialized = 0;
     for (const Section& section : image.sections) {
-        if ((section.flags & 0xff) == 0x13)
+        const uint32_t type = section.flags & SECTION_TYPE;
+        if (type == S_THREAD_LOCAL_VARIABLES) {
             variables = &section;
-        else if ((section.flags & 0xff) == 0x11 || (section.flags & 0xff) == 0x12) {
+        } else if (type == S_THREAD_LOCAL_REGULAR || type == S_THREAD_LOCAL_ZEROFILL) {
             start = std::min(start, section.address);
             end = std::max(end, section.address + section.size);
+            if (type == S_THREAD_LOCAL_REGULAR)
+                initialized = std::max(initialized, section.address + section.size);
         }
     }
     if (!variables)
         return true;
-    m_threadLocals.push_back({0, end - start, start, m_threadLocals.size()});
+    uint64_t size = end - start;
+    if (start == UINT64_MAX) {
+        start = 0;
+        size = 0;
+    }
+    ThreadLocal& entry = m_threadLocals.emplace_back();
+    entry.content = start ? image.slide + start : 0;
+    entry.size = size;
+    entry.initialized = initialized > start ? initialized - start : 0;
+    entry.index = m_threadLocals.size() - 1;
+    for (uint64_t offset = 0; offset + 24 <= variables->size; offset += 24) {
+        uint64_t* descriptor = reinterpret_cast<uint64_t*>(image.slide + variables->address + offset);
+        descriptor[0] = reinterpret_cast<uint64_t>(m_tlvGetAddress);
+        descriptor[1] = reinterpret_cast<uint64_t>(&entry);
+    }
     return true;
 }
 

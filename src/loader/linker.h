@@ -32,10 +32,11 @@ struct ImageInfo
 // Thread-local variables of an image.
 struct ThreadLocal
 {
-    uint64_t key;
-    uint64_t size;
-    uint64_t end;
-    uint64_t index;
+    // The initial content, what of it is not zero, and the size of all of it.
+    uint64_t content = 0;
+    uint64_t initialized = 0;
+    uint64_t size = 0;
+    uint64_t index = 0;
 };
 
 struct ProgramVars

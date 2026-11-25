@@ -144,8 +144,53 @@ static long hostSysconf(int name)
     case 1:
         host = _SC_ARG_MAX;
         break;
+    case 2:
+        host = _SC_CHILD_MAX;
+        break;
+    case 3:
+        host = _SC_CLK_TCK;
+        break;
+    case 4:
+        host = _SC_NGROUPS_MAX;
+        break;
+    case 5:
+        host = _SC_OPEN_MAX;
+        break;
     case 15:
         host = _SC_LINE_MAX;
+        break;
+    case 29:
+        host = _SC_PAGESIZE;
+        break;
+    case 56:
+        host = _SC_IOV_MAX;
+        break;
+    case 57:
+        host = _SC_NPROCESSORS_CONF;
+        break;
+    case 58:
+        host = _SC_NPROCESSORS_ONLN;
+        break;
+    case 70:
+        host = _SC_GETGR_R_SIZE_MAX;
+        break;
+    case 71:
+        host = _SC_GETPW_R_SIZE_MAX;
+        break;
+    case 72:
+        host = _SC_HOST_NAME_MAX;
+        break;
+    case 73:
+        host = _SC_LOGIN_NAME_MAX;
+        break;
+    case 74:
+        host = _SC_MONOTONIC_CLOCK;
+        break;
+    case 93:
+        host = _SC_THREAD_STACK_MIN;
+        break;
+    case 101:
+        host = _SC_TTY_NAME_MAX;
         break;
     case 120:
         host = _SC_SYMLOOP_MAX;
