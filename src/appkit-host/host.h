@@ -133,6 +133,8 @@ void logDrawnFrames();
 
 // Makes one out of the process's own arguments, for a program that did not start it.
 void ensureApplication();
+// 6
+const char* systemFontFamily();
 
 // The smallest rectangle that has both.
 inline ui::RectF united(const ui::RectF& a, const ui::RectF& b)

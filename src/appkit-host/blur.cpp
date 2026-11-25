@@ -6,6 +6,7 @@
 
 #include "views.h"
 
+#include "ui/image.h"
 #include "ui/path.h"
 #include "ui/popup_glass.h"
 #include "ui/theme.h"
@@ -149,6 +150,83 @@ void hostWindowSetBackgroundBlur(reef_ui_window* window, int blurred)
 double hostWindowCornerRadius()
 {
     return ui::Theme::current().windowRadius;
+}
+
+// 190
+// The shape is the outline of what the window draws, or the whole window.
+void hostWindowSetShapeFromContent(reef_ui_window* window, int fromContent)
+{
+    if (!fromContent) {
+        window->window->setBodyShape({});
+        return;
+    }
+    const ui::Image image = window->window->grab();
+    if (image.isNull())
+        return;
+    const ui::SizeF size = window->window->size();
+    if (size.width <= 0)
+        return;
+    const double scale = image.width() / size.width;
+    ui::Path shape;
+    // The first pixel of each row that counts, and the one after the last.
+    struct Row
+    {
+        int first = -1;
+        int last = -1;
+    };
+    const int height = image.height();
+    std::vector<Row> rows(std::max(0, height));
+    for (int y = 0; y < height; y++) {
+        const uint32_t* pixels = image.bits() + size_t(y) * image.width();
+        for (int x = 0; x < image.width(); x++) {
+            if (pixels[x] >> 24 < 128)
+                continue;
+            if (rows[y].first == -1)
+                rows[y].first = x;
+            rows[y].last = x + 1;
+        }
+    }
+    for (int top = 0; top < height;) {
+        if (rows[top].first < 0) {
+            top++;
+            continue;
+        }
+        int bottom = top;
+        while (bottom < height && rows[bottom].first >= 0)
+            bottom++;
+        // Down the left edge and up the right one.
+        std::vector<ui::PointF> points;
+        for (int y = top; y < bottom; y++) {
+            const int x = rows[y].first;
+            if (y == top || x != rows[y - 1].first)
+                points.push_back({x / scale, y / scale});
+            if (y + 1 == bottom || x != rows[y + 1].first)
+                points.push_back({x / scale, (y + 1) / scale});
+        }
+        for (int y = bottom - 1; y >= top; y--) {
+            const int x = rows[y].last;
+            if (y + 1 == bottom || x != rows[y + 1].last)
+                points.push_back({x / scale, (y + 1) / scale});
+            if (y == top || x != rows[y - 1].last)
+                points.push_back({x / scale, y / scale});
+        }
+        shape.moveTo(points[0]);
+        for (size_t i = 1; i < points.size(); i++)
+            shape.lineTo(points[i]);
+        shape.close();
+        top = bottom;
+    }
+    // An empty shape would be the whole window.
+    if (shape.isEmpty()) {
+        const double x = size.width / 2;
+        const double y = size.height / 2;
+        shape.moveTo(x, y);
+        shape.lineTo(x + 1, y);
+        shape.lineTo(x + 1, y + 1);
+        shape.lineTo(x, y + 1);
+        shape.close();
+    }
+    window->window->setBodyShape(shape);
 }
 
 // 191

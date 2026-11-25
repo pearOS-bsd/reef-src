@@ -86,7 +86,7 @@ bool hostIsHeadless()
 }
 
 // 6
-const char* hostSystemFontFamily()
+const char* systemFontFamily()
 {
     fontFamily = ui::Theme::current().fontFamily;
     if (fontFamily.empty())
