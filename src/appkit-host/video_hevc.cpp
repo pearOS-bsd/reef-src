@@ -387,7 +387,7 @@ static bool parseSps(const Rbsp& rbsp, int& id, Sps& sps)
 {
     BitReader reader(rbsp);
     reader.skip(16);
-    reader.skip(4);
+    reader.skip(4); // The VPS.
     const int subLayers = reader.bits(3);
     reader.skip(1);
     if (subLayers > 6)
@@ -987,9 +987,10 @@ bool HevcDecoder::decodePicture(const std::vector<Slice>& slices, std::shared_pt
     }
     for (Reference& reference : m_references) {
         const bool isLongTerm = contains(longTerm, &reference) || contains(longTermLater, &reference);
-        reference.shortTerm = !isLongTerm
-            && (contains(before, &reference) || contains(after, &reference) || contains(shortTermLater, &reference));
+        const bool isShortTerm
+            = contains(before, &reference) || contains(after, &reference) || contains(shortTermLater, &reference);
         reference.longTerm = isLongTerm;
+        reference.shortTerm = isShortTerm && !isLongTerm;
     }
 
     std::shared_ptr<Surface> target = m_context->takeSurface();
@@ -1221,17 +1222,16 @@ bool HevcDecoder::decode(const uint8_t* data, size_t size, std::shared_ptr<Surfa
         // Reserved ones, and what is not a slice.
         if (type > LastIrap || (type >= 10 && type <= 15))
             return true;
-        Slice blank;
-        blank.data = unit;
-        blank.size = length;
-        blank.unitType = type;
-        blank.temporalId = (unit[1] & 7) - 1;
+        Slice slice;
+        slice.data = unit;
+        slice.size = length;
+        slice.unitType = type;
+        slice.temporalId = (unit[1] & 7) - 1;
         // The header is in the beginning, the rest need not be copied.
-        Slice slice = blank;
-        const SliceHeader* previous = hasIndependent ? &independent : nullptr;
-        if (length <= 1024 || !parseSliceHeader(unescape(unit, 1024), slice, previous)) {
+        const Slice blank = slice;
+        if (length <= 1024 || !parseSliceHeader(unescape(unit, 1024), slice, hasIndependent ? &independent : nullptr)) {
             slice = blank;
-            if (!parseSliceHeader(unescape(unit, length), slice, previous))
+            if (!parseSliceHeader(unescape(unit, length), slice, hasIndependent ? &independent : nullptr))
                 return false;
         }
         if (!slice.header.dependent) {

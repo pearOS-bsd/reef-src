@@ -19,8 +19,8 @@ namespace cutefish::reef {
 
 // The types one after another, each with a line end; the length of them all.
 int hostDropOfferTypes(reef_ui_drop_offer* offer, char* buffer, int size);
-void hostDropOfferRead(reef_ui_drop_offer* offer, const char* type, void (*callback)(void* context, const void* bytes, size_t size, int read),
-                       void* context);
+void hostDropOfferRead(reef_ui_drop_offer* offer, const char* type,
+                       void (*callback)(void* context, const void* bytes, size_t size, int read), void* context);
 
 // Zero when the drag started. The picture is premultiplied ARGB and may be null.
 int hostWindowStartDrag(reef_ui_window* window, const reef_ui_mime_data* items, unsigned count, unsigned actions, const void* pixels,

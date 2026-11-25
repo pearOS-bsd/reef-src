@@ -75,20 +75,6 @@ static std::vector<std::string> split(const char* text)
     return parts;
 }
 
-static ui::FileChooser::Mode modeOf(int mode)
-{
-    switch (mode) {
-    case 1:
-        return ui::FileChooser::Mode::OpenFiles;
-    case 2:
-        return ui::FileChooser::Mode::OpenFolder;
-    case 3:
-        return ui::FileChooser::Mode::SaveFile;
-    default:
-        return ui::FileChooser::Mode::OpenFile;
-    }
-}
-
 // 101
 void hostTestFileChooserAnswer(const char* const* paths, unsigned count, const char* const* options, unsigned optionCount)
 {
@@ -106,7 +92,8 @@ void hostTestFileChooserAnswer(const char* const* paths, unsigned count, const c
 }
 
 // 99
-reef_ui_file_chooser* hostFileChooserOpen(reef_ui_window* window, const reef_ui_file_chooser_request* request, Answer callback, void* context)
+reef_ui_file_chooser* hostFileChooserOpen(reef_ui_window* window, const reef_ui_file_chooser_request* request, Answer callback,
+                                          void* context)
 {
     const int mode = request->mode;
     const char* title = request->title;
@@ -153,7 +140,10 @@ reef_ui_file_chooser* hostFileChooserOpen(reef_ui_window* window, const reef_ui_
     }
     chooser->dialog = std::make_unique<ui::FileChooser>(window ? window->window : nullptr);
     ui::FileChooser* dialog = chooser->dialog.get();
-    dialog->setMode(modeOf(mode));
+    dialog->setMode(mode == 1   ? ui::FileChooser::Mode::OpenFiles
+                    : mode == 2 ? ui::FileChooser::Mode::OpenFolder
+                    : mode == 3 ? ui::FileChooser::Mode::SaveFile
+                                : ui::FileChooser::Mode::OpenFile);
     if (title && *title)
         dialog->setTitle(title);
     if (acceptLabel && *acceptLabel)
@@ -175,7 +165,8 @@ reef_ui_file_chooser* hostFileChooserOpen(reef_ui_window* window, const reef_ui_
     if (!choiceList.empty())
         dialog->setChoices(std::move(choiceList));
     dialog->setModal(modal);
-    dialog->onAccepted = [callback, context, ids, dialog, alive = chooser->alive](const std::vector<std::string>& paths, const std::string&) {
+    dialog->onAccepted = [callback, context, ids, dialog, alive = chooser->alive](const std::vector<std::string>& paths,
+                                                                                  const std::string&) {
         if (*alive)
             answer(callback, context, paths, ids, dialog->chosenOptions());
     };

@@ -116,8 +116,8 @@ int hostDropOfferTypes(reef_ui_drop_offer* offer, char* buffer, int size)
 }
 
 // 108
-void hostDropOfferRead(reef_ui_drop_offer* offer, const char* type, void (*callback)(void* context, const void* bytes, size_t size, int read),
-                       void* context)
+void hostDropOfferRead(reef_ui_drop_offer* offer, const char* type,
+                       void (*callback)(void* context, const void* bytes, size_t size, int read), void* context)
 {
     if (!offer || !type)
         return callback(context, nullptr, 0, 0);

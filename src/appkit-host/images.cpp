@@ -320,22 +320,22 @@ static const Symbol* symbolAt(const std::string& path)
 static ui::Bitmap drawSymbol(const Symbol& symbol, int width, int height, const double* rect, double weight, bool filled, int margin)
 {
     // The bounds are those of the middle of the lines.
+    const double* bounds = symbol.bounds;
     const double drawnWidth = std::max(rect[2] - weight, 0.1);
     const double drawnHeight = std::max(rect[3] - weight, 0.1);
     double scale = 0;
-    if (symbol.bounds[2] >= 1)
-        scale = drawnWidth / symbol.bounds[2];
-    if (symbol.bounds[3] >= 1) {
-        const double vertical = drawnHeight / symbol.bounds[3];
+    if (bounds[2] >= 1)
+        scale = drawnWidth / bounds[2];
+    if (bounds[3] >= 1) {
+        const double vertical = drawnHeight / bounds[3];
         scale = scale > 0 ? std::min(scale, vertical) : vertical;
     }
     if (scale <= 0)
-        scale = drawnWidth / std::max(symbol.bounds[2], 1.0);
+        scale = drawnWidth / std::max(bounds[2], 1.0);
     const int fullWidth = width + 2 * margin;
     const int fullHeight = height + 2 * margin;
-    const double box[4] = {symbol.bounds[0] + symbol.bounds[2] / 2 - (rect[0] + rect[2] / 2 + margin) / scale,
-                           symbol.bounds[1] + symbol.bounds[3] / 2 - (rect[1] + rect[3] / 2 + margin) / scale, fullWidth / scale,
-                           fullHeight / scale};
+    const double box[4] = {bounds[0] + bounds[2] / 2 - (rect[0] + rect[2] / 2 + margin) / scale,
+                           bounds[1] + bounds[3] / 2 - (rect[1] + rect[3] / 2 + margin) / scale, fullWidth / scale, fullHeight / scale};
     return ui::Bitmap::decode(
         symbolPart(symbol.svg, box, fullWidth, fullHeight, weight / scale / symbol.strokeWidth, filled), {fullWidth, fullHeight});
 }
@@ -351,9 +351,7 @@ int symbolExists(const char* name)
 int symbolBounds(const char* name, double* bounds)
 {
     const std::string path = symbolPath(name);
-    if (path.empty())
-        return 0;
-    const Symbol* symbol = symbolAt(path);
+    const Symbol* symbol = path.empty() ? nullptr : symbolAt(path);
     if (!symbol || !bounds)
         return 0;
     std::copy(symbol->bounds, symbol->bounds + 4, bounds);
