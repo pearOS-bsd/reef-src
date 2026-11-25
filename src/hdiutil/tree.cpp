@@ -68,7 +68,7 @@ std::u16string utf16(const std::string& text)
     return result;
 }
 
-uint32_t crc32(uint32_t crc, const void* data, size_t size)
+uint32_t updateCrc(uint32_t crc, const void* data, size_t size)
 {
     if (!size)
         return crc;

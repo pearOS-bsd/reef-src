@@ -50,7 +50,7 @@ bool scanFolder(const std::string& folder, Entry& root, std::string* error);
 // All of `size` bytes at `offset`.
 bool writeAll(int fd, uint64_t offset, const void* data, size_t size);
 std::u16string utf16(const std::string& text);
-uint32_t crc32(uint32_t crc, const void* data, size_t size);
+uint32_t updateCrc(uint32_t crc, const void* data, size_t size);
 // The data of a file into the image at `offset`; `done` counts the bytes of `total` for the progress.
 bool copyFile(const std::string& path, uint64_t size, int fd, uint64_t offset, const Progress& progress, uint64_t* done, uint64_t total,
               std::string* error);
