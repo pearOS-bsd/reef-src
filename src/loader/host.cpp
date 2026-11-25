@@ -1022,10 +1022,10 @@ HostServices* hostServices(int argumentCount, char* executablePath, const char* 
     services.log = hostLog;
     setUpSignalStack();
     setUpThread();
-    services.taskFunctions[0] = reinterpret_cast<void*>(taskFunction0);
-    services.taskFunctions[1] = reinterpret_cast<void*>(taskFunction1);
-    services.taskFunctions[2] = reinterpret_cast<void*>(taskFunction2);
-    services.taskFunctions[3] = reinterpret_cast<void*>(taskFunction3);
+    services.taskFunctions[0] = reinterpret_cast<void*>(taskMemory);
+    services.taskFunctions[1] = reinterpret_cast<void*>(accessMemory);
+    services.taskFunctions[2] = reinterpret_cast<void*>(signalThread);
+    services.taskFunctions[3] = reinterpret_cast<void*>(exceptionPorts);
     setUpTask();
     setUpCrashHandler();
     allowSandboxSignal();

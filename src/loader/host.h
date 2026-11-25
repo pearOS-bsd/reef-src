@@ -14,7 +14,7 @@
 #include <string>
 #include <ctime>
 
-struct iovec;
+#include "thread_state.h"
 
 struct pollfd;
 struct iovec;
@@ -96,6 +96,8 @@ struct DarwinTimeval
     long seconds;
     int microseconds;
 };
+
+struct DarwinStack;
 
 struct HostServices
 {
@@ -213,7 +215,14 @@ struct HostServices
     void (*seekdir)(void* stream, long position);
     long (*telldir)(void* stream);
     int (*dirfd)(void* stream);
-    void* unknown388[8];
+    int (*sigaction)(int signal, uint64_t handler, uint32_t mask, uint32_t flags, uint64_t* oldHandler, uint32_t* oldMask, uint32_t* oldFlags);
+    int (*sigmask)(int how, const uint32_t* set, uint32_t* old);
+    int (*sigaltstack)(const DarwinStack* stack, DarwinStack* old);
+    int (*kill)(int process, int signal);
+    int (*raise)(int signal);
+    unsigned (*alarm)(unsigned seconds);
+    int (*sigpending)(uint32_t* set);
+    int (*sigsuspend)(uint32_t mask);
     long (*sysconf)(int name);
     int (*ioctl)(int fd, unsigned long request, void* argument);
     int (*poll)(struct pollfd* fds, unsigned count, int timeout);
@@ -257,7 +266,7 @@ struct HostServices
     bool (*readable)(uintptr_t address, size_t size);
     void (*fail)(const char* message);
     long (*pathconf)(const char* path, int fd, int name);
-    void* unknown5e0;
+    int (*sigwait)(uint32_t mask);
     int (*getdirentries)(int fd, HostEntry* entries, int count);
     const char* activationToken;
     void* unknown5f8;
@@ -272,7 +281,8 @@ struct HostServices
     void (*manyAllocations)(int more);
     void* unknown648[3];
     int (*memoryFile)(const char* name);
-    void* unknown668[2];
+    void* unknown668;
+    void (*setExceptionHandler)(ExceptionHandler handler);
     int (*ppoll)(struct pollfd* fds, unsigned count, const struct timespec* timeout, const uint32_t* mask);
     size_t (*pointerSize)(const void* memory);
     // RealtimeKit: the thread runs with real-time priority; -1 when it cannot.
@@ -329,10 +339,12 @@ int machBroker();
 
 // task.cpp
 void setUpTask();
-int taskFunction0();
-int taskFunction1();
-int taskFunction2();
-int taskFunction3();
+void renewTask();
+void* taskMemory();
+long accessMemory(int process, void* remote, void* local, size_t size, int write);
+int signalThread(int process, int thread);
+// The signal that stops a thread for a debugger.
+int suspendSignal();
 
 void addFileServices(HostServices& services);
 void addSignalServices(HostServices& services);
