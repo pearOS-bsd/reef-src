@@ -19,7 +19,7 @@ namespace cutefish::reef {
 using base::dbus::ObjectPath;
 using base::dbus::VariantMap;
 
-static constexpr const char* path = "/org/mpris/MediaPlayer2";
+static constexpr const char* objectPath = "/org/mpris/MediaPlayer2";
 static constexpr const char* applicationInterface = "org.mpris.MediaPlayer2";
 static constexpr const char* playerInterface = "org.mpris.MediaPlayer2.Player";
 
@@ -28,7 +28,7 @@ static int64_t microseconds(double seconds)
     return std::llround(seconds * 1e6);
 }
 
-static std::string text(const char* text)
+static std::string orEmpty(const char* text)
 {
     return text ? std::string(text) : std::string();
 }
@@ -110,7 +110,7 @@ void NowPlaying::exportPlayer()
 {
     if (m_player || !m_connection)
         return;
-    m_application = std::make_unique<base::dbus::Object>(m_connection, path, applicationInterface);
+    m_application = std::make_unique<base::dbus::Object>(m_connection, objectPath, applicationInterface);
     m_application->addProperty("Identity", [this] { return m_identity; });
     m_application->addProperty("DesktopEntry", [this] { return m_desktopEntry; });
     m_application->addProperty("CanQuit", [this] { return can(Quit); });
@@ -122,7 +122,7 @@ void NowPlaying::exportPlayer()
     m_application->addMethod("Quit", [this] { m_command(Quit, 0); });
     m_application->publish();
 
-    m_player = std::make_unique<base::dbus::Object>(m_connection, path, playerInterface);
+    m_player = std::make_unique<base::dbus::Object>(m_connection, objectPath, playerInterface);
     m_player->addProperty("PlaybackStatus", [this] { return status(); });
     m_player->addProperty("Rate", [this] { return m_state.rate > 0 ? m_state.rate : 1.0; });
     m_player->addProperty("MinimumRate", [] { return 1.0; });
@@ -197,10 +197,10 @@ void NowPlaying::update(const reef_ui_now_playing& state)
     m_state = state;
     m_state.application = m_state.title = m_state.artist = m_state.album = m_state.artwork = nullptr;
     m_updated = std::chrono::steady_clock::now();
-    m_identity = text(state.application);
-    m_title = text(state.title);
-    m_artist = text(state.artist);
-    m_album = text(state.album);
+    m_identity = orEmpty(state.application);
+    m_title = orEmpty(state.title);
+    m_artist = orEmpty(state.artist);
+    m_album = orEmpty(state.album);
     m_artworkUrl = state.artwork && *state.artwork ? "file://" + std::string(state.artwork) : std::string();
     m_track = state.track;
     if (!m_player) {

@@ -162,37 +162,38 @@ static const Library& library()
 {
     Library& library = loadedLibrary;
     std::lock_guard<std::mutex> lock(libraryMutex);
-    if (!library.loaded) {
-        library.loaded = true;
-        if (void* handle = dlopen("libopenjp2.so.7", RTLD_NOW)) {
-            library.decodes = load(handle, "opj_stream_create", library.createStream)
-                && load(handle, "opj_stream_set_read_function", library.setRead)
-                && load(handle, "opj_stream_set_skip_function", library.setSkip)
-                && load(handle, "opj_stream_set_seek_function", library.setSeek)
-                && load(handle, "opj_stream_set_user_data", library.setContext)
-                && load(handle, "opj_stream_set_user_data_length", library.setLength)
-                && load(handle, "opj_stream_destroy", library.destroyStream)
-                && load(handle, "opj_create_decompress", library.createDecompress)
-                && load(handle, "opj_destroy_codec", library.destroyCodec)
-                && load(handle, "opj_set_default_decoder_parameters", library.setDefaultDecoderParameters)
-                && load(handle, "opj_setup_decoder", library.setupDecoder)
-                && load(handle, "opj_read_header", library.readHeader)
-                && load(handle, "opj_decode", library.decode)
-                && load(handle, "opj_end_decompress", library.endDecompress)
-                && load(handle, "opj_image_destroy", library.destroyImage)
-                && load(handle, "opj_set_error_handler", library.setErrorHandler)
-                && load(handle, "opj_set_warning_handler", library.setWarningHandler);
-            library.encodes = library.decodes
-                && load(handle, "opj_stream_set_write_function", library.setWrite)
-                && load(handle, "opj_create_compress", library.createCompress)
-                && load(handle, "opj_set_default_encoder_parameters", library.setDefaultEncoderParameters)
-                && load(handle, "opj_setup_encoder", library.setupEncoder)
-                && load(handle, "opj_image_create", library.createImage)
-                && load(handle, "opj_start_compress", library.startCompress)
-                && load(handle, "opj_encode", library.encode)
-                && load(handle, "opj_end_compress", library.endCompress);
-        }
-    }
+    if (library.loaded)
+        return library;
+    library.loaded = true;
+    void* handle = dlopen("libopenjp2.so.7", RTLD_NOW);
+    if (!handle)
+        return library;
+    library.decodes = load(handle, "opj_stream_create", library.createStream)
+        && load(handle, "opj_stream_set_read_function", library.setRead)
+        && load(handle, "opj_stream_set_skip_function", library.setSkip)
+        && load(handle, "opj_stream_set_seek_function", library.setSeek)
+        && load(handle, "opj_stream_set_user_data", library.setContext)
+        && load(handle, "opj_stream_set_user_data_length", library.setLength)
+        && load(handle, "opj_stream_destroy", library.destroyStream)
+        && load(handle, "opj_create_decompress", library.createDecompress)
+        && load(handle, "opj_destroy_codec", library.destroyCodec)
+        && load(handle, "opj_set_default_decoder_parameters", library.setDefaultDecoderParameters)
+        && load(handle, "opj_setup_decoder", library.setupDecoder)
+        && load(handle, "opj_read_header", library.readHeader)
+        && load(handle, "opj_decode", library.decode)
+        && load(handle, "opj_end_decompress", library.endDecompress)
+        && load(handle, "opj_image_destroy", library.destroyImage)
+        && load(handle, "opj_set_error_handler", library.setErrorHandler)
+        && load(handle, "opj_set_warning_handler", library.setWarningHandler);
+    library.encodes = library.decodes
+        && load(handle, "opj_stream_set_write_function", library.setWrite)
+        && load(handle, "opj_create_compress", library.createCompress)
+        && load(handle, "opj_set_default_encoder_parameters", library.setDefaultEncoderParameters)
+        && load(handle, "opj_setup_encoder", library.setupEncoder)
+        && load(handle, "opj_image_create", library.createImage)
+        && load(handle, "opj_start_compress", library.startCompress)
+        && load(handle, "opj_encode", library.encode)
+        && load(handle, "opj_end_compress", library.endCompress);
     return library;
 }
 
@@ -278,70 +279,6 @@ static int clampByte(double value)
     return int(std::min(std::max(std::lround(value), 0l), 255l));
 }
 
-static uint32_t* pixelsOf(const Image& image, int* width, int* height)
-{
-    if (image.componentCount == 0 || !image.components)
-        return nullptr;
-    const Component* components = image.components;
-    const uint32_t imageWidth = image.x1 - image.x0;
-    const uint32_t imageHeight = image.y1 - image.y0;
-    if (imageWidth == 0 || imageHeight == 0 || imageWidth > maximumSide || imageHeight > maximumSide || !components[0].data
-        || components[0].precision == 0 || components[0].precision > 31)
-        return nullptr;
-    if (components[0].width != (imageWidth + components[0].dx - 1) / std::max(components[0].dx, 1u))
-        return nullptr;
-    int alpha = -1;
-    uint32_t colors = image.componentCount;
-    for (uint32_t i = 0; i < image.componentCount; i++) {
-        if (components[i].alpha) {
-            alpha = int(i);
-            colors = std::min(colors, i);
-        }
-    }
-    // Files without a channel definition.
-    if (alpha < 0 && (image.componentCount == 2 || (image.componentCount == 4 && image.colorSpace != Cmyk))) {
-        alpha = int(image.componentCount - 1);
-        colors = image.componentCount - 1;
-    }
-    uint32_t* pixels = static_cast<uint32_t*>(malloc(size_t(imageWidth) * imageHeight * 4));
-    if (!pixels)
-        return nullptr;
-    for (uint32_t y = 0; y < imageHeight; y++) {
-        for (uint32_t x = 0; x < imageWidth; x++) {
-            int red, green, blue;
-            if (colors >= 4) {
-                const int cyan = sampleAt(components[0], x, y);
-                const int magenta = sampleAt(components[1], x, y);
-                const int yellow = sampleAt(components[2], x, y);
-                const int rest = 255 - sampleAt(components[3], x, y);
-                red = (255 - cyan) * rest / 255;
-                green = (255 - magenta) * rest / 255;
-                blue = (255 - yellow) * rest / 255;
-            } else if (colors == 3) {
-                red = sampleAt(components[0], x, y);
-                green = sampleAt(components[1], x, y);
-                blue = sampleAt(components[2], x, y);
-                if (image.colorSpace == SYcc || image.colorSpace == EYcc) {
-                    const double luma = red;
-                    const double cb = green - 128.0;
-                    const double cr = blue - 128.0;
-                    red = clampByte(luma + 1.402 * cr);
-                    green = clampByte(luma - 0.344136 * cb - 0.714136 * cr);
-                    blue = clampByte(luma + 1.772 * cb);
-                }
-            } else {
-                red = green = blue = sampleAt(components[0], x, y);
-            }
-            const int opacity = alpha >= 0 ? sampleAt(components[alpha], x, y) : 255;
-            pixels[size_t(y) * imageWidth + x] = uint32_t(opacity) << 24 | uint32_t(red * opacity / 255) << 16
-                | uint32_t(green * opacity / 255) << 8 | uint32_t(blue * opacity / 255);
-        }
-    }
-    *width = int(imageWidth);
-    *height = int(imageHeight);
-    return pixels;
-}
-
 bool isJpeg2000(const void* data, size_t size)
 {
     const unsigned char* bytes = static_cast<const unsigned char*>(data);
@@ -373,8 +310,64 @@ uint32_t* decodeJpeg2000(const void* data, size_t size, int* width, int* height)
     Image* image = nullptr;
     uint32_t* pixels = nullptr;
     if (lib.setupDecoder(codec, parameters) && lib.readHeader(stream, codec, &image) && lib.decode(codec, stream, image)
-        && lib.endDecompress(codec, stream) && image)
-        pixels = pixelsOf(*image, width, height);
+        && lib.endDecompress(codec, stream) && image && image->componentCount && image->components) {
+        const Component* components = image->components;
+        const uint32_t imageWidth = image->x1 - image->x0;
+        const uint32_t imageHeight = image->y1 - image->y0;
+        if (imageWidth > 0 && imageHeight > 0 && imageWidth <= maximumSide && imageHeight <= maximumSide && components[0].data
+            && components[0].precision > 0 && components[0].precision <= 31
+            && components[0].width == (imageWidth + components[0].dx - 1) / std::max(components[0].dx, 1u)) {
+            int alpha = -1;
+            uint32_t colors = image->componentCount;
+            for (uint32_t i = 0; i < image->componentCount; i++) {
+                if (components[i].alpha) {
+                    alpha = int(i);
+                    colors = std::min(colors, i);
+                }
+            }
+            // Files without a channel definition.
+            if (alpha < 0 && (image->componentCount == 2 || (image->componentCount == 4 && image->colorSpace != Cmyk))) {
+                alpha = int(image->componentCount - 1);
+                colors = image->componentCount - 1;
+            }
+            pixels = static_cast<uint32_t*>(malloc(size_t(imageWidth) * imageHeight * 4));
+            if (pixels) {
+                for (uint32_t y = 0; y < imageHeight; y++) {
+                    for (uint32_t x = 0; x < imageWidth; x++) {
+                        int red, green, blue;
+                        if (colors >= 4) {
+                            const int cyan = sampleAt(components[0], x, y);
+                            const int magenta = sampleAt(components[1], x, y);
+                            const int yellow = sampleAt(components[2], x, y);
+                            const int rest = 255 - sampleAt(components[3], x, y);
+                            red = (255 - cyan) * rest / 255;
+                            green = (255 - magenta) * rest / 255;
+                            blue = (255 - yellow) * rest / 255;
+                        } else if (colors == 3) {
+                            red = sampleAt(components[0], x, y);
+                            green = sampleAt(components[1], x, y);
+                            blue = sampleAt(components[2], x, y);
+                            if (image->colorSpace == SYcc || image->colorSpace == EYcc) {
+                                const double cb = green - 128.0;
+                                const double cr = blue - 128.0;
+                                const double luma = red;
+                                red = clampByte(luma + 1.402 * cr);
+                                green = clampByte(luma - 0.344136 * cb - 0.714136 * cr);
+                                blue = clampByte(luma + 1.772 * cb);
+                            }
+                        } else {
+                            red = green = blue = sampleAt(components[0], x, y);
+                        }
+                        const int opacity = alpha >= 0 ? sampleAt(components[alpha], x, y) : 255;
+                        pixels[size_t(y) * imageWidth + x] = uint32_t(opacity) << 24 | uint32_t(red * opacity / 255) << 16
+                            | uint32_t(green * opacity / 255) << 8 | uint32_t(blue * opacity / 255);
+                    }
+                }
+                *width = int(imageWidth);
+                *height = int(imageHeight);
+            }
+        }
+    }
     if (image)
         lib.destroyImage(image);
     lib.destroyStream(stream);

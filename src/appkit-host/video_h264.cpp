@@ -154,6 +154,7 @@ struct Reference
     // For a frame that was left out.
     bool missing = false;
 
+    bool isUsed() const { return shortTerm || longTerm; }
     int poc() const { return std::min(top, bottom); }
 };
 
@@ -493,12 +494,24 @@ static bool parseSliceHeader(const Rbsp& rbsp, const std::map<int, Sps>& spsMap,
     return !reader.failed();
 }
 
+static void removeUnused(std::vector<Reference>& references)
+{
+    references.erase(std::remove_if(references.begin(), references.end(),
+                                    [](const Reference& reference) { return !reference.isUsed(); }),
+                     references.end());
+}
+
+static void invalidate(VAPictureH264& picture)
+{
+    picture.picture_id = VA_INVALID_SURFACE;
+    picture.flags = VA_PICTURE_H264_INVALID;
+}
+
 static VAPictureH264 vaPicture(const Reference* reference)
 {
     VAPictureH264 picture = {};
     if (!reference || !reference->surface) {
-        picture.picture_id = VA_INVALID_SURFACE;
-        picture.flags = VA_PICTURE_H264_INVALID;
+        invalidate(picture);
         return picture;
     }
     picture.picture_id = reference->surface->id();
@@ -525,8 +538,8 @@ private:
     bool decodePicture(const std::vector<Slice>& slices, std::shared_ptr<Surface>& surface);
     void updateNumbers(int frameNumber, int maxFrameNumber);
     void fillGap(const Sps& sps, int frameNumber);
+    void computePoc(const Sps& sps, const Slice& slice, int frameNumber, int& top, int& bottom);
     void slideWindow(const Sps& sps);
-    void removeUnused();
     std::vector<Reference*> initialList(const Slice& slice, int list, int poc);
     bool addSlice(const Sps& sps, const Slice& slice, int poc);
 
@@ -557,8 +570,10 @@ bool H264Decoder::configure(const uint8_t* configuration, size_t size)
         return false;
     m_lengthSize = (configuration[4] & 3) + 1;
     size_t offset = 6;
-    int count = configuration[5] & 31;
     for (int pass = 0; pass < 2; pass++) {
+        if (pass == 1 && offset >= size)
+            return false;
+        const int count = pass == 0 ? configuration[5] & 31 : configuration[offset++];
         for (int i = 0; i < count; i++) {
             if (offset + 2 > size)
                 return false;
@@ -570,11 +585,6 @@ bool H264Decoder::configure(const uint8_t* configuration, size_t size)
                 return false;
             offset += length;
         }
-        if (pass == 1)
-            break;
-        if (offset >= size)
-            return false;
-        count = configuration[offset++];
     }
     if (m_sps.empty() || m_pps.empty())
         return false;
@@ -582,14 +592,19 @@ bool H264Decoder::configure(const uint8_t* configuration, size_t size)
     if (!sps.frameMbsOnly || sps.chromaFormat != 1 || sps.lumaDepth != 8 || sps.chromaDepth != 8)
         return false;
     VAProfile profile;
-    if (sps.profile == 66)
+    switch (sps.profile) {
+    case 66:
         profile = VAProfileH264ConstrainedBaseline;
-    else if (sps.profile == 77)
+        break;
+    case 77:
         profile = VAProfileH264Main;
-    else if (sps.profile == 100)
+        break;
+    case 100:
         profile = VAProfileH264High;
-    else
+        break;
+    default:
         return false;
+    }
     m_display = VaDisplay::open();
     if (!m_display || !m_display->supports(profile))
         return false;
@@ -645,7 +660,7 @@ void H264Decoder::updateNumbers(int frameNumber, int maxFrameNumber)
 void H264Decoder::slideWindow(const Sps& sps)
 {
     const int count = std::count_if(m_references.begin(), m_references.end(),
-                                    [](const Reference& reference) { return reference.shortTerm || reference.longTerm; });
+                                    [](const Reference& reference) { return reference.isUsed(); });
     if (count < std::max(sps.maxReferences, 1))
         return;
     Reference* oldest = nullptr;
@@ -657,11 +672,6 @@ void H264Decoder::slideWindow(const Sps& sps)
         oldest->shortTerm = false;
 }
 
-void H264Decoder::removeUnused()
-{
-    std::erase_if(m_references, [](const Reference& reference) { return !reference.shortTerm && !reference.longTerm; });
-}
-
 void H264Decoder::fillGap(const Sps& sps, int frameNumber)
 {
     const int maxFrameNumber = 1 << sps.log2MaxFrameNumber;
@@ -671,7 +681,7 @@ void H264Decoder::fillGap(const Sps& sps, int frameNumber)
     for (int i = 0; number != frameNumber && i < maxFrameNumber; i++) {
         updateNumbers(number, maxFrameNumber);
         slideWindow(sps);
-        removeUnused();
+        removeUnused(m_references);
         Reference reference;
         reference.frameNumber = number;
         reference.frameNumberWrap = number;
@@ -682,6 +692,64 @@ void H264Decoder::fillGap(const Sps& sps, int frameNumber)
         m_previousFrameNumber = number;
         number = (number + 1) % maxFrameNumber;
     }
+}
+
+void H264Decoder::computePoc(const Sps& sps, const Slice& slice, int frameNumber, int& top, int& bottom)
+{
+    if (sps.pocType == 0) {
+        int msb = 0;
+        int previousLsb = 0;
+        if (slice.unitType != IdrUnit) {
+            if (m_previousReset) {
+                previousLsb = m_previousTop;
+            } else {
+                msb = m_previousPocMsb;
+                previousLsb = m_previousPocLsb;
+            }
+        }
+        const int maxLsb = 1 << sps.log2MaxPocLsb;
+        if (slice.pocLsb < previousLsb && previousLsb - slice.pocLsb >= maxLsb / 2)
+            msb += maxLsb;
+        else if (slice.pocLsb > previousLsb && slice.pocLsb - previousLsb > maxLsb / 2)
+            msb -= maxLsb;
+        top = msb + slice.pocLsb;
+        bottom = top + slice.deltaPocBottom;
+        if (slice.referenceIdc != 0) {
+            m_previousPocMsb = msb;
+            m_previousPocLsb = slice.pocLsb;
+        }
+        return;
+    }
+    int offset = 0;
+    if (slice.unitType != IdrUnit) {
+        if (!m_previousReset)
+            offset = m_frameNumberOffset;
+        if (m_previousFrameNumber > frameNumber)
+            offset += 1 << sps.log2MaxFrameNumber;
+    }
+    m_frameNumberOffset = offset;
+    if (sps.pocType == 1) {
+        int number = sps.pocCycleLength != 0 ? offset + frameNumber : 0;
+        if (slice.referenceIdc == 0 && number > 0)
+            number--;
+        int expected = 0;
+        if (number > 0) {
+            int delta = 0;
+            for (int i = 0; i < sps.pocCycleLength; i++)
+                delta += sps.pocCycle[i];
+            expected = (number - 1) / sps.pocCycleLength * delta;
+            for (int i = 0; i <= (number - 1) % sps.pocCycleLength; i++)
+                expected += sps.pocCycle[i];
+        }
+        if (slice.referenceIdc == 0)
+            expected += sps.offsetForNonReference;
+        top = expected + slice.deltaPoc[0];
+        bottom = top + sps.offsetForBottom + slice.deltaPoc[1];
+        return;
+    }
+    if (slice.unitType != IdrUnit)
+        top = 2 * (offset + frameNumber) - (slice.referenceIdc == 0 ? 1 : 0);
+    bottom = top;
 }
 
 std::vector<Reference*> H264Decoder::initialList(const Slice& slice, int list, int poc)
@@ -711,9 +779,13 @@ std::vector<Reference*> H264Decoder::initialList(const Slice& slice, int list, i
         }
         std::sort(before.begin(), before.end(), [](const Reference* a, const Reference* b) { return a->poc() > b->poc(); });
         std::sort(after.begin(), after.end(), [](const Reference* a, const Reference* b) { return a->poc() < b->poc(); });
-        result = list == 0 ? before : after;
-        const std::vector<Reference*>& rest = list == 0 ? after : before;
-        result.insert(result.end(), rest.begin(), rest.end());
+        if (list == 0) {
+            result = before;
+            result.insert(result.end(), after.begin(), after.end());
+        } else {
+            result = after;
+            result.insert(result.end(), before.begin(), before.end());
+        }
     }
     result.insert(result.end(), longTerm.begin(), longTerm.end());
     return result;
@@ -737,8 +809,8 @@ bool H264Decoder::addSlice(const Sps& sps, const Slice& slice, int poc)
     parameters.slice_alpha_c0_offset_div2 = slice.alphaOffset;
     parameters.slice_beta_offset_div2 = slice.betaOffset;
     for (int i = 0; i < 32; i++) {
-        parameters.RefPicList0[i] = vaPicture(nullptr);
-        parameters.RefPicList1[i] = vaPicture(nullptr);
+        invalidate(parameters.RefPicList0[i]);
+        invalidate(parameters.RefPicList1[i]);
     }
     bool ok = true;
     for (int list = 0; list < 2 && ok; list++) {
@@ -847,60 +919,7 @@ bool H264Decoder::decodePicture(const std::vector<Slice>& slices, std::shared_pt
 
     int top = 0;
     int bottom = 0;
-    if (sps.pocType == 0) {
-        int msb = 0;
-        int previousLsb = 0;
-        if (first.unitType != IdrUnit) {
-            if (m_previousReset) {
-                previousLsb = m_previousTop;
-            } else {
-                msb = m_previousPocMsb;
-                previousLsb = m_previousPocLsb;
-            }
-        }
-        const int maxLsb = 1 << sps.log2MaxPocLsb;
-        if (first.pocLsb < previousLsb && previousLsb - first.pocLsb >= maxLsb / 2)
-            msb += maxLsb;
-        else if (first.pocLsb > previousLsb && first.pocLsb - previousLsb > maxLsb / 2)
-            msb -= maxLsb;
-        top = msb + first.pocLsb;
-        bottom = top + first.deltaPocBottom;
-        if (first.referenceIdc != 0) {
-            m_previousPocMsb = msb;
-            m_previousPocLsb = first.pocLsb;
-        }
-    } else {
-        int offset = 0;
-        if (first.unitType != IdrUnit) {
-            if (!m_previousReset)
-                offset = m_frameNumberOffset;
-            if (m_previousFrameNumber > frameNumber)
-                offset += 1 << sps.log2MaxFrameNumber;
-        }
-        m_frameNumberOffset = offset;
-        if (sps.pocType == 1) {
-            int number = sps.pocCycleLength != 0 ? offset + frameNumber : 0;
-            if (first.referenceIdc == 0 && number > 0)
-                number--;
-            int expected = 0;
-            if (number > 0) {
-                int delta = 0;
-                for (int i = 0; i < sps.pocCycleLength; i++)
-                    delta += sps.pocCycle[i];
-                expected = (number - 1) / sps.pocCycleLength * delta;
-                for (int i = 0; i <= (number - 1) % sps.pocCycleLength; i++)
-                    expected += sps.pocCycle[i];
-            }
-            if (first.referenceIdc == 0)
-                expected += sps.offsetForNonReference;
-            top = expected + first.deltaPoc[0];
-            bottom = top + sps.offsetForBottom + first.deltaPoc[1];
-        } else {
-            if (first.unitType != IdrUnit)
-                top = 2 * (offset + frameNumber) - (first.referenceIdc == 0 ? 1 : 0);
-            bottom = top;
-        }
-    }
+    computePoc(sps, first, frameNumber, top, bottom);
 
     std::shared_ptr<Surface> target = m_context->takeSurface();
     if (!target)
@@ -912,11 +931,11 @@ bool H264Decoder::decodePicture(const std::vector<Slice>& slices, std::shared_pt
     picture.CurrPic.BottomFieldOrderCnt = bottom;
     size_t count = 0;
     for (const Reference& reference : m_references) {
-        if (!reference.missing && (reference.shortTerm || reference.longTerm) && count < 16)
+        if (!reference.missing && reference.isUsed() && count < 16)
             picture.ReferenceFrames[count++] = vaPicture(&reference);
     }
     for (; count < 16; count++)
-        picture.ReferenceFrames[count] = vaPicture(nullptr);
+        invalidate(picture.ReferenceFrames[count]);
     picture.picture_width_in_mbs_minus1 = sps.widthMbs - 1;
     picture.picture_height_in_mbs_minus1 = sps.heightMbs - 1;
     picture.bit_depth_luma_minus8 = sps.lumaDepth - 8;
@@ -1060,7 +1079,7 @@ bool H264Decoder::decodePicture(const std::vector<Slice>& slices, std::shared_pt
         m_previousReferenceFrameNumber = frameNumber;
 
     surface = target;
-    removeUnused();
+    removeUnused(m_references);
     if (shortTerm || longTerm) {
         Reference reference;
         reference.surface = std::move(target);
@@ -1086,8 +1105,8 @@ bool H264Decoder::decode(const uint8_t* data, size_t size, std::shared_ptr<Surfa
 {
     surface.reset();
     std::vector<Slice> slices;
-    const auto unit = [this, &slices](const uint8_t* unit, size_t length) {
-        const uint8_t type = unit[0] & 31;
+    const bool complete = forEachUnit(data, size, m_lengthSize, [this, &slices](const uint8_t* unit, size_t length) {
+        const int type = unit[0] & 31;
         if (type == SpsUnit || type == PpsUnit)
             return parseParameters(unit, length);
         if (type != SliceUnit && type != IdrUnit)
@@ -1106,22 +1125,8 @@ bool H264Decoder::decode(const uint8_t* data, size_t size, std::shared_ptr<Surfa
         }
         slices.push_back(std::move(slice));
         return true;
-    };
-    size_t offset = 0;
-    while (offset + m_lengthSize <= size) {
-        size_t length = 0;
-        for (int i = 0; i < m_lengthSize; i++)
-            length = length << 8 | data[offset + i];
-        offset += m_lengthSize;
-        if (length > size - offset)
-            return false;
-        if (length == 0)
-            continue;
-        if (!unit(data + offset, length))
-            return false;
-        offset += length;
-    }
-    if (offset != size)
+    });
+    if (!complete)
         return false;
     return slices.empty() || decodePicture(slices, surface);
 }

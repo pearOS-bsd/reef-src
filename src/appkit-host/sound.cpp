@@ -17,9 +17,12 @@
 #include <cstring>
 #include <dlfcn.h>
 #include <fstream>
+#include <memory>
 #include <mutex>
 #include <sstream>
+#include <string>
 #include <thread>
+#include <vector>
 
 namespace {
 
@@ -165,7 +168,7 @@ struct reef_ui_sound
     int64_t seek = -1;
 };
 
-// Without a stream samples go nowhere, at the rate of one.
+// Without a stream the samples go nowhere, in the time that playing them would take.
 struct reef_ui_audio_output
 {
     PulseStream* stream = nullptr;
@@ -186,6 +189,12 @@ namespace cutefish::reef {
 
 static bool silent = false;
 
+template <typename Function>
+static void load(void* library, const char* name, Function& function)
+{
+    function = reinterpret_cast<Function>(dlsym(library, name));
+}
+
 static const Libraries& libraries()
 {
     static Libraries libraries;
@@ -193,20 +202,20 @@ static const Libraries& libraries()
     std::call_once(once, [] {
         libraries.loaded = true;
         if (void* library = dlopen("libsndfile.so.1", RTLD_NOW)) {
-            libraries.open = reinterpret_cast<decltype(libraries.open)>(dlsym(library, "sf_open_virtual"));
-            libraries.readFrames = reinterpret_cast<decltype(libraries.readFrames)>(dlsym(library, "sf_readf_float"));
-            libraries.seek = reinterpret_cast<decltype(libraries.seek)>(dlsym(library, "sf_seek"));
-            libraries.close = reinterpret_cast<decltype(libraries.close)>(dlsym(library, "sf_close"));
+            load(library, "sf_open_virtual", libraries.open);
+            load(library, "sf_readf_float", libraries.readFrames);
+            load(library, "sf_seek", libraries.seek);
+            load(library, "sf_close", libraries.close);
             libraries.sndFile = libraries.open && libraries.readFrames && libraries.seek && libraries.close;
         }
         if (void* library = dlopen("libpulse-simple.so.0", RTLD_NOW)) {
-            libraries.newStream = reinterpret_cast<decltype(libraries.newStream)>(dlsym(library, "pa_simple_new"));
-            libraries.writeStream = reinterpret_cast<decltype(libraries.writeStream)>(dlsym(library, "pa_simple_write"));
-            libraries.readStream = reinterpret_cast<decltype(libraries.readStream)>(dlsym(library, "pa_simple_read"));
-            libraries.drainStream = reinterpret_cast<decltype(libraries.drainStream)>(dlsym(library, "pa_simple_drain"));
-            libraries.flushStream = reinterpret_cast<decltype(libraries.flushStream)>(dlsym(library, "pa_simple_flush"));
-            libraries.freeStream = reinterpret_cast<decltype(libraries.freeStream)>(dlsym(library, "pa_simple_free"));
-            libraries.streamLatency = reinterpret_cast<decltype(libraries.streamLatency)>(dlsym(library, "pa_simple_get_latency"));
+            load(library, "pa_simple_new", libraries.newStream);
+            load(library, "pa_simple_write", libraries.writeStream);
+            load(library, "pa_simple_read", libraries.readStream);
+            load(library, "pa_simple_drain", libraries.drainStream);
+            load(library, "pa_simple_flush", libraries.flushStream);
+            load(library, "pa_simple_free", libraries.freeStream);
+            load(library, "pa_simple_get_latency", libraries.streamLatency);
             libraries.pulse = libraries.newStream && libraries.writeStream && libraries.drainStream && libraries.flushStream
                 && libraries.freeStream;
         }
@@ -219,9 +228,9 @@ static SndFile* openBytes(Reader& reader, SndFileInfo& info)
     return libraries().open(&readerIo, sndFileRead, &info, &reader);
 }
 
-void setSoundSilent(bool given)
+void setSoundSilent(bool value)
 {
-    silent = given;
+    silent = value;
 }
 
 static double secondsOf(const reef_ui_sound* sound, int64_t frames)
@@ -608,8 +617,9 @@ int soundPlayNamed(const char* name)
             reef_ui_sound* sound = soundCreate(path.c_str(), nullptr, 0);
             if (!sound)
                 continue;
-            const int result = soundPlay(sound, 1, 0, [](void* context, int) { soundDestroy(static_cast<reef_ui_sound*>(context)); },
-                                         sound);
+            const int result = soundPlay(sound, 1, 0, [](void* context, int) {
+                soundDestroy(static_cast<reef_ui_sound*>(context));
+            }, sound);
             if (result)
                 soundDestroy(sound);
             return result;

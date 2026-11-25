@@ -177,6 +177,25 @@ public:
     int depth = 8;
 };
 
+// The NAL units of a frame, each after its length.
+template<typename Handler>
+bool forEachUnit(const uint8_t* data, size_t size, int lengthSize, Handler&& handler)
+{
+    size_t offset = 0;
+    while (offset + lengthSize <= size) {
+        size_t length = 0;
+        for (int i = 0; i < lengthSize; i++)
+            length = length << 8 | data[offset + i];
+        offset += lengthSize;
+        if (length > size - offset)
+            return false;
+        if (length > 0 && !handler(data + offset, length))
+            return false;
+        offset += length;
+    }
+    return offset == size;
+}
+
 // The configuration is what MP4 files have (avcC, hvcC, vpcC), the units of frames have their lengths before them.
 std::unique_ptr<Decoder> makeH264Decoder(const uint8_t* configuration, size_t size);
 std::unique_ptr<Decoder> makeHevcDecoder(const uint8_t* configuration, size_t size);

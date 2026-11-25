@@ -18,6 +18,9 @@ namespace cutefish::reef {
 using base::dbus::MethodCall;
 using base::dbus::ObjectPath;
 
+static constexpr const char* itemInterface = "org.kde.StatusNotifierItem";
+static constexpr const char* watcherName = "org.kde.StatusNotifierWatcher";
+
 static int nextItem = 1;
 
 StatusItem::StatusItem(base::dbus::Connection* connection, void* context, Handler handler, std::string id)
@@ -29,7 +32,7 @@ StatusItem::StatusItem(base::dbus::Connection* connection, void* context, Handle
 {
     if (!m_connection)
         return;
-    m_object = std::make_unique<base::dbus::Object>(m_connection, m_path, "org.kde.StatusNotifierItem");
+    m_object = std::make_unique<base::dbus::Object>(m_connection, m_path, itemInterface);
     m_object->addProperty("Category", [] { return std::string("ApplicationStatus"); });
     m_object->addProperty("Id", [this] { return m_id; });
     m_object->addProperty("Title", [this] { return m_title; });
@@ -72,7 +75,7 @@ StatusItem::StatusItem(base::dbus::Connection* connection, void* context, Handle
         m_object->addSignal(name, "");
     m_object->addSignal("NewStatus", "s");
     m_object->publish();
-    m_watch = m_connection->watchName("org.kde.StatusNotifierWatcher", [this, alive = m_alive](const std::string& owner) {
+    m_watch = m_connection->watchName(watcherName, [this, alive = m_alive](const std::string& owner) {
         if (*alive && !owner.empty())
             registerItem();
     });
@@ -85,7 +88,7 @@ StatusItem::~StatusItem()
 
 void StatusItem::registerItem()
 {
-    const base::dbus::Proxy watcher(m_connection, "org.kde.StatusNotifierWatcher", "/StatusNotifierWatcher", "org.kde.StatusNotifierWatcher");
+    const base::dbus::Proxy watcher(m_connection, watcherName, "/StatusNotifierWatcher", watcherName);
     watcher.send("RegisterStatusNotifierItem", m_path);
 }
 
@@ -123,12 +126,15 @@ void StatusItem::setIcon(const uint32_t* pixels, int width, int height)
         const size_t count = size_t(width) * size_t(height);
         std::vector<uint8_t> data(count * 4);
         for (size_t i = 0; i < count; i++) {
-            const uint32_t alpha = pixels[i] >> 24;
-            const auto unpremultiplied = [alpha](uint32_t value) { return alpha ? uint8_t(std::min((value * 255 + alpha / 2) / alpha, 255u)) : 0; };
-            data[i * 4] = uint8_t(alpha);
-            data[i * 4 + 1] = unpremultiplied(pixels[i] >> 16 & 0xff);
-            data[i * 4 + 2] = unpremultiplied(pixels[i] >> 8 & 0xff);
-            data[i * 4 + 3] = unpremultiplied(pixels[i] & 0xff);
+            const uint32_t pixel = pixels[i];
+            const uint32_t alpha = pixel >> 24;
+            const auto straight = [alpha](uint32_t value) -> uint8_t {
+                return alpha ? std::min((value * 255 + alpha / 2) / alpha, 255u) : 0;
+            };
+            data[i * 4] = alpha;
+            data[i * 4 + 1] = straight(pixel >> 16 & 0xff);
+            data[i * 4 + 2] = straight(pixel >> 8 & 0xff);
+            data[i * 4 + 3] = straight(pixel & 0xff);
         }
         m_icon.emplace_back(width, height, std::move(data));
     }

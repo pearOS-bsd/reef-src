@@ -146,11 +146,11 @@ static constexpr FixedFamily fixedFamilies[] = {
     {"Courier", "monospace", 0.753906, 0.246094, 0, 0.600098},
 };
 
-static constinit std::recursive_mutex mutex;
+static std::recursive_mutex layoutMutex;
 
 std::recursive_mutex& textMutex()
 {
-    return mutex;
+    return layoutMutex;
 }
 
 static std::string familyOrSystem(const char* name)
@@ -368,7 +368,7 @@ static std::shared_ptr<ShapedRun> shapeRun(const std::string& text, const reef_u
     starts.push_back(text.size());
 
     // Control characters have none.
-    std::vector<reef_ui_face*> faces(characters.size());
+    std::vector<reef_ui_face*> faces(characters.size(), nullptr);
     for (size_t i = 0; i < characters.size(); i++) {
         const uint32_t c = characters[i];
         if (c < 0x20 || c == 0x7f)
@@ -426,7 +426,7 @@ static std::shared_ptr<ShapedRun> shapeRun(const std::string& text, const reef_u
         ShapedRun::Group group;
         faceRetain(faces[i]);
         group.face = faces[i];
-        std::vector<double> advances(end - i);
+        std::vector<double> advances(end - i, 0);
         double pen = x;
         double width = 0;
         for (uint32_t k = 0; k < count; k++) {
@@ -735,7 +735,7 @@ static void layOutRuns(reef_ui_paragraph* paragraph, const reef_ui_text_run* run
 // 90
 reef_ui_paragraph* paragraphCreate(const char* text, const reef_ui_text_run* runs, unsigned count, const reef_ui_paragraph_style* style)
 {
-    const std::lock_guard lock(mutex);
+    const std::lock_guard lock(layoutMutex);
     auto paragraph = new reef_ui_paragraph;
     paragraph->text = text ? text : "";
     reef_ui_text_run whole = {};
@@ -781,21 +781,21 @@ reef_ui_paragraph* paragraphCreate(const char* text, const reef_ui_text_run* run
 // 91
 void paragraphDestroy(reef_ui_paragraph* paragraph)
 {
-    const std::lock_guard lock(mutex);
+    const std::lock_guard lock(layoutMutex);
     delete paragraph;
 }
 
 // 92
 unsigned paragraphLineCount(reef_ui_paragraph* paragraph)
 {
-    const std::lock_guard lock(mutex);
+    const std::lock_guard lock(layoutMutex);
     return unsigned(paragraph->lines.size());
 }
 
 // 93
 void paragraphLine(reef_ui_paragraph* paragraph, unsigned index, reef_ui_paragraph_line* line)
 {
-    const std::lock_guard lock(mutex);
+    const std::lock_guard lock(layoutMutex);
     if (index >= paragraph->lines.size()) {
         *line = {};
         return;
@@ -813,7 +813,7 @@ void paragraphLine(reef_ui_paragraph* paragraph, unsigned index, reef_ui_paragra
 // 94
 double paragraphOffsetToX(reef_ui_paragraph* paragraph, unsigned index, size_t offset)
 {
-    const std::lock_guard lock(mutex);
+    const std::lock_guard lock(layoutMutex);
     if (index >= paragraph->lines.size())
         return 0;
     if (paragraph->single)
@@ -831,7 +831,7 @@ double paragraphOffsetToX(reef_ui_paragraph* paragraph, unsigned index, size_t o
 // 95
 size_t paragraphXToOffset(reef_ui_paragraph* paragraph, unsigned index, double x)
 {
-    const std::lock_guard lock(mutex);
+    const std::lock_guard lock(layoutMutex);
     if (index >= paragraph->lines.size())
         return 0;
     const Line& line = paragraph->lines[index];
@@ -850,7 +850,7 @@ size_t paragraphXToOffset(reef_ui_paragraph* paragraph, unsigned index, double x
 
 const std::string& paragraphText(reef_ui_paragraph* paragraph)
 {
-    const std::lock_guard lock(mutex);
+    const std::lock_guard lock(layoutMutex);
     return paragraph->text;
 }
 
@@ -874,7 +874,7 @@ static void drawShaped(ui::Canvas2D& canvas, const ShapedRun& shaped, double x, 
 
 void drawParagraph(ui::Canvas2D& canvas, reef_ui_paragraph* paragraph, double x, double y)
 {
-    const std::lock_guard lock(mutex);
+    const std::lock_guard lock(layoutMutex);
     if (paragraph->single) {
         canvas.drawText(paragraph->layout, {x, y});
         return;
@@ -910,19 +910,25 @@ void drawParagraph(ui::Canvas2D& canvas, reef_ui_paragraph* paragraph, double x,
     canvas.restore();
 }
 
+static PdfTextSpan makeSpan(const Run& run, size_t begin, size_t end)
+{
+    PdfTextSpan span;
+    span.begin = begin;
+    span.end = end;
+    span.family = run.family;
+    span.size = run.size;
+    span.bold = run.bold;
+    span.italic = run.italic;
+    std::copy(run.color, run.color + 4, span.color);
+    span.underline = run.underline;
+    span.features = run.features;
+    return span;
+}
+
 std::vector<PdfTextSpan> paragraphSpans(reef_ui_paragraph* paragraph, double x, double y)
 {
-    const std::lock_guard lock(mutex);
+    const std::lock_guard lock(layoutMutex);
     std::vector<PdfTextSpan> spans;
-    const auto setStyle = [](PdfTextSpan& span, const Run& run) {
-        span.family = run.family;
-        span.size = run.size;
-        span.bold = run.bold;
-        span.italic = run.italic;
-        std::copy(run.color, run.color + 4, span.color);
-        span.underline = run.underline;
-        span.features = run.features;
-    };
     if (paragraph->single) {
         const ui::TextLayout& layout = paragraph->layout;
         for (int i = 0; i < layout.lineCount(); i++) {
@@ -938,10 +944,8 @@ std::vector<PdfTextSpan> paragraphSpans(reef_ui_paragraph* paragraph, double x, 
                 size_t next = k + 1;
                 while (next < owners.size() && owners[next] == owners[k])
                     next++;
-                PdfTextSpan span;
-                span.begin = line.textStart + k;
-                span.end = line.textStart + next;
-                setStyle(span, paragraph->runs[std::max(owners[k], 0)]);
+                const Run& run = paragraph->runs[std::max(owners[k], 0)];
+                PdfTextSpan span = makeSpan(run, line.textStart + k, line.textStart + next);
                 span.baseline = y + line.position.y + line.ascent;
                 span.x = [&layout, i, x](size_t offset) { return layout.cursorToX(i, offset) + x; };
                 spans.push_back(std::move(span));
@@ -952,14 +956,11 @@ std::vector<PdfTextSpan> paragraphSpans(reef_ui_paragraph* paragraph, double x, 
     }
     for (const Line& line : paragraph->lines) {
         for (const Fragment& fragment : line.fragments) {
-            if (fragment.piece >= paragraph->runs.size() || fragment.start >= fragment.end)
+            if (fragment.piece >= paragraph->runs.size() || fragment.end <= fragment.start)
                 continue;
             const Piece& piece = paragraph->pieces[fragment.piece];
             const double start = piece.offsetToX(fragment.start);
-            PdfTextSpan span;
-            span.begin = fragment.start;
-            span.end = fragment.end;
-            setStyle(span, paragraph->runs[fragment.piece]);
+            PdfTextSpan span = makeSpan(paragraph->runs[fragment.piece], fragment.start, fragment.end);
             span.baseline = y + line.y + line.baseline;
             const double left = x + line.x + fragment.x - start;
             span.x = [&piece, left](size_t offset) { return piece.offsetToX(offset) + left; };

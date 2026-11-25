@@ -51,7 +51,7 @@ constexpr off_t logSize = 256 * 1024;
 } // namespace
 
 static std::mutex mutex;
-static std::condition_variable issued;
+static std::condition_variable workIssued;
 static std::deque<Work> pending;
 static bool watching = false;
 
@@ -112,7 +112,7 @@ static std::string logPath()
     return directory + "/gpu-activity.log";
 }
 
-static void log(const std::string& line)
+static void logLine(const std::string& line)
 {
     static const std::string path = logPath();
     if (path.empty())
@@ -124,7 +124,7 @@ static void log(const std::string& line)
     if (fd < 0)
         return;
     const std::string text = line + "\n";
-    write(fd, text.data(), text.size());
+    [[maybe_unused]] const ssize_t written = write(fd, text.data(), text.size());
     close(fd);
 }
 
@@ -156,7 +156,7 @@ static void watch()
     static const std::string process = processName();
     std::unique_lock<std::mutex> lock(mutex);
     while (true) {
-        issued.wait(lock, [] { return !pending.empty(); });
+        workIssued.wait(lock, [] { return !pending.empty(); });
         const double now = milliseconds();
         for (auto work = pending.begin(); work != pending.end();) {
             const EGLint status = clientWaitSync(work->display, work->sync, 0, 0);
@@ -164,13 +164,13 @@ static void watch()
             if (status == EGL_TIMEOUT_EXPIRED_KHR) {
                 if (elapsed > stuck && !work->logged) {
                     work->logged = true;
-                    log(prefix(process, *work, "RUNNING") + description(now, *work) + " | also running: " + otherWork(pending, now, *work));
+                    logLine(prefix(process, *work, "RUNNING") + description(now, *work) + " | also running: " + otherWork(pending, now, *work));
                 }
                 ++work;
                 continue;
             }
             if (elapsed > slow)
-                log(prefix(process, *work, "SLOW") + description(now, *work) + " | also running: " + otherWork(pending, now, *work));
+                logLine(prefix(process, *work, "SLOW") + description(now, *work) + " | also running: " + otherWork(pending, now, *work));
             destroySync(work->display, work->sync);
             work = pending.erase(work);
         }
@@ -205,7 +205,7 @@ void hostGpuWorkIssued(const char* name, const char* detail)
         std::thread(watch).detach();
     }
     pending.push_back(std::move(work));
-    issued.notify_one();
+    workIssued.notify_one();
 }
 
 static void frameDrawn(const ui::DrawnFrame& frame)
@@ -234,7 +234,7 @@ void hostGpuWorkMeasured(const char* name, const char* detail, int running, int 
     const double now = milliseconds();
     work.issued = now - duration;
     std::lock_guard<std::mutex> lock(mutex);
-    log(prefix(process, work, running ? "RUNNING" : "SLOW") + description(now, work) + " | also running: " + otherWork(pending, now, work));
+    logLine(prefix(process, work, running ? "RUNNING" : "SLOW") + description(now, work) + " | also running: " + otherWork(pending, now, work));
 }
 
 // 316
