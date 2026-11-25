@@ -226,4 +226,34 @@ int dladdr(const void*, struct dl_info*);
 uint32_t _dyld_image_count(void);
 const char* _dyld_get_image_name(uint32_t);
 
+// Mach ports, messages and the bootstrap server
+typedef uint32_t mach_port_t;
+typedef int kern_return_t;
+extern mach_port_t mach_task_self_;
+extern mach_port_t bootstrap_port;
+#define mach_task_self() mach_task_self_
+kern_return_t mach_port_allocate(mach_port_t, uint32_t, mach_port_t*);
+kern_return_t mach_port_insert_right(mach_port_t, mach_port_t, mach_port_t, uint32_t);
+kern_return_t mach_port_deallocate(mach_port_t, mach_port_t);
+kern_return_t mach_port_mod_refs(mach_port_t, mach_port_t, uint32_t, int);
+kern_return_t mach_port_destroy(mach_port_t, mach_port_t);
+kern_return_t mach_msg(void*, int, uint32_t, uint32_t, mach_port_t, uint32_t, mach_port_t);
+kern_return_t bootstrap_check_in(mach_port_t, const char*, mach_port_t*);
+kern_return_t bootstrap_look_up(mach_port_t, const char*, mach_port_t*);
+typedef struct { uint32_t msgh_bits; uint32_t msgh_size; mach_port_t msgh_remote_port; mach_port_t msgh_local_port; mach_port_t msgh_voucher_port; int msgh_id; } mach_msg_header_t;
+typedef struct { mach_port_t name; uint32_t pad1; uint16_t pad2; uint8_t disposition; uint8_t type; } mach_msg_port_descriptor_t;
+#define MACH_PORT_RIGHT_RECEIVE 1
+#define MACH_MSG_TYPE_MOVE_RECEIVE 16
+#define MACH_MSG_TYPE_MOVE_SEND 17
+#define MACH_MSG_TYPE_MOVE_SEND_ONCE 18
+#define MACH_MSG_TYPE_COPY_SEND 19
+#define MACH_MSG_TYPE_MAKE_SEND 20
+#define MACH_MSG_TYPE_MAKE_SEND_ONCE 21
+#define MACH_MSGH_BITS(remote, local) ((remote) | ((local) << 8))
+#define MACH_MSGH_BITS_COMPLEX 0x80000000u
+#define MACH_SEND_MSG 1
+#define MACH_RCV_MSG 2
+#define MACH_SEND_TIMEOUT 0x10
+#define MACH_RCV_TIMEOUT 0x100
+
 #define CHECK(expression) do { long value_ = (long)(expression); int error_ = errno; printf("%s = %ld", #expression, value_); if (value_ < 0) printf(" (%d %s)", error_, strerror(error_)); printf("\n"); } while (0)

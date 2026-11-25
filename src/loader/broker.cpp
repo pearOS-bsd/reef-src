@@ -255,22 +255,21 @@ static void startBroker()
         return;
     if (child == 0) {
         setsid();
-        if (fork() == 0) {
-            const int null = open("/dev/null", O_RDWR);
-            if (null >= 0) {
-                dup2(null, 0);
-                dup2(null, 1);
-                dup2(null, 2);
-            }
-            close_range(3, ~0U, 0);
-            sigset_t mask;
-            sigemptyset(&mask);
-            sigprocmask(SIG_SETMASK, &mask, nullptr);
-            char* environment[] = {nullptr};
-            execle(path, "reef", "--mach-broker", nullptr, environment);
-            _exit(127);
+        if (fork() != 0)
+            _exit(0);
+        const int null = open("/dev/null", O_RDWR);
+        if (null >= 0) {
+            dup2(null, 0);
+            dup2(null, 1);
+            dup2(null, 2);
         }
-        _exit(0);
+        close_range(3, ~0U, 0);
+        sigset_t mask;
+        sigemptyset(&mask);
+        sigprocmask(SIG_SETMASK, &mask, nullptr);
+        char* environment[] = {nullptr};
+        execle(path, "reef", "--mach-broker", nullptr, environment);
+        _exit(127);
     }
     while (waitpid(child, nullptr, 0) < 0 && errno == EINTR) {
     }
@@ -325,13 +324,13 @@ static long sendMessage(int fd, const void* data, size_t size, const int* fds, u
     std::vector<char> control;
     if (count) {
         control.resize(CMSG_SPACE(count * sizeof(int)));
+        message.msg_control = control.data();
+        message.msg_controllen = control.size();
         cmsghdr* header = reinterpret_cast<cmsghdr*>(control.data());
         header->cmsg_level = SOL_SOCKET;
         header->cmsg_type = SCM_RIGHTS;
         header->cmsg_len = CMSG_LEN(count * sizeof(int));
         memcpy(CMSG_DATA(header), fds, count * sizeof(int));
-        message.msg_control = control.data();
-        message.msg_controllen = control.size();
     }
     long result;
     do {
@@ -345,14 +344,12 @@ static long sendMessage(int fd, const void* data, size_t size, const int* fds, u
 static long machSend(int fd, const void* data, size_t size, const int* fds, uint32_t count)
 {
     long result = sendMessage(fd, data, size, fds, count);
-    if (result == -ETOOMANYREFS) {
-        // Descriptors on their way count against the limit of open files.
-        rlimit limit = {};
-        if (getrlimit(RLIMIT_NOFILE, &limit) == 0 && limit.rlim_cur < limit.rlim_max) {
-            limit.rlim_cur = limit.rlim_max;
-            if (setrlimit(RLIMIT_NOFILE, &limit) == 0)
-                result = sendMessage(fd, data, size, fds, count);
-        }
+    // Descriptors on their way count against the limit of open files.
+    rlimit limit = {};
+    if (result == -ETOOMANYREFS && getrlimit(RLIMIT_NOFILE, &limit) == 0 && limit.rlim_cur < limit.rlim_max) {
+        limit.rlim_cur = limit.rlim_max;
+        if (setrlimit(RLIMIT_NOFILE, &limit) == 0)
+            result = sendMessage(fd, data, size, fds, count);
     }
     return result;
 }
@@ -406,8 +403,8 @@ static void sendOnceNotification(Broker& broker, uint64_t name, Connection* rece
     } notification = {};
     notification.header.type = ReceivedMessage;
     notification.header.remote = name;
-    notification.header.value = MoveSendOnce;
     notification.header.remoteDisposition = MoveSendOnce;
+    notification.header.value = MoveSendOnce;
     notification.header.bodySize = 0x20;
     notification.bits = MoveSendOnce;
     notification.size = 0x20;
@@ -426,10 +423,7 @@ static void noSenders(Broker& broker, uint64_t name, Port& port)
             return;
     }
     port.noSendersSent = true;
-    Header notification = {};
-    notification.type = NoSenders;
-    notification.remote = name;
-    notification.local = port.madeSends;
+    Header notification = {NoSenders, 0, name, port.madeSends};
     send(broker, port.receiver, &notification, sizeof(notification), {});
 }
 
@@ -616,7 +610,11 @@ static void sandboxRequest(Broker& broker, Connection* connection, const Header*
         return;
     }
     case IssueExtension: {
-        const std::string path = secondString(text, name.size(), header->nameSize);
+        size_t used = name.size() + 1;
+        const char* rest = text + used;
+        if (header->nameSize <= used)
+            used = header->nameSize;
+        const std::string path(rest, strnlen(rest, header->nameSize - used));
         std::string token;
         if (name.empty() || path.empty() || path[0] != '/') {
             reply.remoteDisposition = 1;

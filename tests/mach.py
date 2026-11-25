@@ -34,6 +34,9 @@ for name in names:
         os.mkdir(directory)
         for library in extra:
             shutil.copy(os.path.join(os.path.dirname(ours), library), directory)
+        # Each loader gets its own Mach broker: a broker that is still there from the other run would answer instead.
+        subprocess.run(['pkill', '-f', '--', '--mach-broker'], capture_output=True)
+        os.makedirs('/run/user/%d' % os.getuid(), exist_ok=True)
         run = subprocess.run([which, program, directory], capture_output=True, timeout=120, cwd=directory, stdin=subprocess.DEVNULL)
         results.append((run.returncode, run.stdout, frame.sub(b'', run.stderr)))
     if results[0] == results[1]:
