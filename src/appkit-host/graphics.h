@@ -17,17 +17,11 @@
 
 namespace cutefish::reef {
 
-struct GcShadow
-{
-    ui::PointF offset;
-    double blur = 0;
-    ui::ColorF color = {0, 0, 0, 0};
-};
-
 struct GcState
 {
     int composite = 0;
-    GcShadow shadow;
+    // Offset, blur and color.
+    double shadow[7] = {};
     bool antialias = true;
     ui::Canvas2D::Smoothing smoothing = ui::Canvas2D::Smoothing::Medium;
     ui::LineCap lineCap = ui::LineCap::Butt;

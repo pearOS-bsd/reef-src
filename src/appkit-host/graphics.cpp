@@ -170,11 +170,9 @@ void gcSetAlpha(reef_ui_gc* gc, double alpha)
 
 static ui::Canvas2D::Composite compositeOf(int composite)
 {
-    if (composite == 26)
-        return ui::Canvas2D::Composite::Multiply;
-    if (composite == 27)
-        return ui::Canvas2D::Composite::Lighter;
-    return ui::Canvas2D::Composite(std::clamp(composite, 0, 25));
+    return composite == 26 ? ui::Canvas2D::Composite::Multiply
+        : composite == 27  ? ui::Canvas2D::Composite::Lighter
+                           : ui::Canvas2D::Composite(std::clamp(composite, 0, 25));
 }
 
 // 44
@@ -270,14 +268,14 @@ void gcSetShadow(reef_ui_gc* gc, double dx, double dy, double blur, double red, 
 {
     if (gc->pdf)
         return gc->pdf->setShadow(dx, dy, blur, red, green, blue, alpha);
-    gc->state.shadow = {{dx, dy}, blur, {red, green, blue, alpha}};
+    const double shadow[7] = {dx, dy, blur, red, green, blue, alpha};
+    std::copy(shadow, shadow + 7, gc->state.shadow);
     gc->canvas->setShadow({dx, dy}, blur, {red, green, blue, alpha});
 }
 
-static void setShadow(reef_ui_gc* gc, const GcShadow& shadow)
+static void setShadow(reef_ui_gc* gc, const double* shadow)
 {
-    gcSetShadow(gc, shadow.offset.x, shadow.offset.y, shadow.blur, shadow.color.red, shadow.color.green, shadow.color.blue,
-                shadow.color.alpha);
+    gcSetShadow(gc, shadow[0], shadow[1], shadow[2], shadow[3], shadow[4], shadow[5], shadow[6]);
 }
 
 // 41
@@ -433,7 +431,7 @@ void gcBeginMaskedGroup(reef_ui_gc* gc)
 
 // Of what was drawn, only what `draw` covers with the mask in the rectangle stays.
 template<typename Draw>
-static void endMaskedGroup(reef_ui_gc* gc, const double* matrix, const ui::RectF& rect, bool masked, Draw draw)
+static void endMaskedGroup(reef_ui_gc* gc, const double* matrix, double x, double y, double width, double height, bool masked, Draw draw)
 {
     ui::Canvas2D* canvas = gc->canvas.get();
     canvas->save();
@@ -445,7 +443,7 @@ static void endMaskedGroup(reef_ui_gc* gc, const double* matrix, const ui::RectF
         canvas->setAntialias(false);
         ui::Path outside;
         outside.addRect({-1e6, -1e6, 2e6, 2e6});
-        outside.addRect(rect);
+        outside.addRect({x, y, width, height});
         outside.setFillRule(ui::Path::FillRule::EvenOdd);
         canvas->setFillColor({0, 0, 0, 1});
         canvas->setComposite(ui::Canvas2D::Composite::DestinationOut);
@@ -466,8 +464,8 @@ int gcEndGroupMaskedByImage(reef_ui_gc* gc, reef_ui_image* image, double x, doub
 {
     if (gc->pdf || !image)
         return 0;
-    const ui::RectF rect = {x, y, width, height};
-    endMaskedGroup(gc, matrix, rect, true, [&](ui::Canvas2D* canvas) { canvas->drawBitmap(image->bitmap, rect, mirrored); });
+    endMaskedGroup(gc, matrix, x, y, width, height, true,
+                   [&](ui::Canvas2D* canvas) { canvas->drawBitmap(image->bitmap, {x, y, width, height}, mirrored); });
     return 1;
 }
 
@@ -586,23 +584,24 @@ void gcEndGroupMaskedByPixels(reef_ui_gc* gc, const void* pixels, int width, int
 {
     if (gc->pdf)
         return gc->pdf->endMaskedGroup(pixels, width, height, stride, x, y, drawnWidth, drawnHeight, matrix, mirrored);
-    const ui::RectF rect = {x, y, drawnWidth, drawnHeight};
-    endMaskedGroup(gc, matrix, rect, pixels && width > 0 && height > 0, [&](ui::Canvas2D* canvas) {
+    endMaskedGroup(gc, matrix, x, y, drawnWidth, drawnHeight, pixels && width > 0 && height > 0, [&](ui::Canvas2D* canvas) {
         const ui::Bitmap bitmap = ui::Bitmap::wrap(const_cast<void*>(pixels), width, height, stride, ui::Bitmap::Format::Argb32Premultiplied);
-        canvas->drawBitmap(bitmap, rect, mirrored);
+        canvas->drawBitmap(bitmap, {x, y, drawnWidth, drawnHeight}, mirrored);
     });
 }
 
 // 69
 reef_ui_gc* gcCreateForPixels(void* pixels, int width, int height, size_t stride, int format)
 {
-    auto gc = std::make_unique<reef_ui_gc>();
+    auto gc = new reef_ui_gc;
     gc->bitmap = ui::Bitmap::wrap(pixels, width, height, stride,
                                   format == 1 ? ui::Bitmap::Format::Rgba8888Premultiplied : ui::Bitmap::Format::Argb32Premultiplied);
     gc->canvas = std::make_unique<ui::Canvas2D>(gc->bitmap);
-    if (!gc->canvas->isValid())
+    if (!gc->canvas->isValid()) {
+        delete gc;
         return nullptr;
-    return gc.release();
+    }
+    return gc;
 }
 
 } // namespace cutefish::reef
