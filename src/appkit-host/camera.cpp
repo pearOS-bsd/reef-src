@@ -20,6 +20,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <utility>
 #include <vector>
 
 struct reef_ui_camera
@@ -93,7 +94,8 @@ static void addFormat(int fd, reef_ui_camera_info& camera, uint32_t pixelFormat,
 static void addFormats(int fd, reef_ui_camera_info& camera, uint32_t pixelFormat)
 {
     // For cameras that scale to any size.
-    static constexpr FrameSize sizes[] = {{320, 240}, {640, 360}, {640, 480}, {960, 540}, {1280, 720}, {1920, 1080}, {3840, 2160}};
+    static constexpr FrameSize sizes[] = {{320, 240}, {640, 360}, {640, 480}, {960, 540},
+                                          {1280, 720}, {1920, 1080}, {3840, 2160}};
     v4l2_frmsizeenum frame = {};
     frame.pixel_format = pixelFormat;
     for (; request(fd, VIDIOC_ENUM_FRAMESIZES, &frame) == 0; frame.index++) {
@@ -126,6 +128,7 @@ int hostCameraList(reef_ui_camera_info* cameras, int count)
             paths.push_back(std::string("/dev/") + entry->d_name);
     }
     closedir(directory);
+    // By number.
     std::sort(paths.begin(), paths.end(), [](const std::string& a, const std::string& b) {
         return a.size() != b.size() ? a.size() < b.size() : a < b;
     });
@@ -136,7 +139,8 @@ int hostCameraList(reef_ui_camera_info* cameras, int count)
             continue;
         v4l2_capability capability = {};
         const int result = request(fd, VIDIOC_QUERYCAP, &capability);
-        const uint32_t capabilities = capability.capabilities & V4L2_CAP_DEVICE_CAPS ? capability.device_caps : capability.capabilities;
+        const uint32_t capabilities = capability.capabilities & V4L2_CAP_DEVICE_CAPS ? capability.device_caps
+                                                                                     : capability.capabilities;
         const uint32_t needed = V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_STREAMING;
         if (result != 0 || (capabilities & needed) != needed) {
             close(fd);

@@ -49,8 +49,9 @@ struct reef_ui_callbacks
     void (*terminate)();
     void (*screensChanged)();
     void (*drawRects)(void* window, reef_ui_gc* gc, const double* rects, unsigned count);
-    void (*open)(const char* const* paths, unsigned count, const char* action);
-    void (*reopen)();
+    // Started again, by another process that was given these files or URLs and this activation token.
+    void (*launched)(int count, const char* const* items, const char* token);
+    void (*quit)();
     void (*themeChanged)();
     void (*languageChanged)();
     void (*drawPlane)(void* window, void* plane, reef_ui_gc* gc, const double* rects, unsigned count);
@@ -103,8 +104,9 @@ struct reef_ui_window
     bool blurred = false;
     std::vector<double> behindMaterials;
     bool hasBehindMaterials = false;
-    int number1 = 0;
-    int number2 = 0;
+    int cursor = 0;
+    // How often it was changed, for tests.
+    int cursorChanges = 0;
     std::shared_ptr<bool> alive = std::make_shared<bool>(true);
 };
 
@@ -152,5 +154,9 @@ ui::Window* windowOf(reef_ui_window* window);
 
 // menus.cpp
 int hostStatusItemsSupported();
+
+// desktop.cpp
+// The length of the text; what fits is written with a zero at the end.
+int copyString(const std::string& text, char* buffer, int size);
 
 } // namespace cutefish::reef

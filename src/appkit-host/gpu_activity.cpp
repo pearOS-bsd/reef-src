@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <thread>
 #include <unistd.h>
+#include <utility>
 
 namespace cutefish::reef {
 
@@ -43,9 +44,10 @@ struct Work
     bool logged = false;
 };
 
-// Milliseconds.
+// Milliseconds: work that took longer is logged when it is done, and while it runs.
 constexpr double slow = 100;
 constexpr double stuck = 1000;
+// The log starts anew beyond it; the old one stays next to it.
 constexpr off_t logSize = 256 * 1024;
 
 } // namespace
@@ -149,6 +151,7 @@ static std::string otherWork(const std::deque<Work>& all, double now, const Work
     return text.empty() ? "nothing else" : text;
 }
 
+// The thread that waits for the fences.
 static void watch()
 {
     static const auto destroySync = reinterpret_cast<PFNEGLDESTROYSYNCKHRPROC>(eglGetProcAddress("eglDestroySyncKHR"));
@@ -164,13 +167,15 @@ static void watch()
             if (status == EGL_TIMEOUT_EXPIRED_KHR) {
                 if (elapsed > stuck && !work->logged) {
                     work->logged = true;
-                    logLine(prefix(process, *work, "RUNNING") + description(now, *work) + " | also running: " + otherWork(pending, now, *work));
+                    logLine(prefix(process, *work, "RUNNING") + description(now, *work) + " | also running: "
+                            + otherWork(pending, now, *work));
                 }
                 ++work;
                 continue;
             }
             if (elapsed > slow)
-                logLine(prefix(process, *work, "SLOW") + description(now, *work) + " | also running: " + otherWork(pending, now, *work));
+                logLine(prefix(process, *work, "SLOW") + description(now, *work) + " | also running: "
+                        + otherWork(pending, now, *work));
             destroySync(work->display, work->sync);
             work = pending.erase(work);
         }
@@ -234,7 +239,8 @@ void hostGpuWorkMeasured(const char* name, const char* detail, int running, int 
     const double now = milliseconds();
     work.issued = now - duration;
     std::lock_guard<std::mutex> lock(mutex);
-    logLine(prefix(process, work, running ? "RUNNING" : "SLOW") + description(now, work) + " | also running: " + otherWork(pending, now, work));
+    logLine(prefix(process, work, running ? "RUNNING" : "SLOW") + description(now, work) + " | also running: "
+            + otherWork(pending, now, work));
 }
 
 // 316

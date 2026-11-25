@@ -15,11 +15,11 @@ struct reef_ui_audio_input;
 
 namespace cutefish::reef {
 
-// Of the file at the path, or of the bytes without a path.
+// Of the file at the path, or of the bytes without a path. Null when it is no sound that libsndfile reads.
 reef_ui_sound* soundCreate(const char* path, const void* bytes, size_t size);
 void soundDestroy(reef_ui_sound* sound);
-// Both return 0 when the sound plays, or would. The handler runs on the loop of the calling thread, with 1 when the
-// sound played to its end.
+// Both return 0, or 1 when there is no such sound or no PulseAudio. The handler runs on the loop of the calling thread,
+// with 1 when the sound was played to its end or not at all. A sound that is destroyed does not call it.
 int soundPlay(reef_ui_sound* sound, double volume, int loops, void (*finished)(void*, int), void* context);
 int soundPlayNamed(const char* name);
 void soundStop(reef_ui_sound* sound);

@@ -466,7 +466,7 @@ void soundDestroy(reef_ui_sound* sound)
     delete sound;
 }
 
-// The thread of a playing sound.
+// The thread of a sound that plays.
 static void play(reef_ui_sound* sound, base::LoopHandle loop, void (*finished)(void*, int), void* context)
 {
     const Libraries& libs = libraries();
