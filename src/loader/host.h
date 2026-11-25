@@ -275,6 +275,13 @@ void setUpCrashHandler();
 
 // unsupported.cpp
 void showUnsupported(bool running, const std::string& reason);
+// The ports given with --exception-ports=, for the exception server.
+void setExceptionPorts(const char* ports);
+const char* exceptionPorts();
+// The program that the dialog about unsupported programs names.
+void setProgramPath(const std::string& path);
+// reef --mach-broker: the server of Mach ports of the session.
+int machBroker();
 
 // task.cpp
 void setUpTask();

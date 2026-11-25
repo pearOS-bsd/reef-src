@@ -72,13 +72,16 @@ class Linker
 {
 public:
     explicit Linker(const std::string& root);
-    ~Linker();
 
     static Linker* current;
 
     const std::string& root() const { return m_root; }
     const std::deque<ImageInfo>& infos() const { return m_infos; }
     const std::vector<Image*>& images() const { return m_images; }
+    void setImageMap(std::string path) { m_imageMap = std::move(path); }
+    void setStubMode(StubMode mode) { m_stubMode = mode; }
+    void setArgv0(std::string argv0) { m_argv0 = std::move(argv0); }
+    void setLaunchItems(std::vector<std::string> items) { m_launchItems = std::move(items); }
 
     Image* load(const std::string& path, std::string& error);
     void* open(const std::string& path, uint32_t mode, std::string& error);
@@ -94,7 +97,7 @@ public:
     Image* frameworkImage(const Image& image) const;
     int run(const std::string& path, const std::vector<std::string>& arguments, char** environment);
 
-    std::optional<std::string> resolveInstallName(Image* loader, const std::string& name, Image* client);
+    std::optional<std::string> resolveInstallName(const std::string& name, Image* image);
     std::optional<uint64_t> exported(Image* image, const std::string& name, int depth);
     std::optional<uint64_t> lookup(const std::string& name);
     void* stub(Image* image, int ordinal, const std::string& name, bool report);
@@ -110,8 +113,7 @@ public:
     std::string m_root;
     std::string m_imageMap;
     StubMode m_stubMode = StubMode::None;
-    std::vector<std::string> m_launchItemPaths;
-    bool m_launchItems = false;
+    std::optional<std::vector<std::string>> m_launchItems;
     std::string m_argv0;
     std::map<std::string, void*, std::less<>> m_stubs;
     std::vector<Image*> m_images;
@@ -170,6 +172,8 @@ private:
 
 // Errors that are shown once the program has run.
 std::vector<std::string>& reports();
+// reef --list-missing[=json]: what a program or bundle needs that reef does not have.
+int listMissing(Linker& linker, const std::string& path, bool json);
 void report(const char* format, ...) __attribute__((format(printf, 1, 2)));
 std::string directoryOf(const std::string& path);
 // The name of the missing function a stub address stands for.

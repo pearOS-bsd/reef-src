@@ -545,8 +545,10 @@ std::optional<std::string> Linker::framework(const std::string& path)
     return std::nullopt;
 }
 
-std::optional<std::string> Linker::resolveInstallName(Image* loader, const std::string& name, Image* client)
+std::optional<std::string> Linker::resolveInstallName(const std::string& name, Image* image)
 {
+    Image* loader = image;
+    Image* client = image;
     if (name.compare(0, 7, "@rpath/") != 0)
         return framework(expand(client, name));
     const std::string rest = name.substr(6);
@@ -573,7 +575,7 @@ std::optional<std::string> Linker::resolveInstallName(Image* loader, const std::
 bool Linker::loadDependencies(Image* image)
 {
     for (Dylib& dylib : image->dylibs) {
-        const std::optional<std::string> path = resolveInstallName(image, dylib.path, image);
+        const std::optional<std::string> path = resolveInstallName(dylib.path, image);
         if (!path) {
             if (dylib.kind == DylibKind::Weak)
                 continue;
@@ -1086,11 +1088,11 @@ void* Linker::open(const std::string& path, uint32_t mode, std::string& error)
         return client ? reinterpret_cast<void*>(client->header) : nullptr;
     std::optional<std::string> resolved;
     if (path.find('/') == std::string::npos) {
-        resolved = resolveInstallName(client, "/usr/lib/" + path, client);
+        resolved = resolveInstallName("/usr/lib/" + path, client);
         if (!resolved && access(path.c_str(), F_OK) == 0)
             resolved = path;
     } else {
-        resolved = resolveInstallName(client, path, client);
+        resolved = resolveInstallName(path, client);
     }
     if (!resolved) {
         error = "image not found: " + path;
@@ -1208,7 +1210,7 @@ int Linker::run(const std::string& path, const std::vector<std::string>& argumen
     HostServices* services = hostServices(m_argumentCount, const_cast<char*>(m_main->path.c_str()), m_name);
     static std::vector<uint64_t> launchItems;
     if (m_launchItems) {
-        for (const std::string& item : m_launchItemPaths)
+        for (const std::string& item : *m_launchItems)
             launchItems.push_back(reinterpret_cast<uint64_t>(item.c_str()));
         launchItems.push_back(0);
         services->launchItems = launchItems.data();
