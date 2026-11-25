@@ -312,7 +312,7 @@ struct HostServices
     void (*manyAllocations)(int more);
     void* unknown648[3];
     int (*memoryFile)(const char* name);
-    void* unknown668;
+    int (*sandbox)(const char* profile, size_t size, char* message, size_t messageSize, char* policy, size_t policySize);
     void (*setExceptionHandler)(ExceptionHandler handler);
     int (*ppoll)(struct pollfd* fds, unsigned count, const struct timespec* timeout, const uint32_t* mask);
     size_t (*pointerSize)(const void* memory);
