@@ -5,9 +5,4 @@ H="-g -O2 -fstack-protector-strong -fstack-clash-protection -fcf-protection -D_F
 cmake -S "$2" -B /tmp/b -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
   -DCMAKE_C_FLAGS="$H" -DCMAKE_CXX_FLAGS="$H" -DTOOLKIT_SRC="$3" -DTOOLKIT_LIB="$4" -DWEBKIT_INCLUDE="$5" -DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,relro >/dev/null
 ninja -C /tmp/b >/tmp/ninja.log 2>&1 || { tail -60 /tmp/ninja.log; exit 1; }
-s=0
-while read -r orig ours min; do
-  [ -e "/tmp/b/$ours" ] || { echo "$ours: not built here"; continue; }
-  printf '%s: ' "$ours"; python3 "$2/tools/compare.py" --min "$min" "$1/$orig" "/tmp/b/$ours" || s=1
-done < "$2/match/targets.txt"
-exit $s
+python3 "$2/tools/total.py" "$1" /tmp/b "$2/match/targets.txt"

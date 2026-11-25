@@ -69,3 +69,16 @@ if(WEBKIT_INCLUDE AND TOOLKIT_LIB)
     target_link_libraries(reef-webkit-host PRIVATE ${TOOLKIT_LIB}/libcutefish-webkit.so.2 gbm PkgConfig::Glib)
     target_link_options(reef-webkit-host PRIVATE -Wl,--unresolved-symbols=ignore-all)
 endif()
+
+# The AppKit host is incomplete (no function table yet): an object to compare, not a library to use.
+if(TOOLKIT_SRC AND TOOLKIT_LIB)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(AppkitHost REQUIRED IMPORTED_TARGET harfbuzz-subset harfbuzz fontconfig freetype2 zlib egl glesv2)
+    file(GLOB appkit_host src/appkit-host/*.cpp)
+    add_library(reef-appkit-host SHARED ${appkit_host})
+    set_target_properties(reef-appkit-host PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    target_include_directories(reef-appkit-host PRIVATE ${TOOLKIT_SRC}/src)
+    target_link_libraries(reef-appkit-host PRIVATE ${TOOLKIT_LIB}/libcutefish-toolkit.so.1
+        ${TOOLKIT_LIB}/libcutefish-toolkit-base.so.1 PkgConfig::AppkitHost)
+    target_link_options(reef-appkit-host PRIVATE -Wl,--unresolved-symbols=ignore-all)
+endif()

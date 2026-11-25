@@ -18,7 +18,19 @@ struct reef_ui_path_element
 
 namespace cutefish::reef {
 
-ui::Path pathOf(const reef_ui_path_element* elements, unsigned count, bool evenOdd);
+ui::Path pathOf(const reef_ui_path_element* elements, unsigned count, int evenOdd);
 base::AffineTransform transformOf(const double* matrix);
+
+// 1 round, 2 square, otherwise butt.
+inline ui::LineCap lineCapOf(int cap)
+{
+    return cap == 1 ? ui::LineCap::Round : cap == 2 ? ui::LineCap::Square : ui::LineCap::Butt;
+}
+
+// 1 round, 2 bevel, otherwise miter.
+inline ui::LineJoin lineJoinOf(int join)
+{
+    return join == 1 ? ui::LineJoin::Round : join == 2 ? ui::LineJoin::Bevel : ui::LineJoin::Miter;
+}
 
 } // namespace cutefish::reef

@@ -1,6 +1,11 @@
 # reef-src (private)
 Source of the ELF programs and libraries of Reef, reconstructed function by function. Linux only. BSD-3-Clause (see NOTICE).
 
+**Total of the 12 ELF files: 21.9 % of the code bytes (839796 of 3828323) and 51.9 % of the functions (2625 of 5060) are the
+same as in the published binaries** (2026-11-25). `tools/total.py` computes it; every CI run prints it at the end of the match
+list (there without `libreef-webkit-host.so`, which needs headers CI does not have). Functions that are written but not the
+same yet do not count. The 199 Mach-O files of Reef (58.6 MB) are not part of this repository.
+
 | target | matched |
 |---|---|
 | `login` | 1/1 functions, 1269/1269 bytes; differential tests in `tests/small.py` |
@@ -10,9 +15,10 @@ Source of the ELF programs and libraries of Reef, reconstructed function by func
 | `libreef-webkit-host.so` | 213/260 functions, 45.2 % of bytes; all 100 table entries written, the same output as the original in `tests/webkit.py` (JSON, input, data, find, screens); views, downloads and dialogs not run yet |
 | `reef-install-package` | 175/210 functions, 38.9 % of bytes; everything written, the same output as the original in `tests/package.py` (listing and command line installation); the window and the D-Bus helper not run yet |
 | `reef` (loader) | 576/979 functions, 27.1 % of bytes; all written (the Mach broker last); the same output as the original in `tests/mach.py` (files, ports, processes, signals, sockets, threads) and `tests/loader.py` |
-| `reef-hdiutil` | 79/196 functions, 14.2 % of bytes; all written (LZFSE from `upstream/`, its 21 functions match); the same images and output as the original in `tests/hdiutil.py` (46 cases: HFS+, ISO 9660, Joliet, UDF, the seven UDIF formats, verify, errors) |
+| `reef-hdiutil` | 75/196 functions, 14.1 % of bytes; all written (LZFSE from `upstream/`, its 21 functions match); the same images and output as the original in `tests/hdiutil.py` (46 cases: HFS+, ISO 9660, Joliet, UDF, the seven UDIF formats, verify, errors) |
 | `reef-diagnose` | 308/401 functions, 38.8 % of bytes; all written; the same reports as the original in `tests/diagnose.py` (20 cases on made up machines), see `docs/DIAGNOSE.md` |
-| the other 3 | not started (`libreef-appkit-host.so`, `libreef-metal-msl.so`, `libreef-metal-translator.so`) |
+| `libreef-appkit-host.so` | 1096/1768 functions, 31.7 % of bytes; in progress (written: application, windows, views, planes, drawing, fade, fonts, sound, camera, displays, JPEG 2000, D-Bus menus) |
+| the other 2 | not started (`libreef-metal-msl.so` 346 functions, `libreef-metal-translator.so` 712 functions) |
 
 Behaviour: `tests/small.py` 25 cases (login, authhelper), `tests/mach.py` 6 Mac programs on the loader (Mach ports through the broker included), `tests/hdiutil.py` 46 cases, `tests/diagnose.py` 20 cases, `tests/dialogs.py` 1444 cases (the two dialogs, 2026-11-25),
 `tests/package.py` 540 cases (packages made there, good and broken: what is listed and the installed tree): no difference.

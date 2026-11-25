@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "host.h"
 #include "pdf.h"
 
 #include "ui/bitmap.h"
@@ -16,19 +17,25 @@
 
 namespace cutefish::reef {
 
+struct GcShadow
+{
+    ui::PointF offset;
+    double blur = 0;
+    ui::ColorF color = {0, 0, 0, 0};
+};
+
 struct GcState
 {
     int composite = 0;
-    ui::PointF shadowOffset;
-    double shadowBlur = 0;
-    ui::ColorF shadowColor = {0, 0, 0, 0};
+    GcShadow shadow;
     bool antialias = true;
-    int smoothing = 2;
-    int lineCap = 0;
-    int lineJoin = 0;
+    ui::Canvas2D::Smoothing smoothing = ui::Canvas2D::Smoothing::Medium;
+    ui::LineCap lineCap = ui::LineCap::Butt;
+    ui::LineJoin lineJoin = ui::LineJoin::Miter;
     double miterLimit = 10;
     double dashOffset = 0;
     std::vector<double> dashes;
+    // Begun since the last save.
     int groups = 0;
 };
 

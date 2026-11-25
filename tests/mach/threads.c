@@ -16,6 +16,9 @@ static void destroy(void* value) { destroyed += (int)(long)value; }
 
 static void* run(void* argument)
 {
+    // Until the main thread printed what pthread_create returned.
+    pthread_mutex_lock(&mutex);
+    pthread_mutex_unlock(&mutex);
     local += (int)(long)argument;
     zero[10] = 1;
     pthread_setspecific(key, argument);
@@ -42,8 +45,8 @@ int main(int argc, char** argv)
     for (long i = 1; i < 4; i++) {
         pthread_t thread;
         void* result;
-        CHECK(pthread_create(&thread, NULL, run, (void*)i));
         pthread_mutex_lock(&mutex);
+        CHECK(pthread_create(&thread, NULL, run, (void*)i));
         while (ready < i)
             pthread_cond_wait(&condition, &mutex);
         pthread_mutex_unlock(&mutex);

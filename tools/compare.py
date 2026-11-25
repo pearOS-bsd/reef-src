@@ -134,12 +134,8 @@ class Image:
 
 def describe(x): return x.hex() if isinstance(x, bytes) else ' '.join(y.hex() if isinstance(y, bytes) else str(y) for y in x)
 
-def main():
-    p = argparse.ArgumentParser(); p.add_argument('orig'); p.add_argument('ours')
-    p.add_argument('--map'); p.add_argument('-v', action='store_true'); p.add_argument('--strict', action='store_true'); p.add_argument('--min', type=float, default=0)
-    a = p.parse_args()
-    Image.strict = a.strict
-    A, B = Image(a.orig), Image(a.ours)
+def match(A, B):
+    """The functions of A that are the same in B (address: address), and how many of them call functions not written yet."""
     na = {f: A.normal(f) for f in A.funcs}; nb = {f: B.normal(f) for f in B.funcs}
     index = collections.defaultdict(list)
     for f, (o, _) in nb.items(): index[repr(o)].append(f)
@@ -158,17 +154,30 @@ def main():
                 changed = True
                 if keep: pairs[f] = keep
                 else: del pairs[f]
-    used, match = set(), {}
+    used, found = set(), {}
     for f in sorted(pairs, key=lambda f: len(pairs[f])):
         for g in pairs[f]:
-            if g not in used: used.add(g); match[f] = g; break
-    total = sum(A.funcs.values()); ok = sum(A.funcs[f] for f in match)
-    wait = sum(any(isinstance(y, str) for y in nb[g][1]) for g in match.values())
-    print(f'{len(match)}/{len(A.funcs)} functions, {ok}/{total} bytes = {100 * ok / max(total, 1):.2f}%'
-          + (f', {wait} of them call functions not written yet' if wait else ''))
+            if g not in used: used.add(g); found[f] = g; break
+    return found, sum(any(isinstance(y, str) for y in nb[g][1]) for g in found.values())
+
+def summary(A, found, waiting):
+    total = sum(A.funcs.values()); ok = sum(A.funcs[f] for f in found)
+    return (f'{len(found)}/{len(A.funcs)} functions, {ok}/{total} bytes = {100 * ok / max(total, 1):.2f}%'
+            + (f', {waiting} of them call functions not written yet' if waiting else ''))
+
+def main():
+    p = argparse.ArgumentParser(); p.add_argument('orig'); p.add_argument('ours')
+    p.add_argument('--map'); p.add_argument('-v', action='store_true'); p.add_argument('--strict', action='store_true'); p.add_argument('--min', type=float, default=0)
+    a = p.parse_args()
+    Image.strict = a.strict
+    A, B = Image(a.orig), Image(a.ours)
+    found, waiting = match(A, B)
+    total = sum(A.funcs.values()); ok = sum(A.funcs[f] for f in found)
+    print(summary(A, found, waiting))
     if a.v:
-        left = [g for g in nb if g not in used]
-        for f in sorted(set(na) - set(match)):
+        na = {f: A.normal(f) for f in A.funcs}; nb = {f: B.normal(f) for f in B.funcs}
+        left = [g for g in nb if g not in set(found.values())]
+        for f in sorted(set(na) - set(found)):
             if not left: print(f'{f:x} {A.funcs[f]} no candidate'); continue
             import difflib
             sc = [(difflib.SequenceMatcher(None, [repr(x) for x in na[f][0]], [repr(x) for x in nb[g][0]], autojunk=False), g) for g in left]
