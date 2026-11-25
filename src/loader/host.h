@@ -310,7 +310,10 @@ struct HostServices
     void* bonjourQuery;
     void (*trim)();
     void (*manyAllocations)(int more);
-    void* unknown648[3];
+    // The Mach broker of the session: a connection to it, and messages with descriptors over it.
+    int (*machConnect)();
+    long (*machSend)(int fd, const void* data, size_t size, const int* fds, uint32_t count);
+    long (*machReceive)(int fd, void* data, size_t size, int* fds, uint32_t* count);
     int (*memoryFile)(const char* name);
     int (*sandbox)(const char* profile, size_t size, char* message, size_t messageSize, char* policy, size_t policySize);
     void (*setExceptionHandler)(ExceptionHandler handler);
