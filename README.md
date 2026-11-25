@@ -1,7 +1,7 @@
 # reef-src (private)
 Source of the ELF programs and libraries of Reef, reconstructed function by function. Linux only. BSD-3-Clause (see NOTICE).
 
-**Total of the 12 ELF files: 28.5 % of the code bytes (1090329 of 3828323) and 58.9 % of the functions (2978 of 5060) are the
+**Total of the 12 ELF files: 28.5 % of the code bytes (1091722 of 3828323) and 59.0 % of the functions (2987 of 5060) are the
 same as in the published binaries** (2026-11-26). `tools/total.py` computes it; every CI run prints it at the end of the match
 list (there without `libreef-webkit-host.so`, which needs headers CI does not have). Functions that are written but not the
 same yet do not count.
@@ -19,7 +19,7 @@ tested against the original is in the table. The 199 Mach-O files of Reef (58.6 
 | `reef` (loader) | 576/979 functions, 27.1 % of bytes; all written (the Mach broker last); the same output as the original in `tests/mach.py` (files, ports, processes, signals, sockets, threads) and `tests/loader.py` |
 | `reef-hdiutil` | 75/196 functions, 14.1 % of bytes; all written (LZFSE from `upstream/`, its 21 functions match); the same images and output as the original in `tests/hdiutil.py` (46 cases: HFS+, ISO 9660, Joliet, UDF, the seven UDIF formats, verify, errors) |
 | `reef-diagnose` | 308/401 functions, 38.8 % of bytes; all written; the same reports as the original in `tests/diagnose.py` (20 cases on made up machines), see `docs/DIAGNOSE.md` |
-| `libreef-appkit-host.so` | 1449/1768 functions, 54.6 % of bytes; all 317 table entries written; the same behaviour as the original in `tests/appkit` (drawing, windows, planes, input, menus, OpenGL without a display) and in the tests of the units (fonts, text, PDF, video, sound, cameras, D-Bus, icons, dialogs, drags; see `docs/APPKIT-HOST.md`) |
+| `libreef-appkit-host.so` | 1458/1768 functions, 54.7 % of bytes; all 317 table entries written; the same behaviour as the original in `tests/appkit` (drawing, windows, planes, input, menus, OpenGL without a display) and in the tests of the units (fonts, text, PDF, video, sound, cameras, D-Bus, icons, dialogs, drags; see `docs/APPKIT-HOST.md`) |
 | the other 2 | in progress (`libreef-metal-msl.so` 346 functions, `libreef-metal-translator.so` 712 functions) |
 
 Behaviour: `tests/small.py` 25 cases (login, authhelper), `tests/mach.py` 6 Mac programs on the loader (Mach ports through the broker included), `tests/hdiutil.py` 46 cases, `tests/diagnose.py` 20 cases, `tests/dialogs.py` 1444 cases (the two dialogs, 2026-11-25),

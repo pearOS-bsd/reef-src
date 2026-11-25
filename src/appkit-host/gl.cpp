@@ -66,11 +66,11 @@ struct SavedContext
 
 static bool glHeadless;
 static std::set<reef_ui_gl_surface*> surfaces;
-static std::once_flag eglOnce;
 static Egl eglState;
-static thread_local int drawing;
-static thread_local SavedContext saved;
 static thread_local reef_ui_gl_context* current;
+static thread_local SavedContext saved;
+// How many views are drawn.
+static thread_local int drawing;
 
 static bool hasExtension(const char* extensions, const char* name)
 {
@@ -84,37 +84,36 @@ static bool hasExtension(const char* extensions, const char* name)
     return false;
 }
 
-static void initialize()
-{
-    ensureApplication();
-    wl_display* wayland = glHeadless ? nullptr : ui::Subsurface::waylandDisplay();
-    if (wayland) {
-        eglState.display = eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_KHR, wayland, nullptr);
-        eglState.wayland = true;
-    } else {
-        eglState.display = eglGetPlatformDisplay(EGL_PLATFORM_SURFACELESS_MESA, EGL_DEFAULT_DISPLAY, nullptr);
-    }
-    if (!eglState.display || !eglInitialize(eglState.display, nullptr, nullptr)) {
-        fprintf(stderr, "reef: no EGL display for OpenGL\n");
-        return;
-    }
-    const char* extensions = eglQueryString(eglState.display, EGL_EXTENSIONS);
-    if (!hasExtension(extensions, "EGL_KHR_no_config_context") || !hasExtension(extensions, "EGL_KHR_surfaceless_context")) {
-        fprintf(stderr, "reef: the EGL driver cannot make OpenGL contexts without a config\n");
-        return;
-    }
-    const EGLint attributes[] = {
-        EGL_SURFACE_TYPE, EGL_PBUFFER_BIT, EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT, EGL_RED_SIZE,   8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8,
-        EGL_ALPHA_SIZE,   8,               EGL_DEPTH_SIZE,      24,             EGL_STENCIL_SIZE, 8, EGL_NONE,
-    };
-    EGLint count = 0;
-    eglChooseConfig(eglState.display, attributes, &eglState.config, 1, &count);
-    eglState.available = true;
-}
-
 static const Egl& egl()
 {
-    std::call_once(eglOnce, initialize);
+    static std::once_flag once;
+    std::call_once(once, [] {
+        ensureApplication();
+        wl_display* wayland = glHeadless ? nullptr : ui::Subsurface::waylandDisplay();
+        if (wayland) {
+            eglState.display = eglGetPlatformDisplay(EGL_PLATFORM_WAYLAND_KHR, wayland, nullptr);
+            eglState.wayland = true;
+        } else {
+            eglState.display = eglGetPlatformDisplay(EGL_PLATFORM_SURFACELESS_MESA, EGL_DEFAULT_DISPLAY, nullptr);
+        }
+        if (!eglState.display || !eglInitialize(eglState.display, nullptr, nullptr)) {
+            fprintf(stderr, "reef: no EGL display for OpenGL\n");
+            return;
+        }
+        const char* extensions = eglQueryString(eglState.display, EGL_EXTENSIONS);
+        if (!hasExtension(extensions, "EGL_KHR_no_config_context") || !hasExtension(extensions, "EGL_KHR_surfaceless_context")) {
+            fprintf(stderr, "reef: the EGL driver cannot make OpenGL contexts without a config\n");
+            return;
+        }
+        const EGLint attributes[] = {
+            EGL_SURFACE_TYPE, EGL_PBUFFER_BIT, EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT, EGL_RED_SIZE,   8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8,
+            EGL_ALPHA_SIZE,   8,               EGL_DEPTH_SIZE,      24,             EGL_STENCIL_SIZE, 8, EGL_NONE,
+        };
+        EGLint count = 0;
+        if (!eglChooseConfig(eglState.display, attributes, &eglState.config, 1, &count) || count < 1)
+            eglState.config = nullptr;
+        eglState.available = true;
+    });
     return eglState;
 }
 
@@ -242,17 +241,17 @@ int glContextMakeCurrent(reef_ui_gl_context* context, reef_ui_gl_surface* surfac
     }
     if (!current)
         saveCurrent();
-    if (!surface) {
-        if (!eglMakeCurrent(state.display, EGL_NO_SURFACE, EGL_NO_SURFACE, context->context))
-            return 0;
-        current = context;
-        return 1;
-    }
-    if (surface->subsurface ? !surface->subsurface->makeCurrent(context->context)
-                            : !eglMakeCurrent(state.display, surface->pbuffer, surface->pbuffer, context->context))
+    bool made;
+    if (surface && surface->subsurface)
+        made = surface->subsurface->makeCurrent(context->context);
+    else if (surface && surface->pbuffer)
+        made = eglMakeCurrent(state.display, surface->pbuffer, surface->pbuffer, context->context);
+    else
+        made = eglMakeCurrent(state.display, EGL_NO_SURFACE, EGL_NO_SURFACE, context->context);
+    if (!made)
         return 0;
     current = context;
-    if (surface->subsurface || surface->pbuffer)
+    if (surface && (surface->subsurface || surface->pbuffer))
         useDefaultBuffers();
     return 1;
 }
@@ -329,43 +328,50 @@ int glSurfaceBeginFrame(reef_ui_gl_surface* surface, reef_ui_gl_context* context
         return 0;
     if (!current)
         saveCurrent();
-    base::Size size;
     if (surface->subsurface) {
-        size = surface->subsurface->beginFrame(context->context);
+        const base::Size size = surface->subsurface->beginFrame(context->context);
         if (size.width() <= 0 || size.height() <= 0)
             return 0;
-    } else {
-        const Egl& state = egl();
-        if (!state.available || !state.config)
-            return 0;
-        {
-            std::lock_guard lock(surface->mutex);
-            size = base::Size(int(std::lround(surface->scale * surface->width)), int(std::lround(surface->scale * surface->height)));
-        }
-        if (size.width() <= 0 || size.height() <= 0)
-            return 0;
-        if (surface->pbuffer && size != surface->pbufferSize) {
-            if (current)
-                eglMakeCurrent(state.display, EGL_NO_SURFACE, EGL_NO_SURFACE, current->context);
-            eglDestroySurface(state.display, surface->pbuffer);
-            surface->pbuffer = EGL_NO_SURFACE;
-        }
-        if (!surface->pbuffer) {
-            const EGLint attributes[] = {EGL_WIDTH, size.width(), EGL_HEIGHT, size.height(), EGL_NONE};
-            surface->pbuffer = eglCreatePbufferSurface(state.display, state.config, attributes);
-            if (!surface->pbuffer)
-                return 0;
-            surface->pbufferSize = size;
-        }
-        if (!eglMakeCurrent(state.display, surface->pbuffer, surface->pbuffer, context->context))
-            return 0;
+        current = context;
+        useDefaultBuffers();
+        if (width)
+            *width = size.width();
+        if (height)
+            *height = size.height();
+        return 1;
     }
+    const Egl& state = egl();
+    if (!state.available || !state.config)
+        return 0;
+    int frameWidth, frameHeight;
+    {
+        std::lock_guard lock(surface->mutex);
+        frameWidth = int(std::lround(surface->width * surface->scale));
+        frameHeight = int(std::lround(surface->height * surface->scale));
+    }
+    if (frameWidth <= 0 || frameHeight <= 0)
+        return 0;
+    if (surface->pbuffer && (surface->pbufferSize.width() != frameWidth || surface->pbufferSize.height() != frameHeight)) {
+        if (current)
+            eglMakeCurrent(state.display, EGL_NO_SURFACE, EGL_NO_SURFACE, current->context);
+        eglDestroySurface(state.display, surface->pbuffer);
+        surface->pbuffer = EGL_NO_SURFACE;
+    }
+    if (!surface->pbuffer) {
+        const EGLint attributes[] = {EGL_WIDTH, frameWidth, EGL_HEIGHT, frameHeight, EGL_NONE};
+        surface->pbuffer = eglCreatePbufferSurface(state.display, state.config, attributes);
+        if (!surface->pbuffer)
+            return 0;
+        surface->pbufferSize = {frameWidth, frameHeight};
+    }
+    if (!eglMakeCurrent(state.display, surface->pbuffer, surface->pbuffer, context->context))
+        return 0;
     current = context;
     useDefaultBuffers();
     if (width)
-        *width = size.width();
+        *width = frameWidth;
     if (height)
-        *height = size.height();
+        *height = frameHeight;
     return 1;
 }
 
@@ -406,12 +412,12 @@ int glSurfaceTakePixels(reef_ui_gl_surface* surface, void* pixels, size_t stride
     if (!surface || !pixels)
         return 0;
     std::lock_guard lock(surface->mutex);
-    if (surface->pixels.empty() || surface->pixelsSize.width() != width || surface->pixelsSize.height() != height)
+    if (surface->pixels.empty() || surface->pixelsSize != base::Size(width, height))
         return 0;
     const size_t row = size_t(width) * 4;
     for (int y = 0; y < height; y++)
         memcpy(static_cast<uint8_t*>(pixels) + y * stride, surface->pixels.data() + (height - 1 - y) * row, row);
-    surface->pixels = {};
+    surface->pixels = std::vector<uint8_t>();
     return 1;
 }
 
@@ -589,7 +595,8 @@ void glSurfaceSetResizeHandler(reef_ui_gl_surface* surface, void (*handler)(void
 // Below the window.
 reef_ui_gl_surface* glSurfaceCreate(reef_ui_window* window)
 {
-    auto surface = new reef_ui_gl_surface{window};
+    auto surface = new reef_ui_gl_surface;
+    surface->window = window;
     surfaces.insert(surface);
     if (!window || !egl().wayland)
         return surface;
@@ -597,11 +604,11 @@ reef_ui_gl_surface* glSurfaceCreate(reef_ui_window* window)
     if (!owner)
         return surface;
     auto subsurface = std::make_unique<ui::Subsurface>(owner);
-    if (subsurface->isValid() && subsurface->eglDisplay() == egl().display) {
-        subsurface->setOpaque(true);
-        surface->subsurface = std::move(subsurface);
-        windowSetUnderlay(window, true);
-    }
+    if (!subsurface->isValid() || subsurface->eglDisplay() != egl().display)
+        return surface;
+    subsurface->setOpaque(true);
+    surface->subsurface = std::move(subsurface);
+    windowSetUnderlay(window, true);
     return surface;
 }
 
