@@ -6,9 +6,12 @@
 #pragma once
 
 #include "host.h"
+#include "image.h"
 
 #include <deque>
 #include <mutex>
+#include <string>
+#include <sys/stat.h>
 
 namespace cutefish::reef {
 
@@ -42,7 +45,5 @@ private:
     std::deque<ImageInfo> m_infos;
 };
 
-// image.cpp
-void* reserveMemory(size_t size);
 
 } // namespace cutefish::reef

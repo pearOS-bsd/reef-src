@@ -223,7 +223,14 @@ struct HostServices
     void* unknown5e0;
     int (*getdirentries)(int fd, HostEntry* entries, int count);
     const char* activationToken;
-    void* unknown5f8[8];
+    void* unknown5f8;
+    void* bonjourRegister;
+    void* bonjourSocket;
+    void* bonjourNext;
+    void* bonjourDestroy;
+    void* bonjourBrowse;
+    void* bonjourResolve;
+    void* bonjourQuery;
     void (*trim)();
     void (*manyAllocations)(int more);
     void* unknown648[3];
