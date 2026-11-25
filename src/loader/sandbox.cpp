@@ -567,42 +567,38 @@ static std::vector<std::string> matching(const std::string& text)
     return found;
 }
 
-static std::vector<std::string> startingWith(const std::string& start)
-{
-    const size_t slash = start.rfind('/');
-    if (slash == std::string::npos)
-        return {};
-    const std::string directory = slash ? start.substr(0, slash) : "/";
-    const std::string name = start.substr(slash + 1);
-    const std::string host = canonical(directory);
-    DIR* stream = opendir(host.c_str());
-    if (!stream)
-        return {};
-    std::vector<std::string> found;
-    while (const dirent* entry = readdir(stream)) {
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-            continue;
-        if (strncmp(entry->d_name, name.c_str(), name.size()) == 0)
-            found.push_back(host + "/" + entry->d_name);
-    }
-    closedir(stream);
-    return found;
-}
-
 // The paths of the host that a filter means.
 static std::vector<std::string> pathsOf(const Filter& filter)
 {
+    std::vector<std::string> found;
     if (filter.kind == "extension")
-        return {};
+        return found;
     if (filter.kind == "regex")
         return matching(filter.path);
-    if (filter.kind == "prefix")
-        return startingWith(filter.path);
-    return {canonical(filter.path)};
+    if (filter.kind == "prefix") {
+        const size_t slash = filter.path.rfind('/');
+        if (slash == std::string::npos)
+            return found;
+        const std::string directory = slash ? filter.path.substr(0, slash) : "/";
+        const std::string name = filter.path.substr(slash + 1);
+        const std::string host = canonical(directory);
+        DIR* stream = opendir(host.c_str());
+        if (!stream)
+            return found;
+        while (const dirent* entry = readdir(stream)) {
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+                continue;
+            if (strncmp(entry->d_name, name.c_str(), name.size()) == 0)
+                found.push_back(host + "/" + entry->d_name);
+        }
+        closedir(stream);
+        return found;
+    }
+    found.push_back(canonical(filter.path));
+    return found;
 }
 
-// The rules of the filters: a later refusal takes a part of what an earlier filter allows.
-static void addFilters(const Ruleset& ruleset, const std::vector<Filter>& filters, std::string& policy)
+static std::vector<Expanded> expand(const std::vector<Filter>& filters)
 {
     std::vector<Expanded> expanded;
     for (size_t i = 0; i < filters.size(); i++) {
@@ -612,6 +608,13 @@ static void addFilters(const Ruleset& ruleset, const std::vector<Filter>& filter
                 expanded.push_back({i, &filters[i], real});
         }
     }
+    return expanded;
+}
+
+// The rules of the filters: a later refusal takes a part of what an earlier filter allows.
+static void addFilters(const Ruleset& ruleset, const std::vector<Filter>& filters, std::string& policy)
+{
+    const std::vector<Expanded> expanded = expand(filters);
     for (const Expanded& allowed : expanded) {
         if (allowed.filter->deny)
             continue;
