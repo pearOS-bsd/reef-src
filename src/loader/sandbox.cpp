@@ -10,6 +10,7 @@
 #include "host.h"
 #include "linker.h"
 
+#include <algorithm>
 #include <atomic>
 #include <cctype>
 #include <cerrno>
@@ -56,6 +57,22 @@ struct Ruleset
 {
     int fd;
     uint64_t handled;
+
+    void allow(const std::string& path, uint64_t access) const
+    {
+        const int file = open(path.c_str(), O_PATH | O_CLOEXEC);
+        if (file < 0)
+            return;
+        struct stat status;
+        if (fstat(file, &status) == 0 && !S_ISDIR(status.st_mode))
+            access &= fileAccess;
+        landlock_path_beneath_attr attribute;
+        attribute.allowed_access = access & handled;
+        attribute.parent_fd = file;
+        if (attribute.allowed_access)
+            syscall(SYS_landlock_add_rule, fd, LANDLOCK_RULE_PATH_BENEATH, &attribute, 0);
+        close(file);
+    }
 };
 
 struct RulesetAttribute
@@ -133,23 +150,7 @@ uint64_t accessOf(const std::string& letters)
     return 0;
 }
 
-void allow(const Ruleset& ruleset, const std::string& path, uint64_t access)
-{
-    const int fd = open(path.c_str(), O_PATH | O_CLOEXEC);
-    if (fd < 0)
-        return;
-    struct stat status;
-    if (fstat(fd, &status) == 0 && !S_ISDIR(status.st_mode))
-        access &= fileAccess;
-    landlock_path_beneath_attr attribute;
-    attribute.allowed_access = access & ruleset.handled;
-    attribute.parent_fd = fd;
-    if (attribute.allowed_access)
-        syscall(SYS_landlock_add_rule, ruleset.fd, LANDLOCK_RULE_PATH_BENEATH, &attribute, 0);
-    close(fd);
-}
-
-std::string parentOf(const std::string& path)
+inline std::string parentOf(const std::string& path)
 {
     const size_t slash = path.rfind('/');
     if (slash == 0)
@@ -163,11 +164,11 @@ std::string nameOf(const std::string& path)
 }
 
 // The path on the host: /private is not there.
-std::string canonical(std::string_view given)
+std::string canonical(const std::string& given)
 {
-    std::string path(given);
+    std::string path = given;
     struct stat status;
-    if (path.compare(0, 9, "/private/") == 0 && stat("/private", &status) != 0)
+    if (path.rfind("/private/", 0) == 0 && stat("/private", &status) != 0)
         path = path.substr(8);
     while (path.size() > 1 && path.back() == '/')
         path.pop_back();
@@ -188,17 +189,20 @@ std::set<int> threads()
     return found;
 }
 
-int restrictSelf(int ruleset)
+// Opens a path without following links.
+int openPlain(const char* path, uint64_t flags, uint64_t mode)
 {
-    if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0)
-        return -1;
-    return syscall(SYS_landlock_restrict_self, ruleset, 0) == 0 ? 0 : -1;
+    open_how how = {};
+    how.flags = flags;
+    how.mode = mode;
+    how.resolve = RESOLVE_NO_SYMLINKS | RESOLVE_NO_MAGICLINKS;
+    return int(syscall(SYS_openat2, AT_FDCWD, path, &how, sizeof how));
 }
 
 void restrictThread(int)
 {
     const int saved = errno;
-    if (restrictSelf(currentRuleset) != 0)
+    if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 || syscall(SYS_landlock_restrict_self, currentRuleset.load(), 0) != 0)
         failures++;
     const int index = answers++;
     if (index < maximumThreads)
@@ -252,7 +256,8 @@ namespace cutefish::reef {
 
 void SandboxPolicy::release(uint64_t id)
 {
-    std::erase_if(extensions, [id](const SandboxExtension& extension) { return extension.id == id; });
+    extensions.erase(std::remove_if(extensions.begin(), extensions.end(), [id](const SandboxExtension& extension) { return extension.id == id; }),
+                     extensions.end());
 }
 
 bool SandboxPolicy::allows(const std::string& path, uint32_t access) const
@@ -289,14 +294,13 @@ int SandboxPolicy::open(const std::string& path, int flags, int mode, int* fd) c
         access |= SandboxWrite;
     if (!allows(path, access))
         return EPERM;
-    const int host = hostOpenFlags(flags);
-    open_how how = {};
-    how.flags = host | O_CLOEXEC;
-    how.mode = host & (O_CREAT | O_TMPFILE) ? mode & 07777 : 0;
-    how.resolve = RESOLVE_NO_SYMLINKS | RESOLVE_NO_MAGICLINKS;
-    const int opened = int(syscall(SYS_openat2, AT_FDCWD, path.c_str(), &how, sizeof how));
-    if (opened < 0)
-        return errno == ELOOP ? EPERM : darwinError(errno);
+    const int host = hostOpenFlags(flags) | O_CLOEXEC;
+    const int opened = openPlain(path.c_str(), host, host & (O_CREAT | O_TMPFILE) ? mode & 07777 : 0);
+    if (opened < 0) {
+        if (errno == ELOOP)
+            return EPERM;
+        return darwinError(errno);
+    }
     *fd = opened;
     return 0;
 }
@@ -310,7 +314,7 @@ int sandboxError(int error, int directory, const char* path, int access)
         struct stat status;
         if (fstatat(directory, name, &status, 0) != 0)
             return false;
-        const int shift = status.st_uid == geteuid() ? 6 : status.st_gid == getegid() ? 3 : 0;
+        const unsigned shift = status.st_uid == geteuid() ? 6 : status.st_gid == getegid() ? 3 : 0;
         const unsigned mode = status.st_mode >> shift;
         return (!(wanted & 4) || (mode & 4)) && (!(wanted & 2) || (mode & 2)) && (!(wanted & 1) || (mode & 1));
     };
@@ -338,13 +342,7 @@ int SandboxPolicy::change(int operation, const std::string& path, const std::str
         return EINVAL;
     if (!allows(path, SandboxWrite) || (operation == 3 && !allows(to, SandboxWrite)))
         return EPERM;
-    const auto openDirectory = [](const std::string& name) {
-        open_how how = {};
-        how.flags = O_PATH | O_DIRECTORY | O_CLOEXEC;
-        how.resolve = RESOLVE_NO_SYMLINKS | RESOLVE_NO_MAGICLINKS;
-        return int(syscall(SYS_openat2, AT_FDCWD, name.c_str(), &how, sizeof how));
-    };
-    const int directory = openDirectory(parentOf(path));
+    const int directory = openPlain(parentOf(path).c_str(), O_PATH | O_DIRECTORY | O_CLOEXEC, 0);
     if (directory < 0)
         return errno == ELOOP ? EPERM : darwinError(errno);
     int result = -1;
@@ -354,7 +352,7 @@ int SandboxPolicy::change(int operation, const std::string& path, const std::str
     } else if (operation == 2) {
         result = unlinkat(directory, nameOf(path).c_str(), mode ? AT_REMOVEDIR : 0);
     } else if (operation == 3) {
-        const int other = openDirectory(parentOf(to));
+        const int other = openPlain(parentOf(to).c_str(), O_PATH | O_DIRECTORY | O_CLOEXEC, 0);
         if (other >= 0) {
             result = renameat(directory, nameOf(path).c_str(), other, nameOf(to).c_str());
             error = errno;
@@ -403,30 +401,30 @@ static std::string homeFolder()
 // What every program needs to run.
 static void allowSystem(const Ruleset& ruleset, const Profile& profile)
 {
-    allow(ruleset, Linker::current->root(), readAccess);
+    ruleset.allow(Linker::current->root(), readAccess);
     for (const char* path : {"/usr/lib", "/usr/lib64", "/lib", "/lib64", "/usr/local/lib", "/usr/share", "/etc", "/var/cache/fontconfig", "/proc/cpuinfo",
                              "/proc/meminfo", "/proc/stat", "/proc/sys/kernel", "/proc/sys/vm", "/sys/devices/system/cpu", "/dev/zero", "/dev/urandom",
                              "/dev/random"})
-        allow(ruleset, path, readAccess);
+        ruleset.allow(path, readAccess);
     char executable[PATH_MAX];
     const ssize_t length = readlink("/proc/self/exe", executable, sizeof executable - 1);
     if (length > 0) {
         executable[length] = 0;
-        allow(ruleset, executable, readAccess);
+        ruleset.allow(executable, readAccess);
     }
-    allow(ruleset, "/proc/" + std::to_string(getpid()), readAccess);
-    allow(ruleset, "/dev/null", openAccess | LANDLOCK_ACCESS_FS_TRUNCATE);
+    ruleset.allow("/proc/" + std::to_string(getpid()), readAccess);
+    ruleset.allow("/dev/null", openAccess | LANDLOCK_ACCESS_FS_TRUNCATE);
     if (const passwd* user = getpwuid(getuid())) {
         const std::string home = user->pw_dir;
         for (const char* path : {"/.local/share/fonts", "/.fonts", "/.config/fontconfig", "/.cache/fontconfig"})
-            allow(ruleset, home + path, readAccess);
+            ruleset.allow(home + path, readAccess);
         if (profile.audio)
-            allow(ruleset, home + "/.config/pulse", readAccess);
+            ruleset.allow(home + "/.config/pulse", readAccess);
     }
     if (profile.graphics) {
-        allow(ruleset, "/dev/dri", openAccess | controlAccess);
+        ruleset.allow("/dev/dri", openAccess | controlAccess);
         for (const char* path : {"/sys/devices", "/sys/dev", "/sys/bus/pci"})
-            allow(ruleset, path, readAccess);
+            ruleset.allow(path, readAccess);
         const std::string home = homeFolder();
         if (!home.empty()) {
             const std::string cache = home + "/.cache";
@@ -436,16 +434,16 @@ static void allowSystem(const Ruleset& ruleset, const Profile& profile)
             mkdir(directory.c_str(), 0700);
             directory += "/metal";
             mkdir(directory.c_str(), 0700);
-            allow(ruleset, directory, readAccess | writeAccess);
+            ruleset.allow(directory, readAccess | writeAccess);
             for (const char* name : {"/mesa_shader_cache_db", "/mesa_shader_cache"}) {
                 const std::string path = cache + name;
                 mkdir(path.c_str(), 0700);
-                allow(ruleset, path, readAccess | writeAccess);
+                ruleset.allow(path, readAccess | writeAccess);
             }
         }
     }
     if (profile.audio)
-        allow(ruleset, "/dev/snd", openAccess | controlAccess);
+        ruleset.allow("/dev/snd", openAccess | controlAccess);
 }
 
 // A rule of Landlock covers all that is inside: with holes, what is around them gets its own rules.
@@ -462,7 +460,7 @@ static void allowAround(const Ruleset& ruleset, const std::string& path, uint64_
         }
     }
     if (!split) {
-        allow(ruleset, path, access);
+        ruleset.allow(path, access);
         return;
     }
     DIR* directory = opendir(path.c_str());
@@ -515,80 +513,92 @@ bool SandboxPolicy::mayLookUp(const std::string& name) const
     return true;
 }
 
+// What the fixed start of a regular expression says: where to search what it matches.
+static std::string fixedStart(const std::string& expression)
+{
+    std::string start;
+    for (size_t i = !expression.empty() && expression[0] == '^'; i < expression.size(); i++) {
+        const char c = expression[i];
+        if (c == '\\' && i + 1 < expression.size() && !isalnum(static_cast<unsigned char>(expression[i + 1]))) {
+            start.push_back(expression[++i]);
+            continue;
+        }
+        if (strchr(".[]()*+?{}|^$\\", c))
+            break;
+        start += c;
+    }
+    return start;
+}
+
+static std::vector<std::string> matching(const std::string& text)
+{
+    const std::string start = fixedStart(text);
+    const size_t slash = start.rfind('/');
+    if (slash == std::string::npos || start[0] != '/')
+        return {};
+    const std::string base = slash ? start.substr(0, slash) : "/";
+    std::regex expression;
+    try {
+        expression = std::regex(text, std::regex::extended | std::regex::nosubs);
+    } catch (const std::regex_error&) {
+        return {};
+    }
+    std::vector<std::pair<std::string, int>> pending = {{base, 0}};
+    std::vector<std::string> found;
+    size_t seen = 0;
+    while (!pending.empty() && seen < 5000) {
+        auto [directory, depth] = pending.back();
+        pending.pop_back();
+        const std::string host = canonical(directory);
+        DIR* stream = opendir(host.c_str());
+        if (!stream)
+            continue;
+        while (const dirent* entry = readdir(stream)) {
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0 || ++seen > 5000)
+                continue;
+            const std::string path = (directory == "/" ? "" : directory) + "/" + entry->d_name;
+            if (std::regex_search(path, expression))
+                found.push_back(host + "/" + entry->d_name);
+            else if (entry->d_type == DT_DIR && depth < 8)
+                pending.push_back({path, depth + 1});
+        }
+        closedir(stream);
+    }
+    return found;
+}
+
+static std::vector<std::string> startingWith(const std::string& start)
+{
+    const size_t slash = start.rfind('/');
+    if (slash == std::string::npos)
+        return {};
+    const std::string directory = slash ? start.substr(0, slash) : "/";
+    const std::string name = start.substr(slash + 1);
+    const std::string host = canonical(directory);
+    DIR* stream = opendir(host.c_str());
+    if (!stream)
+        return {};
+    std::vector<std::string> found;
+    while (const dirent* entry = readdir(stream)) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
+        if (strncmp(entry->d_name, name.c_str(), name.size()) == 0)
+            found.push_back(host + "/" + entry->d_name);
+    }
+    closedir(stream);
+    return found;
+}
+
 // The paths of the host that a filter means.
 static std::vector<std::string> pathsOf(const Filter& filter)
 {
     if (filter.kind == "extension")
         return {};
-    if (filter.kind == "regex") {
-        // The directory that the fixed start of the expression names is searched.
-        std::string start;
-        for (size_t i = filter.path[0] == '^'; i < filter.path.size(); i++) {
-            const char c = filter.path[i];
-            if (c == '\\' && i + 1 < filter.path.size() && !isalnum(static_cast<unsigned char>(filter.path[i + 1]))) {
-                start.push_back(filter.path[++i]);
-                continue;
-            }
-            if (strchr(".[]()*+?{}|^$\\", c))
-                break;
-            start += c;
-        }
-        const size_t slash = start.rfind('/');
-        if (slash == std::string::npos || start[0] != '/')
-            return {};
-        const std::string base = slash ? start.substr(0, slash) : "/";
-        std::regex expression;
-        try {
-            expression = std::regex(filter.path, std::regex::extended | std::regex::nosubs);
-        } catch (const std::regex_error&) {
-            return {};
-        }
-        std::vector<std::pair<std::string, int>> pending = {{base, 0}};
-        std::vector<std::string> found;
-        size_t seen = 0;
-        while (!pending.empty() && seen < 5000) {
-            const auto [directory, depth] = pending.back();
-            pending.pop_back();
-            const std::string host = canonical(directory);
-            DIR* stream = opendir(host.c_str());
-            if (!stream)
-                continue;
-            while (const dirent* entry = readdir(stream)) {
-                if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0 || ++seen > 5000)
-                    continue;
-                const std::string path = (directory == "/" ? "" : directory) + "/" + entry->d_name;
-                if (std::regex_search(path, expression))
-                    found.push_back(host + "/" + entry->d_name);
-                else if (entry->d_type == DT_DIR && depth < 8)
-                    pending.push_back({path, depth + 1});
-            }
-            closedir(stream);
-        }
-        return found;
-    }
-    if (filter.kind == "prefix") {
-        const size_t slash = filter.path.rfind('/');
-        if (slash == std::string::npos)
-            return {};
-        const std::string directory = slash ? filter.path.substr(0, slash) : "/";
-        const std::string name = filter.path.substr(slash + 1);
-        const std::string host = canonical(directory);
-        DIR* stream = opendir(host.c_str());
-        if (!stream)
-            return {};
-        std::vector<std::string> found;
-        while (const dirent* entry = readdir(stream)) {
-            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-                continue;
-            if (strncmp(entry->d_name, name.c_str(), name.size()) == 0)
-                found.push_back(host + "/" + entry->d_name);
-        }
-        closedir(stream);
-        return found;
-    }
-    std::vector<std::string> found;
-    found.push_back(canonical(filter.path));
-    return found;
+    if (filter.kind == "regex")
+        return matching(filter.path);
+    if (filter.kind == "prefix")
+        return startingWith(filter.path);
+    return {canonical(filter.path)};
 }
 
 // The rules of the filters: a later refusal takes a part of what an earlier filter allows.
@@ -643,10 +653,39 @@ static void addFilters(const Ruleset& ruleset, const std::vector<Filter>& filter
     }
 }
 
-static Profile parseProfile(const std::string& text)
+static void addFilter(Profile& profile, const std::string& line)
+{
+    const size_t first = line.find(' ');
+    if (first == std::string::npos)
+        return;
+    std::string letters = line.substr(0, first);
+    const size_t second = line.find(' ', first + 1);
+    if (second == std::string::npos)
+        return;
+    const std::string kind = line.substr(first + 1, second - first - 1);
+    const std::string path = line.substr(second + 1);
+    const bool deny = letters[0] == '-';
+    if (deny)
+        letters.erase(0, 1);
+    const uint64_t access = accessOf(letters);
+    if (!access) {
+        if (letters == "I") {
+            for (const char* name : {"IOAccelerator", "IOAccelerationUserClient", "AGX", "AGPMClient"})
+                profile.graphics |= path.find(name) != std::string::npos;
+        }
+        if (letters == "M" && path.rfind("com.apple.audio.", 0) == 0)
+            profile.audio = true;
+        return;
+    }
+    profile.filters.push_back({access, deny, kind, path});
+    if (deny)
+        profile.restricted |= access;
+}
+
+static Profile parseProfile(const char* text, size_t size)
 {
     Profile profile;
-    std::istringstream stream(text);
+    std::istringstream stream(std::string(text, size));
     std::string line;
     while (std::getline(stream, line)) {
         if (line == "deny-default") {
@@ -667,31 +706,7 @@ static Profile parseProfile(const std::string& text)
             profile.confineOutbound |= what == "N out";
             profile.confineInbound |= what == "N in";
         } else {
-            const size_t first = line.find(' ');
-            if (first == std::string::npos)
-                continue;
-            std::string letters = line.substr(0, first);
-            const size_t second = line.find(' ', first + 1);
-            if (second == std::string::npos)
-                continue;
-            const std::string kind = line.substr(first + 1, second - first - 1);
-            const std::string path = line.substr(second + 1);
-            const bool deny = letters[0] == '-';
-            if (deny)
-                letters.erase(0, 1);
-            const uint64_t access = accessOf(letters);
-            if (!access) {
-                if (letters == "I") {
-                    for (const char* name : {"IOAccelerator", "IOAccelerationUserClient", "AGX", "AGPMClient"})
-                        profile.graphics |= path.find(name) != std::string::npos;
-                }
-                if (letters == "M" && path.rfind("com.apple.audio.", 0) == 0)
-                    profile.audio = true;
-                continue;
-            }
-            profile.filters.push_back({access, deny, kind, path});
-            if (deny)
-                profile.restricted |= access;
+            addFilter(profile, line);
         }
     }
     if (profile.denyDefault) {
@@ -726,10 +741,9 @@ static int confineThreads(int ruleset, Outcome& outcome)
     sigemptyset(&action.sa_mask);
     sigaction(signal, &action, &old);
     currentRuleset = ruleset;
-    std::set<int> done;
-    done.insert(int(syscall(SYS_gettid)));
+    std::set<int> done = {int(syscall(SYS_gettid))};
     int result = 0;
-    for (int round = 0; round < 50; round++) {
+    for (int round = 0; round < 50 && !result; round++) {
         answers = 0;
         std::vector<int> signalled;
         for (const int thread : threads()) {
@@ -741,38 +755,40 @@ static int confineThreads(int ruleset, Outcome& outcome)
         }
         if (signalled.empty())
             break;
-        for (unsigned wait = 0; answers < int(signalled.size()); wait++) {
-            if (wait % 50 == 49) {
-                const std::set<int> alive = threads();
-                int gone = 0;
-                for (const int thread : signalled)
-                    gone += !alive.count(thread);
-                if (answers + gone >= int(signalled.size()))
-                    break;
-                if (wait >= 3000) {
-                    std::set<int> confined;
-                    for (int i = 0; i < std::min(int(answers), maximumThreads); i++)
-                        confined.insert(answered[i]);
-                    outcome.message = "a thread did not take the sandbox";
-                    for (const int thread : signalled) {
-                        if (!confined.count(thread) && alive.count(thread))
-                            outcome.message += ": " + threadName(thread);
-                    }
-                    result = -1;
-                    break;
-                }
-            }
+        for (int wait = 0; answers < int(signalled.size()); wait++) {
             const timespec pause = {0, 1000000};
-            nanosleep(&pause, nullptr);
-        }
-        if (result)
+            if (wait % 50 != 49) {
+                nanosleep(&pause, nullptr);
+                continue;
+            }
+            // Those that ended in the meantime do not answer.
+            const std::set<int> alive = threads();
+            int gone = 0;
+            for (const int thread : signalled)
+                gone += alive.find(thread) == alive.end();
+            if (answers + gone >= int(signalled.size()))
+                break;
+            if (wait < 3000) {
+                nanosleep(&pause, nullptr);
+                continue;
+            }
+            std::set<int> confined;
+            for (int i = 0; i < std::min(int(answers), maximumThreads); i++)
+                confined.insert(answered[i]);
+            outcome.message = "a thread did not take the sandbox";
+            for (const int thread : signalled) {
+                if (!confined.count(thread) && alive.count(thread))
+                    outcome.message += ": " + threadName(thread);
+            }
+            result = -1;
             break;
+        }
     }
-    if (!result && failures) {
+    if (result) {
+    } else if (failures) {
         outcome.message = "a thread could not take the sandbox";
         result = -1;
-    }
-    if (!result && restrictSelf(ruleset) != 0) {
+    } else if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 || syscall(SYS_landlock_restrict_self, ruleset, 0) != 0) {
         outcome.message = std::string("landlock_restrict_self: ") + strerror(errno);
         result = -errno;
     }
@@ -784,16 +800,18 @@ static int confineThreads(int ruleset, Outcome& outcome)
 static int filterCalls(const Profile& profile, Outcome& outcome)
 {
     std::vector<sock_filter> program;
+    const auto refuse = [&program](uint32_t call, int error = EPERM) {
+        program.push_back(BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, call, 0, 1));
+        program.push_back(BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | uint32_t(error)));
+    };
     program.push_back(BPF_STMT(BPF_LD | BPF_W | BPF_ABS, 4));
     program.push_back(BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, AUDIT_ARCH_X86_64, 1, 0));
     program.push_back(BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL_PROCESS));
     program.push_back(BPF_STMT(BPF_LD | BPF_W | BPF_ABS, 0));
     program.push_back(BPF_JUMP(BPF_JMP | BPF_JGE | BPF_K, 0x40000000, 0, 1));
     program.push_back(BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | EPERM));
-    for (const uint32_t call : {SYS_iopl, SYS_ioperm}) {
-        program.push_back(BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, call, 0, 1));
-        program.push_back(BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | EPERM));
-    }
+    refuse(SYS_iopl);
+    refuse(SYS_ioperm);
     // A program may read its own memory.
     program.push_back(BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, SYS_process_vm_readv, 0, 4));
     program.push_back(BPF_STMT(BPF_LD | BPF_W | BPF_ABS, 16));
@@ -807,12 +825,9 @@ static int filterCalls(const Profile& profile, Outcome& outcome)
           SYS_finit_module,    SYS_delete_module,      SYS_swapon,            SYS_swapoff,         SYS_reboot,        SYS_acct,
           SYS_quotactl,        SYS_open_by_handle_at,  SYS_name_to_handle_at, SYS_io_uring_setup,  SYS_io_uring_enter, SYS_io_uring_register,
           SYS_fanotify_init,   SYS_syslog,             SYS_vhangup,           SYS_fsopen,          SYS_fsmount,       SYS_fspick,
-          SYS_move_mount,      SYS_open_tree,          SYS_mount_setattr}) {
-        program.push_back(BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, call, 0, 1));
-        program.push_back(BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | EPERM));
-    }
-    program.push_back(BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, SYS_clone3, 0, 1));
-    program.push_back(BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | ENOSYS));
+          SYS_move_mount,      SYS_open_tree,          SYS_mount_setattr})
+        refuse(call);
+    refuse(SYS_clone3, ENOSYS);
     program.push_back(BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, SYS_clone, 0, 4));
     program.push_back(BPF_STMT(BPF_LD | BPF_W | BPF_ABS, 16));
     program.push_back(BPF_JUMP(BPF_JMP | BPF_JSET | BPF_K, 0x7e020000, 0, 1));
@@ -826,8 +841,7 @@ static int filterCalls(const Profile& profile, Outcome& outcome)
             program.push_back(BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ALLOW));
             program.push_back(BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | EPERM));
         } else {
-            program.push_back(BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, SYS_socket, 0, 1));
-            program.push_back(BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | EPERM));
+            refuse(SYS_socket);
         }
     }
     program.push_back(BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ALLOW));
@@ -881,9 +895,9 @@ static int confineFiles(const Profile& profile, uint64_t handled, Outcome& outco
     return result;
 }
 
-static int confine(const std::string& text, Outcome& outcome)
+static int confine(const char* text, size_t size, Outcome& outcome)
 {
-    const Profile profile = parseProfile(text);
+    const Profile profile = parseProfile(text, size);
     uint64_t handled = ~uint64_t(0);
     if (!profile.denyDefault) {
         handled = profile.denied | profile.restricted;
@@ -907,7 +921,7 @@ static int confine(const std::string& text, Outcome& outcome)
 static int hostSandbox(const char* profile, size_t size, char* message, size_t messageSize, char* policy, size_t policySize)
 {
     Outcome outcome;
-    const int result = confine(std::string(profile, size), outcome);
+    const int result = confine(profile, size, outcome);
     if (message && messageSize)
         snprintf(message, messageSize, "%s", outcome.message.c_str());
     if (policy) {
