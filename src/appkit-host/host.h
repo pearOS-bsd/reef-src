@@ -45,7 +45,8 @@ struct reef_ui_callbacks
     void (*menuOpens)(void* menu);
     // 0 entered, 1 moved, 2 left, 3 dropped.
     unsigned (*drag)(void* window, int event, double x, double y, void* offer, unsigned actions, unsigned modifiers);
-    void (*statusItem)(double x, double y, void* item, int button);
+    // action: 0 activated, 1 with the second button, 2 its context menu.
+    void (*statusItem)(void* item, int action, double x, double y);
     void (*terminate)();
     void (*screensChanged)();
     void (*drawRects)(void* window, reef_ui_gc* gc, const double* rects, unsigned count);
