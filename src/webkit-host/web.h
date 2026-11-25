@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <gbm.h>
@@ -20,7 +21,10 @@
 #include <WebKit/WKContextSandbox.h>
 #include <WebKit/WKCredential.h>
 #include <WebKit/WKCredentialTypes.h>
+#include <WebKit/WKAuthenticationChallenge.h>
 #include <WebKit/WKAuthenticationDecisionListener.h>
+#include <WebKit/WKProtectionSpace.h>
+#include <WebKit/WKProtectionSpaceTypes.h>
 #include <WebKit/WKDownloadRef.h>
 #include <WebKit/WKFrameInfoRef.h>
 #include <WebKit/WKHTTPCookieStoreRef.h>
@@ -39,6 +43,8 @@
 #include <WebKit/WKUserContentExtensionStoreRef.h>
 #include <WebKit/WKUserScriptRef.h>
 #include <WebKit/WKView.h>
+#include <WebKit/WKViewClient.h>
+#include <WebKit/WKWebsiteDataRecords.h>
 #include <WebKit/WKWebsiteDataStoreRef.h>
 
 namespace cutefish::reef::web {
@@ -81,42 +87,86 @@ struct ViewClient
 
 struct Buffer
 {
-    ~Buffer();
-
-    uint64_t identifier;
-    bool shared;
-    uint32_t width;
-    uint32_t height;
-    uint32_t format;
-    uint64_t modifier;
-    uint32_t planes;
-    int fds[4];
-    uint32_t offsets[4];
-    uint32_t strides[4];
-    // Not identified yet.
-    uint64_t reserved[2];
+    WKViewBuffer buffer;
     gbm_bo* bo;
+};
+
+// Properties of a page.
+enum { Title = 1, Url, Loading, Progress, CanGoBack, CanGoForward, SecureContent };
+
+struct View;
+
+// What the scheme callbacks have; it stays when the view is gone.
+struct SchemeHandler
+{
+    View* view;
 };
 
 struct View
 {
-    WKViewRef view;
-    void* configuration;
-    WKPageRef page;
-    void* context;
-    const ViewClient* client;
+    WKViewRef view = nullptr;
+    SchemeHandler* schemes = nullptr;
+    WKPageRef page = nullptr;
+    void* context = nullptr;
+    const ViewClient* client = nullptr;
     std::unordered_map<uint64_t, Buffer> buffers;
-    uint64_t current;
-    bool hasCurrent;
-    uint64_t frame;
-    std::vector<uint32_t> pixels;
-    uint64_t pixelsFrame;
-    int width;
-    int height;
-    bool framePending;
+    uint64_t current = 0;
+    bool hasCurrent = false;
+    uint64_t frame = 0;
+    std::vector<unsigned char> pixels;
+    uint64_t pixelsFrame = 0;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    bool framePending = false;
+    int fence = -1;
     std::string title;
     std::string url;
+    std::vector<std::string> itemTexts;
+    std::vector<void*> items;
 };
+
+struct Error
+{
+    int code;
+    const char* domain;
+    const char* description;
+    const char* url;
+};
+
+// The texts that an Error points to.
+struct ErrorText
+{
+    std::string description;
+    std::string domain;
+    std::string url;
+};
+
+struct Challenge
+{
+    const char* host;
+    int port;
+    const char* protocol;
+    const char* realm;
+    int scheme;
+    int isProxy;
+    int failures;
+    const char* user;
+    WKAuthenticationDecisionListenerRef listener;
+};
+
+struct ChallengeText
+{
+    std::string host;
+    std::string protocol;
+    std::string realm;
+    std::string user;
+};
+
+Error makeError(WKErrorRef error, ErrorText& text);
+Challenge makeChallenge(WKAuthenticationChallengeRef challenge, ChallengeText& text);
+void releaseBuffer(Buffer& buffer);
+void appendJson(std::string& text, WKTypeRef value);
+WKTypeRef parseJson(const char*& text);
 
 struct UserContent
 {
@@ -141,6 +191,9 @@ struct DataStore
 
 extern WKContextRef g_context;
 extern gbm_device* g_device;
+extern const Pasteboard* g_pasteboard;
+// The tasks of URL schemes that are still to be answered.
+extern std::unordered_set<const void*> g_tasks;
 
 // Whether WebKit is there; starts it the first time.
 bool available();

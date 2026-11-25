@@ -7,19 +7,19 @@
 #include "web.h"
 
 #include <WebKit/WKPageNavigationClient.h>
+#include <WebKit/WKNavigationActionRef.h>
+#include <WebKit/WKNavigationResponseRef.h>
 #include <WebKit/WKPageStateClient.h>
+#include <WebKit/WKURLRequest.h>
 
 namespace cutefish::reef::web {
 
 // Kinds of navigation events.
 enum { Started = 1, Redirected, Committed, Finished, FailedProvisional, Failed, DocumentLoaded };
 // Properties of a page.
-enum { Title = 1, Url, Loading, Progress, CanGoBack, CanGoForward, SecureContent };
 
 void navigationEvent(View* view, int kind, WKErrorRef error);
 void changed(View* view, int property);
-struct Download;
-Download* createDownload(WKDownloadRef download);
 
 void didStartNavigation(WKPageRef, WKNavigationRef, WKTypeRef, const void* info)
 {
@@ -84,26 +84,105 @@ void closePage(WKPageRef, const void* info)
         function(view->context);
 }
 
-void actionBecameDownload(WKPageRef, WKNavigationActionRef, WKDownloadRef download, const void* info)
+struct Action
 {
-    View* view = viewOf(info);
-    const auto function = view->client->at<void (*)(void*, int, Download*)>(0xa0);
-    if (!function) {
-        WKDownloadCancel(download, nullptr, nullptr);
-        return;
+    const char* url;
+    const char* method;
+    int type;
+    int hasTarget;
+    int targetIsMain;
+    int sourceIsMain;
+    uint32_t modifiers;
+    int button;
+    int gesture;
+    WKFramePolicyListenerRef listener;
+    int download;
+};
+
+struct ActionText
+{
+    std::string url;
+    std::string method;
+};
+
+static int toButton(WKEventMouseButton button)
+{
+    switch (button) {
+    case kWKEventMouseButtonLeftButton:
+        return 1;
+    case kWKEventMouseButtonMiddleButton:
+        return 2;
+    case kWKEventMouseButtonRightButton:
+        return 3;
+    default:
+        return 0;
     }
-    function(view->context, 1, createDownload(download));
 }
 
-void responseBecameDownload(WKPageRef, WKNavigationResponseRef, WKDownloadRef download, const void* info)
+static Action makeAction(WKNavigationActionRef action, ActionText& text)
+{
+    Action result = {};
+    if (WKURLRequestRef request = WKNavigationActionCopyRequest(action)) {
+        text.url = takeUrl(WKURLRequestCopyURL(request));
+        text.method = takeString(WKURLRequestCopyHTTPMethod(request));
+        WKRelease(request);
+    }
+    result.url = text.url.c_str();
+    result.method = text.method.c_str();
+    result.type = WKNavigationActionGetNavigationType(action);
+    if (WKFrameInfoRef frame = WKNavigationActionCopyTargetFrameInfo(action)) {
+        result.hasTarget = 1;
+        result.targetIsMain = WKFrameInfoGetIsMainFrame(frame);
+        WKRelease(frame);
+    }
+    result.sourceIsMain = 1;
+    result.modifiers = WKNavigationActionGetModifiers(action) & 0x1f;
+    result.button = toButton(WKNavigationActionGetMouseButton(action));
+    result.gesture = WKNavigationActionHasUnconsumedUserGesture(action);
+    result.download = WKNavigationActionShouldPerformDownload(action);
+    return result;
+}
+
+void decidePolicyForAction(WKPageRef, WKNavigationActionRef action, WKFramePolicyListenerRef listener, WKTypeRef, const void* info)
 {
     View* view = viewOf(info);
-    const auto function = view->client->at<void (*)(void*, int, Download*)>(0xa0);
-    if (!function) {
-        WKDownloadCancel(download, nullptr, nullptr);
+    using Function = void (*)(void*, const Action*);
+    if (!view->client->at<Function>(0x28)) {
+        WKFramePolicyListenerUse(listener);
         return;
     }
-    function(view->context, 2, createDownload(download));
+    ActionText text;
+    Action value = makeAction(action, text);
+    WKRetain(listener);
+    value.listener = listener;
+    view->client->at<Function>(0x28)(view->context, &value);
+}
+
+WKPageRef createNewPage(WKPageRef, WKPageConfigurationRef, WKNavigationActionRef action, WKWindowFeaturesRef, const void* info)
+{
+    View* view = viewOf(info);
+    using Function = void (*)(void*, const Action*);
+    if (view->client->at<Function>(0x38)) {
+        ActionText text;
+        const Action value = makeAction(action, text);
+        view->client->at<Function>(0x38)(view->context, &value);
+    }
+    return nullptr;
+}
+
+void contentRuleNotification(WKPageRef, WKURLRef url, WKArrayRef names, WKArrayRef texts, const void* info)
+{
+    View* view = viewOf(info);
+    using Function = void (*)(void*, const char*, const char*, const char*);
+    if (!view->client->at<Function>(0xe8))
+        return;
+    const std::string urlText = takeString(url ? WKURLCopyString(url) : nullptr);
+    const size_t count = WKArrayGetSize(texts);
+    for (size_t i = 0; i < count && i < WKArrayGetSize(names); i++) {
+        const std::string name = toString(static_cast<WKStringRef>(WKArrayGetItemAtIndex(names, i)));
+        const std::string text = toString(static_cast<WKStringRef>(WKArrayGetItemAtIndex(texts, i)));
+        view->client->at<Function>(0xe8)(view->context, urlText.c_str(), name.c_str(), text.c_str());
+    }
 }
 
 } // namespace cutefish::reef::web

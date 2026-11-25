@@ -151,8 +151,6 @@ int canGoBack(View* view) { return WKPageCanGoBack(view->page); }
 // 38
 int canGoForward(View* view) { return WKPageCanGoForward(view->page); }
 
-void appendJson(std::string& text, WKTypeRef value);
-
 static void scriptDone(WKTypeRef result, WKErrorRef error, void* context)
 {
     Callback<ScriptFunction>* callback = static_cast<Callback<ScriptFunction>*>(context);
@@ -187,6 +185,31 @@ void evaluateInWorld(View* view, const char* script, const char* world, ScriptFu
     if (name)
         WKRelease(name);
     WKRelease(text);
+}
+
+// 88
+void callAsync(View* view, const char* body, const char* arguments, const char* world, ScriptFunction function, void* context)
+{
+    WKTypeRef values = nullptr;
+    if (arguments) {
+        const char* at = arguments;
+        values = parseJson(at);
+        if (values && WKGetTypeID(values) != WKDictionaryGetTypeID()) {
+            WKRelease(values);
+            values = nullptr;
+        }
+    }
+    if (!values)
+        values = WKMutableDictionaryCreate();
+    WKStringRef text = makeString(body);
+    WKStringRef name = world ? makeString(world) : nullptr;
+    WKPageCallAsyncJavaScriptInWorld(view->page, text, static_cast<WKDictionaryRef>(values), nullptr, name,
+        new Callback<ScriptFunction>{function, context}, scriptDone);
+    if (name)
+        WKRelease(name);
+    WKRelease(text);
+    if (values)
+        WKRelease(values);
 }
 
 // 40

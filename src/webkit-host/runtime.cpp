@@ -14,6 +14,7 @@ namespace cutefish::reef::web {
 
 WKContextRef g_context;
 gbm_device* g_device;
+std::unordered_set<const void*> g_tasks;
 
 bool g_sandbox = true;
 std::string g_sandboxPath;
@@ -22,11 +23,6 @@ static bool s_continuousSpellChecking;
 static const SpellChecker* s_spellChecker;
 static bool s_available;
 static bool s_started;
-static const Pasteboard*& pasteboardClient()
-{
-    static const Pasteboard* client;
-    return client;
-}
 
 static void checkSpelling(const uint16_t* text, size_t length, size_t* location, size_t* misspelled, void*)
 {
@@ -89,17 +85,19 @@ static bool start()
 
 bool available()
 {
-    return s_started ? s_available : start();
+    if (s_started)
+        return s_available;
+    return start();
 }
 
 static int64_t pasteboardChangeCount(const void* clientInfo)
 {
-    return pasteboardClient()->changeCount();
+    return g_pasteboard->changeCount();
 }
 
 static void pasteboardTypes(WKPasteboardAddTypeFunction add, void* context, const void*)
 {
-    pasteboardClient()->types(add, context);
+    g_pasteboard->types(add, context);
 }
 
 struct SetData
@@ -117,13 +115,13 @@ static void setData(const void* bytes, int64_t length, void* context)
 static void pasteboardData(const char* type, WKPasteboardSetDataFunction set, void* context, const void*)
 {
     SetData data = {set, context};
-    pasteboardClient()->data(type, setData, &data);
+    g_pasteboard->data(type, setData, &data);
 }
 
 static void pasteboardWrite(size_t count, const char* const* types, const void* const* bytes, const size_t* lengths, const void*)
 {
     const std::vector<int64_t> sizes(lengths, lengths + count);
-    pasteboardClient()->write(int(count), types, bytes, sizes.data());
+    g_pasteboard->write(int(count), types, bytes, sizes.data());
 }
 
 // Table 96
@@ -180,7 +178,7 @@ void setPasteboard(const Pasteboard* pasteboard)
 {
     if (!available())
         return;
-    pasteboardClient() = pasteboard;
+    g_pasteboard = pasteboard;
     if (!pasteboard) {
         WKPasteboardSetClient(nullptr);
         return;

@@ -4,7 +4,9 @@
 usage: compare.py ORIGINAL OURS [--map FILE] [-v]
 Functions are the FDE ranges of .eh_frame.  An address operand is replaced by what it refers to: a PLT import by name,
 a dynamic symbol by name, read-only data by its bytes, a function by the pair it is matched with, other data by
-section (a weaker check, counted as `data`).  Every original function is paired with at most one of ours.
+section (a weaker check, counted as `data`).  Padding inside a function (NOP) is dropped and local targets are counted
+in instructions: the compiler aligns tight loops to 32 bytes while functions start at 16, so that padding follows from
+where the linker put the function.  --strict keeps it.  Every original function is paired with at most one of ours.
 FILE maps 'original_address our_symbol' (ours must not be stripped) for functions that cannot be paired by content.
 """
 import sys, collections, argparse
@@ -14,6 +16,7 @@ import capstone
 from capstone import x86
 
 class Image:
+    strict = False
     # Calls to our own functions that are not written yet (left unresolved by the link).
     pending = 'plt:_ZN8cutefish4reef'
     def __init__(self, path):
@@ -92,10 +95,12 @@ class Image:
         return tuple(out)
     def normal(self, a):
         n = self.funcs[a]; out = []; calls = []
-        code = self.data(a, n); done = 0
+        code = self.data(a, n); done = 0; at = {}
         for i in self.md.disasm(code, a):
             done = i.address + i.size - a
             ref = None
+            at[i.address - a] = len(out)
+            if i.id == x86.X86_INS_NOP and not self.strict: continue
             if i.group(capstone.CS_GRP_JUMP) or i.group(capstone.CS_GRP_CALL):
                 o = i.operands[0]
                 if o.type == x86.X86_OP_IMM:
@@ -115,14 +120,22 @@ class Image:
                 out.append((i.mnemonic, enc[:d] + b'....' + enc[d + 4:], r))
             else: out.append(bytes(i.bytes))
         if done != n: out.append(('undecoded', code[done:]))
+        if not self.strict:
+            def place(x):
+                if type(x) is not tuple: return x
+                if x[:1] == ('local',): return ('local', at.get(x[1], ('byte', x[1])))
+                if x[:1] == ('table',): return ('table', tuple(at.get(t, ('byte', t)) for t in x[1]))
+                return tuple(place(y) for y in x)
+            out = [place(x) for x in out]
         return out, calls
 
 def describe(x): return x.hex() if isinstance(x, bytes) else ' '.join(y.hex() if isinstance(y, bytes) else str(y) for y in x)
 
 def main():
     p = argparse.ArgumentParser(); p.add_argument('orig'); p.add_argument('ours')
-    p.add_argument('--map'); p.add_argument('-v', action='store_true'); p.add_argument('--min', type=float, default=0)
+    p.add_argument('--map'); p.add_argument('-v', action='store_true'); p.add_argument('--strict', action='store_true'); p.add_argument('--min', type=float, default=0)
     a = p.parse_args()
+    Image.strict = a.strict
     A, B = Image(a.orig), Image(a.ours)
     na = {f: A.normal(f) for f in A.funcs}; nb = {f: B.normal(f) for f in B.funcs}
     index = collections.defaultdict(list)
