@@ -1098,7 +1098,7 @@ void setSocketNoSignal(int fd, bool on)
         noSignalSockets.insert(fd);
     else
         noSignalSockets.erase(fd);
-    anyNoSignal = !noSignalSockets.empty();
+    anyNoSignal.store(!noSignalSockets.empty(), std::memory_order_relaxed);
 }
 
 static int hostSetsockopt(int fd, int level, int name, const void* value, uint32_t length)

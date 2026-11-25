@@ -43,10 +43,10 @@ static bool keyUsed[KeyCount];
 static std::mutex keyMutex;
 
 static thread_local int isMain = -1;
-static thread_local void* threadValue;
-static thread_local void* slots[KeyCount];
 static thread_local uintptr_t stackEnd;
 static thread_local uintptr_t stackStart;
+static thread_local void* slots[KeyCount];
+static thread_local void* threadValue;
 
 int darwinError(int error)
 {
@@ -155,10 +155,10 @@ int darwinError(int error)
         return 69;
     case ECANCELED:
         return 89;
-    case EOWNERDEAD:
-        return 105;
     case ENOTRECOVERABLE:
         return 104;
+    case EOWNERDEAD:
+        return 105;
     }
     if (error > 0 && error <= 34)
         return error;
