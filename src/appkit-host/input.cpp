@@ -70,7 +70,7 @@ void hostScrollerDestroy(reef_ui_scroller* scroller)
 
 // 197
 int hostScrollerScroll(reef_ui_scroller* scroller, double deltaX, double deltaY, int value120X, int value120Y, int precise, int stop,
-                       unsigned time, unsigned modifiers)
+                       unsigned modifiers, unsigned time)
 {
     ui::ScrollEvent event;
     event.deltaX = deltaX;
@@ -79,8 +79,8 @@ int hostScrollerScroll(reef_ui_scroller* scroller, double deltaX, double deltaY,
     event.value120Y = value120Y;
     event.precise = precise;
     event.stop = stop;
-    event.time = time;
     event.modifiers = modifiers;
+    event.time = time;
     return scroller->scroller->handleScroll(event);
 }
 

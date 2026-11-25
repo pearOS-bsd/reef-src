@@ -317,10 +317,9 @@ static const Symbol* symbolAt(const std::string& path)
     return kept.get();
 }
 
-static ui::Bitmap drawSymbol(const Symbol& symbol, int width, int height, const double* rect, double weight, bool filled, int margin)
+// How many pixels a unit of the file gets: lines of the weight reach the sides of the rectangle.
+static double symbolScale(const double* bounds, const double* rect, double weight)
 {
-    // The bounds are those of the middle of the lines.
-    const double* bounds = symbol.bounds;
     const double drawnWidth = std::max(rect[2] - weight, 0.1);
     const double drawnHeight = std::max(rect[3] - weight, 0.1);
     double scale = 0;
@@ -332,12 +331,19 @@ static ui::Bitmap drawSymbol(const Symbol& symbol, int width, int height, const 
     }
     if (scale <= 0)
         scale = drawnWidth / std::max(bounds[2], 1.0);
+    return scale;
+}
+
+static ui::Bitmap drawSymbol(const Symbol& symbol, int width, int height, const double* rect, double weight, bool filled, int margin)
+{
+    const double* bounds = symbol.bounds;
+    const double scale = symbolScale(bounds, rect, weight);
     const int fullWidth = width + 2 * margin;
     const int fullHeight = height + 2 * margin;
     const double box[4] = {bounds[0] + bounds[2] / 2 - (rect[0] + rect[2] / 2 + margin) / scale,
                            bounds[1] + bounds[3] / 2 - (rect[1] + rect[3] / 2 + margin) / scale, fullWidth / scale, fullHeight / scale};
-    return ui::Bitmap::decode(
-        symbolPart(symbol.svg, box, fullWidth, fullHeight, weight / scale / symbol.strokeWidth, filled), {fullWidth, fullHeight});
+    const double strokes = weight / scale / symbol.strokeWidth;
+    return ui::Bitmap::decode(symbolPart(symbol.svg, box, fullWidth, fullHeight, strokes, filled), {fullWidth, fullHeight});
 }
 
 // 211

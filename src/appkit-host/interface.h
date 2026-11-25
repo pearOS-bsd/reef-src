@@ -268,7 +268,7 @@ void hostWindowSetCastsShadow(reef_ui_window* window, int castsShadow);
 reef_ui_scroller* hostScrollerCreate(reef_ui_window* window, const reef_ui_scroller_callbacks* callbacks);
 void hostScrollerDestroy(reef_ui_scroller* scroller);
 int hostScrollerScroll(
-                       reef_ui_scroller* scroller, double deltaX, double deltaY, int value120X, int value120Y, int precise, int stop, unsigned time, unsigned modifiers);
+                       reef_ui_scroller* scroller, double deltaX, double deltaY, int value120X, int value120Y, int precise, int stop, unsigned modifiers, unsigned time);
 void hostScrollerSetElastic(reef_ui_scroller* scroller, int elastic);
 void hostScrollerViewMoved(reef_ui_scroller* scroller);
 int hostScrollerIsActive(reef_ui_scroller* scroller);
