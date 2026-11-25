@@ -72,8 +72,8 @@ static int hostPpoll(pollfd* fds, unsigned count, const timespec* timeout, const
     const int ready = ppoll(fds, count, timeout, mask ? &set : nullptr);
     const int error = errno;
     for (unsigned i = 0; i < count; i++) {
-        // A connection that failed: Darwin reports it readable, so that the program reads the error.
-        if ((fds[i].revents & POLLERR) && (fds[i].events & POLLIN) && socketConnecting(fds[i].fd))
+        // An error for an ICMP socket is a message to read.
+        if ((fds[i].revents & POLLERR) && (fds[i].events & POLLIN) && pingSocket(fds[i].fd))
             fds[i].revents = (fds[i].revents & ~POLLERR) | POLLIN;
         fds[i].events = darwinPollEvents(fds[i].events);
         fds[i].revents = darwinPollEvents(fds[i].revents);

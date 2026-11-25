@@ -98,6 +98,8 @@ struct DarwinTimeval
 };
 
 struct DarwinStack;
+struct DarwinMessage;
+struct DarwinAddressInfo;
 
 struct HostServices
 {
@@ -238,7 +240,23 @@ struct HostServices
     int (*signalfd)(int fd, uint32_t mask, int flags);
     long (*readPlain)(int fd, void* buffer, size_t size);
     long (*futex)(uint32_t* address, int operation, uint32_t value, const struct timespec* timeout, uint32_t* second);
-    void* unknown440[17];
+    int (*socket)(int family, int type, int protocol);
+    int (*socketpair)(int family, int type, int protocol, int* fds);
+    int (*bind)(int fd, const void* address, uint32_t length);
+    int (*connect)(int fd, const void* address, uint32_t length);
+    int (*listen)(int fd, int backlog);
+    int (*accept)(int fd, void* address, uint32_t* length);
+    long (*sendto)(int fd, const void* data, size_t size, int flags, const void* address, uint32_t length);
+    long (*recvfrom)(int fd, void* data, size_t capacity, int flags, void* address, uint32_t* length);
+    long (*sendmsg)(int fd, const DarwinMessage* message, int flags);
+    long (*recvmsg)(int fd, DarwinMessage* message, int flags);
+    int (*shutdown)(int fd, int how);
+    int (*getsockopt)(int fd, int level, int name, void* value, uint32_t* length);
+    int (*setsockopt)(int fd, int level, int name, const void* value, uint32_t length);
+    int (*getsockname)(int fd, void* address, uint32_t* length);
+    int (*getpeername)(int fd, void* address, uint32_t* length);
+    const char* (*inetNtop)(int family, const void* address, char* text, uint32_t size);
+    int (*inetPton)(int family, const char* text, void* address);
     int (*select)(int count, void* read, void* write, void* error, DarwinTimeval* timeout);
     int (*pselect)(int count, void* read, void* write, void* error, const struct timespec* timeout, const uint32_t* mask);
     int (*getpassword)(uint32_t uid, const char* name, uint32_t* ids, char** strings, char* buffer, size_t size);
@@ -249,7 +267,8 @@ struct HostServices
     int (*setxattr)(const char* path, int fd, const char* name, const void* value, size_t size, uint32_t options);
     int (*removexattr)(const char* path, int fd, const char* name, uint32_t options);
     long (*listxattr)(const char* path, int fd, char* names, size_t size, uint32_t options);
-    void* unknown540[2];
+    int (*getaddrinfo)(const char* node, const char* service, const DarwinAddressInfo* hints, DarwinAddressInfo** result);
+    int (*getnameinfo)(const void* address, uint32_t length, char* node, uint32_t nodeSize, char* service, uint32_t serviceSize, int flags);
     int (*renamex)(int directory, const char* from, int toDirectory, const char* to, uint32_t flags);
     int (*inotifyInit)(int flags);
     int (*inotifyAddWatch)(int fd, const char* path, uint32_t mask);
@@ -311,8 +330,8 @@ int sandboxError(int error, int directory, const char* path, int access);
 // sockets.cpp
 void forgetSocket(int fd);
 bool socketNoSignal(int fd);
-// A socket that is connecting without blocking: poll reports it readable when the connection fails.
-bool socketConnecting(int fd);
+// An ICMP socket: poll reports it readable when there is an error for it, which it reads as a message.
+bool pingSocket(int fd);
 void setSocketNoSignal(int fd, bool on);
 long withoutSignal(const std::function<long()>& call);
 
