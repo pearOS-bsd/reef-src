@@ -8,5 +8,5 @@ RUN apt-get -o Acquire::Retries=5 update && apt-get -o Acquire::Retries=5 instal
     gdb strace ca-certificates gettext dpkg-dev \
     libwayland-dev wayland-protocols libegl-dev libgles-dev libxkbcommon-dev libsystemd-dev \
     libfontconfig-dev libfreetype-dev libharfbuzz-dev libicu-dev libpng-dev libjpeg-dev zlib1g-dev \
-    libexpat1-dev libwebp-dev libtiff-dev libheif-dev libjxl-dev libssl-dev liblzma-dev libxml2-dev \
+    libexpat1-dev libwebp-dev libtiff-dev libheif-dev libjxl-dev libssl-dev liblzma-dev libxml2-dev libgbm-dev libglib2.0-dev \
     && rm -rf /var/lib/apt/lists/*

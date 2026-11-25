@@ -14,6 +14,8 @@ import capstone
 from capstone import x86
 
 class Image:
+    # Calls to our own functions that are not written yet (left unresolved by the link).
+    pending = 'plt:_ZN8cutefish4reef'
     def __init__(self, path):
         self.f = open(path, 'rb'); self.e = e = ELFFile(self.f)
         self.sections = [(s['sh_addr'], s['sh_size'], s.name, s.data() if s['sh_type'] != 'SHT_NOBITS' else None)
@@ -64,7 +66,9 @@ class Image:
         return s[3][a - s[0]:a - s[0] + n] if s and s[3] else b''
     def refer(self, a, fstart, fsize, size):
         if fstart <= a < fstart + fsize: return ('local', a - fstart), None
-        if a in self.names: return ('sym', self.names[a]), None
+        if a in self.names:
+            if self.names[a].startswith(self.pending): return ('func',), self.names[a]
+            return ('sym', self.names[a]), None
         if a in self.got: return ('got', self.got[a]), None
         s = self.section(a)
         if not s: return ('abs', a), None
@@ -133,7 +137,7 @@ def main():
         changed = False
         for f in list(pairs):
             keep = [g for g in pairs[f] if len(nb[g][1]) == len(na[f][1]) and
-                    all((x not in na and y not in nb) or y in pairs.get(x, ()) for x, y in zip(na[f][1], nb[g][1]))]
+                    all((x not in na and y not in nb) or y in pairs.get(x, ()) or isinstance(y, str) for x, y in zip(na[f][1], nb[g][1]))]
             if keep != pairs[f]:
                 changed = True
                 if keep: pairs[f] = keep
@@ -143,7 +147,9 @@ def main():
         for g in pairs[f]:
             if g not in used: used.add(g); match[f] = g; break
     total = sum(A.funcs.values()); ok = sum(A.funcs[f] for f in match)
-    print(f'{len(match)}/{len(A.funcs)} functions, {ok}/{total} bytes = {100 * ok / max(total, 1):.2f}%')
+    wait = sum(any(isinstance(y, str) for y in nb[g][1]) for g in match.values())
+    print(f'{len(match)}/{len(A.funcs)} functions, {ok}/{total} bytes = {100 * ok / max(total, 1):.2f}%'
+          + (f', {wait} of them call functions not written yet' if wait else ''))
     if a.v:
         left = [g for g in nb if g not in used]
         for f in sorted(set(na) - set(match)):
