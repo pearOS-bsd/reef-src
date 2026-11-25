@@ -160,7 +160,9 @@ int darwinError(int error)
     case ENOTRECOVERABLE:
         return 104;
     }
-    return error > 0 && error < 35 ? error : 5;
+    if (error > 0 && error <= 34)
+        return error;
+    return 5;
 }
 
 int linuxError(int error)
