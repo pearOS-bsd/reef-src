@@ -50,7 +50,7 @@ int64_t readSleb(const uint8_t*& at, const uint8_t* end)
 }
 
 static std::mutex reserveMutex;
-static uintptr_t nextReservation = 0x200000000;
+static uintptr_t nextReservation = 0x100000000;
 
 void* reserveMemory(size_t size)
 {

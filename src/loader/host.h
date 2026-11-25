@@ -267,7 +267,7 @@ struct HostServices
     int (*gethostname)(char* name, size_t size);
     void (*log)(const char* identity, int priority, const char* message);
     int (*spawn)(int* process, const char* path, char* const* argv, char* const* environment, const FileAction* actions, uint32_t actionCount,
-                 const SpawnAttributes* attributes, const char* exceptionPorts);
+                 const SpawnAttributes* attributes);
     int (*exec)(const char* path, char* const* argv, char* const* environment);
     int (*fork)();
     int (*wait4)(int process, int* status, int options, struct rusage* usage);

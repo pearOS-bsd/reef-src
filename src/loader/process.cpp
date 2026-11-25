@@ -60,7 +60,9 @@ struct SpawnAttributes
     int group;
     uint32_t mask;
     uint32_t defaults;
-    uint64_t unknown10[2];
+    uint64_t unknown10;
+    // The ports of the exceptions of the program, for the loader.
+    const char* exceptionPorts;
 };
 
 struct WaitResult
@@ -425,9 +427,9 @@ static int hostExec(const char* path, char* const* argv, char* const* environmen
 }
 
 static int hostSpawn(int* process, const char* path, char* const* argv, char* const* environment, const FileAction* actions, uint32_t actionCount,
-                     const SpawnAttributes* attributes, const char* exceptionPorts)
+                     const SpawnAttributes* attributes)
 {
-    const Program program = prepare(path, argv, environment, exceptionPorts);
+    const Program program = prepare(path, argv, environment, attributes ? attributes->exceptionPorts : nullptr);
     std::vector<std::string> paths(actionCount);
     std::vector<int> kept;
     for (uint32_t i = 0; i < actionCount; i++) {

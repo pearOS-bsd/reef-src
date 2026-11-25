@@ -1189,8 +1189,7 @@ void* Linker::symbol(void* handle, const char* name)
 // Starts a program whose entry is LC_UNIXTHREAD: the stack has argc, then the pointers.
 [[noreturn]] static void startThread(uintptr_t entry, int argumentCount, const uint64_t* pointers, size_t count)
 {
-    uint64_t* stack = static_cast<uint64_t*>(__builtin_alloca((count + 1) * 8 + 16));
-    stack = reinterpret_cast<uint64_t*>((reinterpret_cast<uintptr_t>(stack) + 15) & ~uintptr_t(15));
+    uint64_t* stack = static_cast<uint64_t*>(__builtin_alloca_with_align((count + 2) * sizeof(uint64_t), 128));
     stack[0] = uint64_t(argumentCount);
     memcpy(stack + 1, pointers, count * 8);
     asm volatile("mov %0, %%rsp\n\txor %%ebp, %%ebp\n\tjmp *%1" : : "r"(stack), "r"(entry) : "memory");
@@ -1231,10 +1230,11 @@ int Linker::run(const std::string& path, const std::vector<std::string>& argumen
         return 127;
     }
     static std::vector<std::string> strings;
-    strings.push_back(m_argv0);
+    const std::string& argv0 = m_argv0.empty() ? m_main->path : m_argv0;
+    strings.push_back(argv0);
     strings.insert(strings.end(), arguments.begin(), arguments.end());
     m_argumentCount = int(strings.size());
-    m_name = m_argv0.c_str() + (m_argv0.rfind('/') + 1);
+    m_name = argv0.c_str() + (argv0.rfind('/') + 1);
     m_programName = "executable_path=" + m_main->path;
     HostServices* services = hostServices(m_argumentCount, const_cast<char*>(m_main->path.c_str()), m_name);
     static std::vector<uint64_t> launchItems;
@@ -1249,8 +1249,10 @@ int Linker::run(const std::string& path, const std::vector<std::string>& argumen
         pointers.push_back(reinterpret_cast<uint64_t>(argument.c_str()));
     pointers.push_back(0);
     const size_t environmentStart = pointers.size();
-    for (char** variable = environment; *variable; variable++)
-        pointers.push_back(reinterpret_cast<uint64_t>(*variable));
+    if (environment) {
+        for (; *environment; environment++)
+            pointers.push_back(reinterpret_cast<uint64_t>(*environment));
+    }
     pointers.push_back(0);
     const size_t appleStart = pointers.size();
     pointers.push_back(reinterpret_cast<uint64_t>(m_programName.c_str()));
@@ -1291,31 +1293,24 @@ int Linker::run(const std::string& path, const std::vector<std::string>& argumen
         }
     }
     const bool good = link(0);
-    if (m_bindCache == BindCache::Record) {
-        if (good) {
-            writeBinds(cache, key, m_cachedAddresses, m_cachedHashes);
-            m_statePath = cache;
-            m_stateKey = key;
-        } else {
-            unlink(cache.c_str());
-        }
-    } else {
-        if (m_cacheInvalid || (m_bindCache == BindCache::Replay && m_cacheIndex != m_cachedAddresses.size()))
-            unlink(cache.c_str());
-        if (good) {
-            m_statePath = cache;
-            m_stateKey = key;
-        }
-    }
+    if (m_bindCache == BindCache::Record && good)
+        writeBinds(cache, key, m_cachedAddresses, m_cachedHashes);
+    else if (m_cacheInvalid || (m_bindCache == BindCache::Replay && m_cacheIndex != m_cachedAddresses.size()))
+        unlink(cache.c_str());
     m_bindCache = BindCache::Off;
+    if (good) {
+        m_statePath = cache;
+        m_stateKey = key;
+    }
     m_cachedAddresses.clear();
     m_cachedHashes.clear();
+    m_ranges.clear();
     if (!good)
         return 127;
     if (!m_canonicalFile.empty())
         saveCanonicalPaths(m_canonicalFile);
     m_canonicalFile.clear();
-    m_canonical.clear();
+    m_canonical = {};
     m_canonicalUsed.clear();
     initialize(m_system);
     initialize(m_main);
