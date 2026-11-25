@@ -53,7 +53,7 @@ static void appendIdentity(std::string& key, const struct stat& status)
     key.append(reinterpret_cast<const char*>(&identity), sizeof identity);
 }
 
-std::string cacheKey(const std::vector<Image*>& images, const std::string& options, int version)
+std::string cacheKey(const std::vector<std::unique_ptr<Image>>& images, const std::string& options, int version)
 {
     std::string key;
     struct stat status;
@@ -64,7 +64,7 @@ std::string cacheKey(const std::vector<Image*>& images, const std::string& optio
     key += '\0';
     key += std::to_string(version);
     key += '\0';
-    for (const Image* image : images) {
+    for (const std::unique_ptr<Image>& image : images) {
         key += image->path;
         key += '\0';
         appendIdentity(key, image->status);

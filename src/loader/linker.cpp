@@ -74,7 +74,7 @@ uint64_t Linker::encode(uint64_t address) const
                                             [](uint64_t value, const std::pair<uintptr_t, size_t>& range) { return value < range.first; });
         if (found != m_ranges.begin()) {
             const size_t index = found[-1].second;
-            const Image* image = m_images[index];
+            const Image* image = m_images[index].get();
             if (address < image->reservation + image->reservationSize) {
                 if (m_absolute)
                     return 0xc000000000000000;
@@ -109,7 +109,8 @@ Image* Linker::frameworkImage(const Image& image) const
         target = &appKit;
     else
         return nullptr;
-    for (Image* other : m_images) {
+    for (const std::unique_ptr<Image>& owned : m_images) {
+        Image* other = owned.get();
         if (other->installName == *target)
             return other;
     }
@@ -162,7 +163,8 @@ void Linker::observe(MappedCallback mapped, InitializedCallback initialized, voi
         return;
     std::vector<const char*> paths;
     std::vector<const void*> headers;
-    for (Image* image : m_images) {
+    for (const std::unique_ptr<Image>& owned : m_images) {
+        Image* image = owned.get();
         if (image->hasObjC()) {
             paths.push_back(image->path.c_str());
             headers.push_back(reinterpret_cast<const void*>(image->header));
@@ -170,7 +172,8 @@ void Linker::observe(MappedCallback mapped, InitializedCallback initialized, voi
     }
     if (!paths.empty())
         mapped(paths.size(), paths.data(), headers.data());
-    for (Image* image : m_images) {
+    for (const std::unique_ptr<Image>& owned : m_images) {
+        Image* image = owned.get();
         const auto found = m_initialized.find(image);
         if (found != m_initialized.end() && found->second == 2 && image->hasObjC())
             initialized(image->path.c_str(), reinterpret_cast<const void*>(image->header));
@@ -185,7 +188,8 @@ bool Linker::findSymbol(const void* address, HostSymbol* symbol)
 
 bool Linker::findSymbolUnlocked(const void* address, HostSymbol* symbol)
 {
-    for (Image* image : m_images) {
+    for (const std::unique_ptr<Image>& owned : m_images) {
+        Image* image = owned.get();
         if (!image->contains(uintptr_t(address)))
             continue;
         uint64_t start = 0;
@@ -207,7 +211,8 @@ bool Linker::contains(uintptr_t address) const { return address >= m_low && addr
 const void* Linker::imageContaining(const void* address)
 {
     std::lock_guard lock(m_mutex);
-    for (Image* image : m_images) {
+    for (const std::unique_ptr<Image>& owned : m_images) {
+        Image* image = owned.get();
         if (image->contains(uintptr_t(address)))
             return reinterpret_cast<const void*>(image->header);
     }
@@ -362,10 +367,10 @@ Image* Linker::load(const std::string& path, std::string& error)
     std::unique_ptr<Image> opened = Image::open(resolved, error);
     if (!opened)
         return nullptr;
-    Image* image = opened.release();
+    Image* image = opened.get();
     m_low = std::min(m_low, image->reservation);
     m_high = std::max(m_high, image->reservation + image->reservationSize);
-    m_images.push_back(image);
+    m_images.push_back(std::move(opened));
     m_byPath[resolved] = image;
     m_byPath[path] = image;
     m_infos.push_back({image->header, image->path.c_str(), image->slide});
@@ -641,7 +646,8 @@ std::optional<uint64_t> Linker::exported(Image* image, const std::string& name, 
 std::optional<uint64_t> Linker::lookup(const std::string& name)
 {
     std::optional<uint64_t> value;
-    for (Image* image : m_images) {
+    for (const std::unique_ptr<Image>& owned : m_images) {
+        Image* image = owned.get();
         if (image->findExport(name)) {
             value = exported(image, name, 0);
             if (value)
@@ -702,7 +708,8 @@ std::optional<uint64_t> Linker::resolve(Image* image, int ordinal, const std::st
     } else if (ordinal == -3) {
         value = lookup(name);
     } else if (ordinal == -2) {
-        for (Image* other : m_images) {
+        for (const std::unique_ptr<Image>& owned : m_images) {
+        Image* other = owned.get();
             if (other->unknown10[0])
                 continue;
             if ((value = exported(other, name, 0)))
@@ -1041,7 +1048,7 @@ bool Linker::link(size_t first)
 {
     bool good = true;
     for (size_t i = m_images.size(); i-- > first;) {
-        Image* image = m_images[i];
+        Image* image = m_images[i].get();
         if (image->chainedSize) {
             image->linked = bindChained(*image);
             good = good && image->linked;
@@ -1112,7 +1119,7 @@ void* Linker::open(const std::string& path, uint32_t mode, std::string& error)
     if (!image)
         return nullptr;
     for (size_t i = first; i < m_images.size(); i++) {
-        if (!loadDependencies(m_images[i])) {
+        if (!loadDependencies(m_images[i].get())) {
             error = "a dependency of " + path + " could not be loaded";
             return nullptr;
         }
@@ -1130,7 +1137,8 @@ void* Linker::symbol(void* handle, const char* name)
     std::lock_guard lock(m_mutex);
     const std::string mangled = std::string("_") + name;
     if (!handle) {
-        for (Image* image : m_images) {
+        for (const std::unique_ptr<Image>& owned : m_images) {
+        Image* image = owned.get();
             if (image->unknown10[0])
                 continue;
             if (const std::optional<uint64_t> value = exported(image, mangled, 0))
@@ -1139,7 +1147,8 @@ void* Linker::symbol(void* handle, const char* name)
         return nullptr;
     }
     std::vector<Image*> queue;
-    for (Image* image : m_images) {
+    for (const std::unique_ptr<Image>& owned : m_images) {
+        Image* image = owned.get();
         if (image->header == uintptr_t(handle)) {
             queue.push_back(image);
             break;
@@ -1190,10 +1199,11 @@ int Linker::run(const std::string& path, const std::vector<std::string>& argumen
         return 127;
     }
     for (size_t i = 0; i < m_images.size(); i++) {
-        if (!loadDependencies(m_images[i]))
+        if (!loadDependencies(m_images[i].get()))
             return 127;
     }
-    for (Image* image : m_images) {
+    for (const std::unique_ptr<Image>& owned : m_images) {
+        Image* image = owned.get();
         if (image->installName == "/usr/lib/libSystem.B.dylib")
             m_system = image;
     }

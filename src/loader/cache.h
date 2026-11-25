@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -17,7 +18,7 @@ struct Image;
 
 uint32_t hash(std::string_view text);
 // What the cache of a run depends on: the loader, the options and every image as it is on disk.
-std::string cacheKey(const std::vector<Image*>& images, const std::string& options, int version);
+std::string cacheKey(const std::vector<std::unique_ptr<Image>>& images, const std::string& options, int version);
 std::string cachePath(const std::string& key);
 bool readBinds(const std::string& path, const std::string& key, std::vector<uint64_t>& addresses, std::vector<uint32_t>& flags);
 void writeBinds(const std::string& path, const std::string& key, const std::vector<uint64_t>& addresses, const std::vector<uint32_t>& flags);

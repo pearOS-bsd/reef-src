@@ -486,8 +486,8 @@ int listMissing(Linker& linker, const std::string& path, bool json)
                 found = defines(main, bind.name, 0);
             } else if (bind.ordinal == -2 || bind.ordinal == -3) {
                 library = bind.ordinal == -2 ? "(flat namespace)" : "(weak definitions)";
-                for (Image* other : linker.m_images) {
-                    if (defines(other, bind.name, 0)) {
+                for (const std::unique_ptr<Image>& other : linker.m_images) {
+                    if (defines(other.get(), bind.name, 0)) {
                         found = true;
                         break;
                     }
@@ -543,7 +543,8 @@ int listMissing(Linker& linker, const std::string& path, bool json)
     // The selectors the program references, and the ones that classes implement.
     std::set<std::string> implemented;
     std::map<std::string, std::set<std::string>> references;
-    for (Image* image : linker.m_images) {
+    for (const std::unique_ptr<Image>& owned : linker.m_images) {
+        Image* image = owned.get();
         if (!image->hasObjC())
             continue;
         const auto [fixups, fixupsEnd] = image->linkedit(image->chainedOffset, image->chainedSize);
@@ -600,8 +601,8 @@ int listMissing(Linker& linker, const std::string& path, bool json)
     // Libraries that export a symbol the program misses, among those reef loaded for it.
     const auto exportedBy = [&linker, &own](const std::string& name) {
         std::set<std::string> exporters;
-        for (Image* image : linker.m_images) {
-            if (own.contains(image))
+        for (const std::unique_ptr<Image>& image : linker.m_images) {
+            if (own.contains(image.get()))
                 continue;
             if (!image->installName.empty() && image->findExport(name))
                 exporters.insert(image->installName);

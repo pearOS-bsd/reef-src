@@ -10,10 +10,16 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <signal.h>
 #include <string>
 #include <ctime>
 
 struct iovec;
+
+struct pollfd;
+struct iovec;
+struct epoll_event;
+struct itimerspec;
 
 namespace cutefish::reef {
 
@@ -82,6 +88,13 @@ struct HostSymbol
     const void* base;
     const char* name;
     const void* address;
+};
+
+// struct timeval of Darwin: the microseconds are an int.
+struct DarwinTimeval
+{
+    long seconds;
+    int microseconds;
 };
 
 struct HostServices
@@ -200,7 +213,27 @@ struct HostServices
     void (*seekdir)(void* stream, long position);
     long (*telldir)(void* stream);
     int (*dirfd)(void* stream);
-    void* unknown388[44];
+    void* unknown388[8];
+    long (*sysconf)(int name);
+    int (*ioctl)(int fd, unsigned long request, void* argument);
+    int (*poll)(struct pollfd* fds, unsigned count, int timeout);
+    long (*readv)(int fd, const struct iovec* vectors, int count);
+    long (*writev)(int fd, const struct iovec* vectors, int count);
+    int (*epollCreate)(int flags);
+    int (*epollCtl)(int epoll, int operation, int fd, struct epoll_event* event);
+    int (*epollWait)(int epoll, struct epoll_event* events, int count, int timeout);
+    int (*eventfd)(unsigned value, int flags);
+    int (*timerfdCreate)(int clock, int flags);
+    int (*timerfdSettime)(int fd, int flags, const struct itimerspec* value, struct itimerspec* old);
+    int (*timerfdGettime)(int fd, struct itimerspec* value);
+    int (*signalfd)(int fd, uint32_t mask, int flags);
+    long (*readPlain)(int fd, void* buffer, size_t size);
+    long (*futex)(uint32_t* address, int operation, uint32_t value, const struct timespec* timeout, uint32_t* second);
+    void* unknown440[17];
+    int (*select)(int count, void* read, void* write, void* error, DarwinTimeval* timeout);
+    int (*pselect)(int count, void* read, void* write, void* error, const struct timespec* timeout, const uint32_t* mask);
+    int (*getpassword)(uint32_t uid, const char* name, uint32_t* ids, char** strings, char* buffer, size_t size);
+    int (*gethostname)(char* name, size_t size);
     void (*log)(const char* identity, int priority, const char* message);
     void* unknown4f0[6];
     long (*getxattr)(const char* path, int fd, const char* name, void* value, size_t size, uint32_t options);
@@ -239,9 +272,11 @@ struct HostServices
     void (*manyAllocations)(int more);
     void* unknown648[3];
     int (*memoryFile)(const char* name);
-    void* unknown668[3];
+    void* unknown668[2];
+    int (*ppoll)(struct pollfd* fds, unsigned count, const struct timespec* timeout, const uint32_t* mask);
     size_t (*pointerSize)(const void* memory);
-    void* unknown688;
+    // RealtimeKit: the thread runs with real-time priority; -1 when it cannot.
+    int (*makeThreadRealtime)(uint64_t thread);
     void* taskFunctions[4];
 };
 
@@ -266,12 +301,21 @@ int sandboxError(int error, int directory, const char* path, int access);
 // sockets.cpp
 void forgetSocket(int fd);
 bool socketNoSignal(int fd);
+// A socket that is connecting without blocking: poll reports it readable when the connection fails.
+bool socketConnecting(int fd);
 void setSocketNoSignal(int fd, bool on);
 long withoutSignal(const std::function<long()>& call);
 
+// users.cpp
+int getPassword(uint32_t uid, const char* name, uint32_t* ids, char** strings, char* buffer, size_t size);
 // signals.cpp
 void setUpSignalStack();
 void setUpCrashHandler();
+// users.cpp
+int getPassword(uint32_t uid, const char* name, uint32_t* ids, char** strings, char* buffer, size_t size);
+// signals.cpp
+void addDarwinSignals(uint32_t mask, sigset_t* set);
+int emulatedSignalfd(int fd, uint32_t mask, int flags);
 
 // unsupported.cpp
 void showUnsupported(bool running, const std::string& reason);

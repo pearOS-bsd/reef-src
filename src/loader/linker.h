@@ -12,6 +12,7 @@
 #include <deque>
 #include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -77,7 +78,7 @@ public:
 
     const std::string& root() const { return m_root; }
     const std::deque<ImageInfo>& infos() const { return m_infos; }
-    const std::vector<Image*>& images() const { return m_images; }
+    const std::vector<std::unique_ptr<Image>>& images() const { return m_images; }
     void setImageMap(std::string path) { m_imageMap = std::move(path); }
     void setStubMode(StubMode mode) { m_stubMode = mode; }
     void setArgv0(std::string argv0) { m_argv0 = std::move(argv0); }
@@ -116,7 +117,7 @@ public:
     std::optional<std::vector<std::string>> m_launchItems;
     std::string m_argv0;
     std::map<std::string, void*, std::less<>> m_stubs;
-    std::vector<Image*> m_images;
+    std::vector<std::unique_ptr<Image>> m_images;
     uintptr_t m_low = UINTPTR_MAX;
     uintptr_t m_high = 0;
     std::map<std::string, Image*, std::less<>> m_byPath;
