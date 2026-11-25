@@ -1078,6 +1078,84 @@ bool Linker::link(size_t first)
     return true;
 }
 
+void* Linker::open(const std::string& path, uint32_t mode, std::string& error)
+{
+    std::lock_guard lock(m_mutex);
+    Image* client = m_main;
+    if (path.empty())
+        return client ? reinterpret_cast<void*>(client->header) : nullptr;
+    std::optional<std::string> resolved;
+    if (path.find('/') == std::string::npos) {
+        resolved = resolveInstallName(client, "/usr/lib/" + path, client);
+        if (!resolved && access(path.c_str(), F_OK) == 0)
+            resolved = path;
+    } else {
+        resolved = resolveInstallName(client, path, client);
+    }
+    if (!resolved) {
+        error = "image not found: " + path;
+        return nullptr;
+    }
+    std::error_code failure;
+    const std::string canonical = std::filesystem::weakly_canonical(std::filesystem::path(*resolved), failure).string();
+    const auto found = m_byPath.find(canonical);
+    if (found != m_byPath.end())
+        return reinterpret_cast<void*>(found->second->header);
+    if (mode & 0x10) {
+        error = "image not loaded: " + path;
+        return nullptr;
+    }
+    const size_t first = m_images.size();
+    Image* image = load(*resolved, error);
+    if (!image)
+        return nullptr;
+    for (size_t i = first; i < m_images.size(); i++) {
+        if (!loadDependencies(m_images[i])) {
+            error = "a dependency of " + path + " could not be loaded";
+            return nullptr;
+        }
+    }
+    if (!link(first)) {
+        error = path + " could not be linked";
+        return nullptr;
+    }
+    initialize(image);
+    return reinterpret_cast<void*>(image->header);
+}
+
+void* Linker::symbol(void* handle, const char* name)
+{
+    std::lock_guard lock(m_mutex);
+    const std::string mangled = std::string("_") + name;
+    if (!handle) {
+        for (Image* image : m_images) {
+            if (image->unknown10[0])
+                continue;
+            if (const std::optional<uint64_t> value = exported(image, mangled, 0))
+                return reinterpret_cast<void*>(*value);
+        }
+        return nullptr;
+    }
+    std::vector<Image*> queue;
+    for (Image* image : m_images) {
+        if (image->header == uintptr_t(handle)) {
+            queue.push_back(image);
+            break;
+        }
+    }
+    for (size_t i = 0; i < queue.size(); i++) {
+        if (const std::optional<uint64_t> value = exported(queue[i], mangled, 0))
+            return reinterpret_cast<void*>(*value);
+        for (const Dylib& dylib : queue[i]->dylibs) {
+            if (dylib.image && std::find(queue.begin(), queue.end(), dylib.image) == queue.end())
+                queue.push_back(dylib.image);
+        }
+    }
+    if (queue.empty() || m_stubMode == StubMode::None)
+        return nullptr;
+    return stub(queue.front(), 0, mangled, true);
+}
+
 // Starts a program whose entry is LC_UNIXTHREAD: the stack has argc, then the pointers.
 [[noreturn]] static void startThread(uintptr_t entry, int argumentCount, const uint64_t* pointers, size_t count)
 {
