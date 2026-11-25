@@ -8,6 +8,9 @@ include(CheckPIESupported)
 check_pie_supported()
 add_executable(login src/login/login.c)
 add_executable(reef-authhelper src/authhelper/authhelper.c)
+# The loader of Mac programs and its Mach broker (`reef --mach-broker`).
+file(GLOB loader src/loader/*.cpp)
+add_executable(reef ${loader})
 
 # Needs the toolkit's headers (commit 7e25ddc) and libraries; left out without them.
 set(TOOLKIT_SRC "" CACHE PATH "checkout of cutefish-toolkit")

@@ -4,3 +4,4 @@ libexec/cutefish-reef/reef-open reef-open 48.4
 libexec/cutefish-reef/reef-unsupported reef-unsupported 60
 lib/cutefish-reef/host/libreef-webkit-host.so libreef-webkit-host.so 45.2
 libexec/cutefish-reef/reef-install-package reef-install-package 38.9
+bin/reef reef 27
