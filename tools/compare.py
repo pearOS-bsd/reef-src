@@ -22,7 +22,8 @@ class Image:
     def __init__(self, path):
         self.f = open(path, 'rb'); self.e = e = ELFFile(self.f)
         self.sections = [(s['sh_addr'], s['sh_size'], s.name, s.data() if s['sh_type'] != 'SHT_NOBITS' else None)
-                         for s in e.iter_sections() if s['sh_flags'] & 2 and s.name]
+                         for s in e.iter_sections() if s['sh_flags'] & 2 and s.name
+                         and s.name != '.tbss']  # thread-local: overlaps what follows
         self.names = {}
         self.got = {}
         ds = e.get_section_by_name('.dynsym')
@@ -45,13 +46,15 @@ class Image:
         for name in ('.plt', '.plt.got', '.plt.sec'):
             s = e.get_section_by_name(name)
             if not s: continue
+            before = None
             for i in self.md.disasm(s.data(), s['sh_addr']):
                 if i.mnemonic.endswith('jmp') and 'rip' in i.op_str:
                     t = i.address + i.size + i.operands[0].mem.disp
+                    # The stub starts at the jump (.plt.got without endbr64 has stubs of 8 bytes) or at the endbr64 before it.
+                    a = before.address if before and before.mnemonic == 'endbr64' else i.address
                     if t in self.got:
-                        a = i.address & ~0xf
                         self.names[a] = 'plt:' + self.got[t]
-                        if name != '.plt': self.names[i.address] = 'plt:' + self.got[t]
+                before = i
         self.funcs = {}
         dw = e.get_dwarf_info(relocate_dwarf_sections=False)
         for c in dw.EH_CFI_entries():
