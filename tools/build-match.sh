@@ -4,7 +4,7 @@ set -e
 H="-g -O2 -fstack-protector-strong -fstack-clash-protection -fcf-protection -D_FORTIFY_SOURCE=2 -Wdate-time"
 cmake -S "$2" -B /tmp/b -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
   -DCMAKE_C_FLAGS="$H" -DCMAKE_CXX_FLAGS="$H" -DTOOLKIT_SRC="$3" -DTOOLKIT_LIB="$4" -DWEBKIT_INCLUDE="$5" -DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,relro >/dev/null
-ninja -C /tmp/b >/dev/null
+ninja -C /tmp/b >/tmp/ninja.log 2>&1 || { tail -60 /tmp/ninja.log; exit 1; }
 s=0
 while read -r orig ours min; do
   [ -e "/tmp/b/$ours" ] || { echo "$ours: not built here"; continue; }

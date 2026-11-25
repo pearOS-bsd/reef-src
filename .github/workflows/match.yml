@@ -14,11 +14,11 @@ jobs:
           gh release download original-f3c1807 -R "$GITHUB_REPOSITORY" -p reef.deb -O /tmp/r.deb
           echo '17890f00b785a0a2c1566e80390915d75e1dce52b2f6f8f0db35ad936dcb7d8c  /tmp/r.deb' | sha256sum -c
           dpkg-deb -x /tmp/r.deb /tmp/orig
-          gh release download original-f3c1807 -R "$GITHUB_REPOSITORY" -p toolkit.deb -O /tmp/t.deb
-          echo 'e80f9350da2a1cbcc0a063770ecfbb694c6aa9ef6c050496f4dfa3a928e525e4  /tmp/t.deb' | sha256sum -c
-          dpkg-deb -x /tmp/t.deb /tmp/tk
+          gh release download original-f3c1807 -R "$GITHUB_REPOSITORY" -p toolkit-libs-7e25ddc.tar.gz -O /tmp/tl.tar.gz
+          echo 'a48106672c26898bfd6dd4c0015a1c3ca44bc27f4dc5b678d99d32ba3e8168aa  /tmp/tl.tar.gz' | sha256sum -c
+          mkdir /tmp/tklib && tar xzf /tmp/tl.tar.gz -C /tmp/tklib
           gh release download original-f3c1807 -R "$GITHUB_REPOSITORY" -p toolkit-7e25ddc.tar.gz -O /tmp/ts.tar.gz
           echo 'a7a01a39a3ad2663a714fad706ccd1dcb91db69e32c0ac3540b16428699b9b67  /tmp/ts.tar.gz' | sha256sum -c
           mkdir /tmp/tksrc && tar xzf /tmp/ts.tar.gz -C /tmp/tksrc
       - run: docker build -t reef-build docker
-      - run: docker run --rm -v "$PWD:/w:ro" -v /tmp/orig/usr:/o:ro -v /tmp/tksrc:/t:ro -v /tmp/tk/usr/lib/x86_64-linux-gnu:/l:ro reef-build sh -c "sh /w/tools/build-match.sh /o /w /t /l && python3 /w/tests/small.py /o /tmp/b && python3 /w/tests/mach.py /o/bin/reef /tmp/b/reef && python3 /w/tests/hdiutil.py /o/lib/cutefish-reef/usr/libexec/reef-hdiutil /tmp/b/reef-hdiutil && LD_LIBRARY_PATH=/l python3 /w/tests/diagnose.py /o/bin/reef-diagnose /tmp/b/reef-diagnose && mkdir /tmp/apps && LD_LIBRARY_PATH=/l python3 -B /w/tests/dialogs.py /o /tmp/b /tmp/b/libuishim.so /tmp/apps && LD_LIBRARY_PATH=/l python3 -B /w/tests/package.py /o/libexec/cutefish-reef/reef-install-package /tmp/b/reef-install-package"
+      - run: docker run --rm -v "$PWD:/w:ro" -v /tmp/orig/usr:/o:ro -v /tmp/tksrc:/t:ro -v /tmp/tklib:/l:ro reef-build sh -c "sh /w/tools/build-match.sh /o /w /t /l && python3 /w/tests/small.py /o /tmp/b && python3 /w/tests/mach.py /o/bin/reef /tmp/b/reef && python3 /w/tests/hdiutil.py /o/lib/cutefish-reef/usr/libexec/reef-hdiutil /tmp/b/reef-hdiutil && LD_LIBRARY_PATH=/l python3 /w/tests/diagnose.py /o/bin/reef-diagnose /tmp/b/reef-diagnose && mkdir /tmp/apps && LD_LIBRARY_PATH=/l python3 -B /w/tests/dialogs.py /o /tmp/b /tmp/b/libuishim.so /tmp/apps && LD_LIBRARY_PATH=/l python3 -B /w/tests/package.py /o/libexec/cutefish-reef/reef-install-package /tmp/b/reef-install-package"
