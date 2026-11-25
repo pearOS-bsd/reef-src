@@ -11,6 +11,7 @@
 #include <WebKit/WKNavigationResponseRef.h>
 #include <WebKit/WKPageStateClient.h>
 #include <WebKit/WKURLRequest.h>
+#include <WebKit/WKURLResponse.h>
 
 namespace cutefish::reef::web {
 
@@ -183,6 +184,58 @@ void contentRuleNotification(WKPageRef, WKURLRef url, WKArrayRef names, WKArrayR
         const std::string text = toString(static_cast<WKStringRef>(WKArrayGetItemAtIndex(texts, i)));
         view->client->at<Function>(0xe8)(view->context, urlText.c_str(), name.c_str(), text.c_str());
     }
+}
+
+struct Response
+{
+    const char* url;
+    const char* type;
+    const char* name;
+    int64_t size;
+    int status;
+    int canShow;
+    int isMainFrame;
+    WKFramePolicyListenerRef listener;
+};
+
+struct ResponseText
+{
+    std::string url;
+    std::string type;
+    std::string name;
+};
+
+void decidePolicyForResponse(WKPageRef, WKNavigationResponseRef navigation, WKFramePolicyListenerRef listener, WKTypeRef, const void* info)
+{
+    View* view = viewOf(info);
+    using Function = void (*)(void*, const Response*);
+    if (!view->client->at<Function>(0x30)) {
+        WKFramePolicyListenerUse(listener);
+        return;
+    }
+    ResponseText text;
+    Response value = {};
+    if (WKURLResponseRef response = WKNavigationResponseCopyResponse(navigation)) {
+        text.url = takeUrl(WKURLResponseCopyURL(response));
+        text.type = takeString(WKURLResponseCopyMIMEType(response));
+        text.name = takeString(WKURLResponseCopySuggestedFilename(response));
+        value.status = WKURLResponseHTTPStatusCode(response);
+        value.size = WKURLResponseGetExpectedContentLength(response);
+        WKRelease(response);
+    }
+    value.url = text.url.c_str();
+    value.type = text.type.c_str();
+    value.name = text.name.c_str();
+    value.canShow = WKNavigationResponseCanShowMIMEType(navigation);
+    if (WKFrameInfoRef frame = WKNavigationResponseCopyFrameInfo(navigation)) {
+        value.isMainFrame = WKFrameInfoGetIsMainFrame(frame);
+        WKRelease(frame);
+    } else {
+        value.isMainFrame = 1;
+    }
+    WKRetain(listener);
+    value.listener = listener;
+    view->client->at<Function>(0x30)(view->context, &value);
 }
 
 } // namespace cutefish::reef::web

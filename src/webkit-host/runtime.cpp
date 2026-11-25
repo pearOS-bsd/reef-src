@@ -5,6 +5,8 @@
 
 #include "web.h"
 
+#include <WebKit/WKScreens.h>
+
 #include <cstring>
 #include <fcntl.h>
 
@@ -190,6 +192,73 @@ void setPasteboard(const Pasteboard* pasteboard)
     client.copyData = pasteboardData;
     client.write = pasteboardWrite;
     WKPasteboardSetClient(&client.base);
+}
+
+// 83
+void setSandbox(int enabled, const char* path)
+{
+    g_sandbox = enabled != 0;
+    g_sandboxPath = path ? path : "";
+}
+
+// 84: the application identifier, before WebKit starts
+void setApplication(const char* identifier)
+{
+    if (s_started || !identifier)
+        return;
+    const size_t size = strlen(identifier);
+    if (size == 0 || size > 255)
+        return;
+    int parts = 0;
+    for (const char* part = identifier; part;) {
+        const char* dot = strchr(part, '.');
+        const size_t length = dot ? size_t(dot - part) : strlen(part);
+        if (length == 0 || (*part >= '0' && *part <= '9'))
+            return;
+        for (size_t i = 0; i < length; i++) {
+            const char c = part[i];
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_'))
+                return;
+        }
+        parts++;
+        part = dot ? dot + 1 : nullptr;
+    }
+    if (parts > 1 && !g_get_prgname())
+        g_set_prgname(identifier);
+}
+
+struct Screen
+{
+    uint32_t identifier;
+    double x;
+    double y;
+    double width;
+    double height;
+    double availableX;
+    double availableY;
+    double availableWidth;
+    double availableHeight;
+    int depth;
+    int depthPerComponent;
+    double dpi;
+};
+
+// 98
+void setScreens(const Screen* screens, int count, uint32_t primary)
+{
+    std::vector<WKScreenInfo> list;
+    for (int i = 0; i < count; i++) {
+        const Screen& screen = screens[i];
+        WKScreenInfo info = {};
+        info.identifier = screen.identifier;
+        info.frame = {{screen.x, screen.y}, {screen.width, screen.height}};
+        info.availableFrame = {{screen.availableX, screen.availableY}, {screen.availableWidth, screen.availableHeight}};
+        info.depth = screen.depth;
+        info.depthPerComponent = screen.depthPerComponent;
+        info.dpi = screen.dpi;
+        list.push_back(info);
+    }
+    WKSetScreens(list.data(), list.size(), primary);
 }
 
 } // namespace cutefish::reef::web

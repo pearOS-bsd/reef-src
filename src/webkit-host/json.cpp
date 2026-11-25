@@ -6,6 +6,8 @@
 
 #include "web.h"
 
+#include <WebKit/WKPageFullScreenClient.h>
+
 #include <cstdlib>
 #include <cstring>
 
@@ -170,6 +172,20 @@ WKTypeRef parseJson(const char*& at)
     }
     at = end;
     return WKDoubleCreate(number);
+}
+
+// 10: the answer to a message; null or text that is not JSON is undefined
+void answerMessage(WKCompletionListenerRef listener, const char* json, const char* error)
+{
+    WKTypeRef value = nullptr;
+    if (!error && json) {
+        const char* at = json;
+        value = parseJson(at);
+    }
+    WKCompletionListenerComplete(listener, value);
+    if (value)
+        WKRelease(value);
+    WKRelease(listener);
 }
 
 } // namespace cutefish::reef::web

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -102,6 +103,13 @@ struct SchemeHandler
     View* view;
 };
 
+struct HistoryItem
+{
+    const char* url;
+    const char* originalUrl;
+    const char* title;
+};
+
 struct View
 {
     WKViewRef view = nullptr;
@@ -122,7 +130,7 @@ struct View
     std::string title;
     std::string url;
     std::vector<std::string> itemTexts;
-    std::vector<void*> items;
+    std::vector<HistoryItem> items;
 };
 
 struct Error
@@ -168,10 +176,20 @@ void releaseBuffer(Buffer& buffer);
 void appendJson(std::string& text, WKTypeRef value);
 WKTypeRef parseJson(const char*& text);
 
+using MessageFunction = void (*)(void* context, const char* name, const char* json, const char* origin, int isMainFrame,
+                                 WKCompletionListenerRef listener);
+
+struct MessageHandler
+{
+    std::string name;
+    MessageFunction function;
+    void* context;
+};
+
 struct UserContent
 {
     WKUserContentControllerRef controller;
-    std::vector<void*> handlers;
+    std::vector<std::unique_ptr<MessageHandler>> handlers;
 };
 
 struct FilterStore

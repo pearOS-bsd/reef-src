@@ -305,7 +305,7 @@ void keepDownload(Download* download, KeptFunction function, void* context)
         download->partial, written, function, context}, downloadKept);
 }
 
-// 65
+// 64
 void releaseDownload(Download* download)
 {
     if (!download)
@@ -365,10 +365,10 @@ void setDownloadClient(Download* download, const DownloadClient* client, void* c
 const char* downloadUrl(Download* download) { return download->url.c_str(); }
 // 63
 void cancelDownload(Download* download) { WKDownloadCancel(download->download, nullptr, nullptr); }
-// 66
+// 65
 void answerRedirect(WKDownloadListenerRef listener, int allow) { WKDownloadListenerAllowRedirect(listener, allow != 0); }
 
-// 64
+// 66
 void chooseDestination(Destination* destination, const char* path, int overwrite)
 {
     destination->download->path = path ? path : "";

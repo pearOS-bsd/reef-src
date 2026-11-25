@@ -295,6 +295,42 @@ void printPdf(View* view, double width, double height, double scale, DataFunctio
     WKPageDrawPagesToPDFForPrinting(view->page, &layout, new Callback<DataFunction>{function, context}, pdfDone);
 }
 
+static void appendItem(View* view, WKBackForwardListItemRef item)
+{
+    view->itemTexts.push_back(takeUrl(WKBackForwardListItemCopyURL(item)));
+    view->itemTexts.push_back(takeUrl(WKBackForwardListItemCopyOriginalURL(item)));
+    view->itemTexts.push_back(takeString(WKBackForwardListItemCopyTitle(item)));
+}
+
+// 68: oldest first
+int history(View* view, const HistoryItem** items, int* back, int* forward)
+{
+    view->itemTexts.clear();
+    view->items.clear();
+    WKBackForwardListRef list = WKPageGetBackForwardList(view->page);
+    WKArrayRef backList = WKBackForwardListCopyBackListWithLimit(list, unsigned(-1));
+    WKArrayRef forwardList = WKBackForwardListCopyForwardListWithLimit(list, unsigned(-1));
+    WKBackForwardListItemRef current = WKBackForwardListGetCurrentItem(list);
+    const size_t backCount = backList ? WKArrayGetSize(backList) : 0;
+    const size_t forwardCount = forwardList ? WKArrayGetSize(forwardList) : 0;
+    for (size_t i = 0; i < backCount; i++)
+        appendItem(view, static_cast<WKBackForwardListItemRef>(WKArrayGetItemAtIndex(backList, i)));
+    if (current)
+        appendItem(view, current);
+    for (size_t i = 0; i < forwardCount; i++)
+        appendItem(view, static_cast<WKBackForwardListItemRef>(WKArrayGetItemAtIndex(forwardList, i)));
+    if (backList)
+        WKRelease(backList);
+    if (forwardList)
+        WKRelease(forwardList);
+    for (size_t i = 0; i + 2 < view->itemTexts.size(); i += 3)
+        view->items.push_back({view->itemTexts[i].c_str(), view->itemTexts[i + 1].c_str(), view->itemTexts[i + 2].c_str()});
+    *items = view->items.data();
+    *back = int(backCount);
+    *forward = int(forwardCount);
+    return int(view->items.size());
+}
+
 // 69
 void goToItem(View* view, int index)
 {
