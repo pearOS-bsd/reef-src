@@ -918,7 +918,7 @@ static void hostLog(const char* identity, int priority, const char* message)
     syslog(priority & 7, "%s", message);
 }
 
-HostServices* hostServices(int argumentCount, char** arguments, char** environment)
+HostServices* hostServices(int argumentCount, char* executablePath, const char* programName)
 {
     static std::string token;
     if (const char* value = getenv("XDG_ACTIVATION_TOKEN")) {
@@ -927,8 +927,8 @@ HostServices* hostServices(int argumentCount, char** arguments, char** environme
         services.activationToken = token.c_str();
     }
     services.argumentCount = argumentCount;
-    services.arguments = arguments;
-    services.environment = environment;
+    services.executablePath = executablePath;
+    services.programName = programName;
     services.exit = hostExit;
     services.abort = hostAbort;
     services.fail = hostFail;

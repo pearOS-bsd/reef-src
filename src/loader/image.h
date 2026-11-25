@@ -121,10 +121,9 @@ struct Image
     std::vector<Section> sections;
     std::vector<Dylib> dylibs;
     std::vector<std::string> rpaths;
-    uint64_t entryOffset = 0;
-    bool hasEntry = false;
-    uint64_t threadEntry = 0;
-    bool hasThread = false;
+    // From LC_MAIN, or from LC_UNIXTHREAD.
+    std::optional<uint64_t> entry;
+    std::optional<uint64_t> threadEntry;
     bool entryFromThread = false;
     uint32_t rebaseOffset = 0;
     uint32_t rebaseSize = 0;

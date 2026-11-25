@@ -87,9 +87,10 @@ struct HostSymbol
 struct HostServices
 {
     int argumentCount;
-    void* unknown008[2];
     char** arguments;
     char** environment;
+    char* executablePath;
+    const char* programName;
     void (*exit)(int status);
     void (*abort)(const char* message);
     int (*getpid)();
@@ -211,7 +212,10 @@ struct HostServices
     int (*inotifyInit)(int flags);
     int (*inotifyAddWatch)(int fd, const char* path, uint32_t mask);
     int (*inotifyRemoveWatch)(int fd, int watch);
-    void* unknown570[6];
+    void* unknown570[2];
+    const char* reefPath;
+    uint64_t* launchItems;
+    void* unknown590[2];
     int (*darwinError)(int error);
     int (*createThreadOnStack)(uintptr_t* thread, void* (*start)(void*), void* argument, void* stack, size_t stackSize);
     int (*threadStack)(uintptr_t thread, void** stack, size_t* size);
@@ -242,7 +246,7 @@ struct HostServices
 };
 
 // host.cpp
-HostServices* hostServices(int argumentCount, char** arguments, char** environment);
+HostServices* hostServices(int argumentCount, char* executablePath, const char* programName);
 int darwinError(int error);
 int linuxError(int error);
 int hostOpenFlags(int flags);

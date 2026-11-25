@@ -100,13 +100,17 @@ public:
     void* stub(Image* image, int ordinal, const std::string& name, bool report);
     bool loadDependencies(Image* image);
     void initialize(Image* image);
-    void missingLibrary(const Image& from, const std::string& name);
+    void missingSymbol(const Image& from, const std::string& name);
+    std::optional<uint64_t> resolve(Image* image, int ordinal, const std::string& name, bool weak);
+    bool bind(Image* image, const uint8_t* at, const uint8_t* end, bool lazy);
+    bool bindChained(Image& image);
+    bool link(size_t first);
 
     std::recursive_mutex m_mutex;
     std::string m_root;
     std::string m_imageMap;
     StubMode m_stubMode = StubMode::None;
-    char m_unknown6c[0x88 - 0x6c];
+    std::vector<std::string> m_launchItemPaths;
     bool m_launchItems = false;
     std::string m_argv0;
     std::map<std::string, void*, std::less<>> m_stubs;
@@ -117,8 +121,9 @@ public:
     std::unordered_map<std::string, bool> m_exists;
     std::unordered_map<Image*, std::unordered_map<std::string, uint64_t>> m_reexported;
     Image* m_main = nullptr;
-    char m_unknown1b0[0x10];
-    std::vector<std::string> m_missingLibraries;
+    Image* m_system = nullptr;
+    void* m_tlvGetAddress = nullptr;
+    std::vector<std::string> m_missingSymbols;
     std::map<std::string, std::optional<uint64_t>, std::less<>> m_flat;
     BindCache m_bindCache = BindCache::Off;
     std::vector<uint64_t> m_cachedAddresses;
@@ -143,7 +148,7 @@ public:
     int m_argumentCount = 0;
     char** m_arguments = nullptr;
     char** m_environment = nullptr;
-    char** m_unknown420 = nullptr;
+    const char* m_name = nullptr;
     const char** m_apple = nullptr;
     std::string m_programName;
     ProgramVars m_vars = {};
@@ -155,7 +160,8 @@ private:
     std::optional<std::string> existing(const std::string& path);
     std::optional<std::string> framework(const std::string& path);
     std::string expand(Image* loader, const std::string& path);
-    std::optional<uint64_t> cachedLookup(std::string_view name);
+    template<typename Resolve>
+    std::optional<uint64_t> cached(std::string_view name, Resolve resolve);
     uint64_t encode(uint64_t address) const;
     bool rebase(Image& image);
     bool bindWeak(Image& image);

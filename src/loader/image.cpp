@@ -516,8 +516,9 @@ bool Image::parse(std::string& error)
                 return false;
             }
             // rip.
-            memcpy(&threadEntry, at + 16 + 16 * 8, 8);
-            hasThread = true;
+            uint64_t rip;
+            memcpy(&rip, at + 16 + 16 * 8, 8);
+            threadEntry = rip;
             break;
         }
         case LC_LOAD_DYLIB:
@@ -588,8 +589,7 @@ bool Image::parse(std::string& error)
             break;
         }
         case LC_MAIN:
-            entryOffset = reinterpret_cast<const entry_point_command*>(at)->entryoff;
-            hasEntry = true;
+            entry = reinterpret_cast<const entry_point_command*>(at)->entryoff;
             break;
         case LC_DYLD_EXPORTS_TRIE: {
             const auto* trie = reinterpret_cast<const linkedit_data_command*>(at);
@@ -628,9 +628,8 @@ bool Image::parse(std::string& error)
     for (const Segment& segment : segments) {
         if (segment.fileOffset == 0 && segment.fileSize != 0) {
             preferredBase = segment.address;
-            if (!hasEntry && hasThread && preferredBase <= threadEntry) {
-                hasEntry = true;
-                entryOffset = threadEntry - preferredBase;
+            if (!entry && threadEntry && preferredBase <= *threadEntry) {
+                entry = *threadEntry - preferredBase;
                 entryFromThread = true;
             }
             if (exportSize == 0)
