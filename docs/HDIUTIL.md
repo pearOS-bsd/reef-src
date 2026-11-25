@@ -34,9 +34,25 @@ dates of the volume header and the UUID (`tests`: folders of 8000 files, three B
 
 ## Optical (`makehybrid`, default ISO 9660 + Joliet + UDF)
 
-Observed on images of the original: ISO PVD 16, Joliet SVD 17, terminator 18, UDF VRS 19-21 (`BEA01 NSR02 TEA01`), main VDS
+Observed on images of the original (and now made the same, `tests/hdiutil.py`): ISO PVD 16, Joliet SVD 17, terminator 18, UDF VRS 19-21 (`BEA01 NSR02 TEA01`), main VDS
 32-37 (PVD, IUVD, PD, LVD, USD, TD), reserve VDS 48, LVID 64, anchor 256 and in the last sector, partition from 257 to the end
 of the data: FSD 0, TD 1, file entries from 2 (root first), directory data of UDF, then the ISO directories, the ISO path
 tables (L, M), the Joliet directories and path tables, then the file data, shared by the three file systems. Links are left out
 of ISO and Joliet; UDF keeps them (file type 12, path components). Volume ids: ISO upper case, Joliet and UDF as given;
 implementation id `*reef`; UDF volume set id `<8 hex digits>` + volume name.
+
+Names: ISO 9660 upper case, `A-Z 0-9 _`, any other character one `_` (UTF-8 continuation bytes skipped), extension (after the
+last dot, not a leading one) at most 8, name and extension at most 30, folders without a dot; Joliet UCS-2, at most 64 with
+the extension kept, `* / : ; ? \` and controls as `_`. Clashes get 1, 2, ... before the extension, in `readdir` order for ISO
+and in ISO order for Joliet. Children are sorted by ISO name (that order is also the UDF identifiers'), Joliet by name without
+`;1`. File entries, unique ids (16 on) and the data are in the order of the walk. `-joliet` alone still makes the primary
+volume. UDF file entries: times atime, mtime, ctime; permissions from the mode, the owner may also change attributes and
+delete, links `0x7fff`.
+
+## UDIF
+
+Chunks of 2048 sectors, zero chunks as type 2, compressed by up to 8 threads in batches of 4 per thread; zlib level 1 unless
+`zlib-level=`, bzip2 9, LZMA preset 6 (`lzma_alone`), LZFSE; a chunk that does not get smaller stays raw. One `blkx` named
+`whole disk (Apple_HFS|Apple_ISO|Apple_UDF : 0)` after what the raw image starts with; CRC32 of each partition and of the data
+fork, the master checksum over the partition checksums; segment id from `getrandom`. UDTO and UDRW are raw images. The
+progress of `-puppetstrings` is reported after each batch.

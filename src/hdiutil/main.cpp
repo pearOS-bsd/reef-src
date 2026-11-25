@@ -273,13 +273,19 @@ static int create(const Arguments& arguments)
     startProgress(arguments);
     const Progress progress = progressFor(arguments);
     // The file system is the first half of the work, its conversion the second.
-    if (!makeHfs(root, name, raw, [&progress](uint64_t done, uint64_t total) { progress(done, total * 2); }, &error)) {
+    if (!makeHfs(root, name, raw, [&progress](uint64_t done, uint64_t total) {
+            if (progress)
+                progress(done, total * 2);
+        }, &error)) {
         unlink(raw.c_str());
         unlink(temporary.c_str());
         return fail("create", error);
     }
     const bool converted = diskimage::convert(raw, temporary, options,
-                                              [&progress](uint64_t done, uint64_t total) { progress(total + done, total * 2); }, &error);
+                                              [&progress](uint64_t done, uint64_t total) {
+                                                  if (progress)
+                                                      progress(total + done, total * 2);
+                                              }, &error);
     unlink(raw.c_str());
     if (!converted) {
         unlink(temporary.c_str());

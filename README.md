@@ -10,9 +10,10 @@ Source of the ELF programs and libraries of Reef, reconstructed function by func
 | `libreef-webkit-host.so` | 213/260 functions, 45.2 % of bytes; all 100 table entries written, the same output as the original in `tests/webkit.py` (JSON, input, data, find, screens); views, downloads and dialogs not run yet |
 | `reef-install-package` | 175/210 functions, 38.9 % of bytes; everything written, the same output as the original in `tests/package.py` (listing and command line installation); the window and the D-Bus helper not run yet |
 | `reef` (loader) | 576/979 functions, 27.1 % of bytes; all written (the Mach broker last); the same output as the original in `tests/mach.py` (files, ports, processes, signals, sockets, threads) and `tests/loader.py` |
-| the other 5 | not started |
+| `reef-hdiutil` | 79/196 functions, 14.2 % of bytes; all written (LZFSE from `upstream/`, its 21 functions match); the same images and output as the original in `tests/hdiutil.py` (46 cases: HFS+, ISO 9660, Joliet, UDF, the seven UDIF formats, verify, errors) |
+| the other 4 | not started |
 
-Behaviour: `tests/small.py` 25 cases (login, authhelper), `tests/mach.py` 6 Mac programs on the loader (Mach ports through the broker included), `tests/dialogs.py` 1444 cases (the two dialogs, 2026-11-25),
+Behaviour: `tests/small.py` 25 cases (login, authhelper), `tests/mach.py` 6 Mac programs on the loader (Mach ports through the broker included), `tests/hdiutil.py` 46 cases, `tests/dialogs.py` 1444 cases (the two dialogs, 2026-11-25),
 `tests/package.py` 540 cases (packages made there, good and broken: what is listed and the installed tree): no difference.
 The dialogs run without a display: `tests/uishim.cpp` prints what they would show. Of the reef-open cases 393 ended in a
 verified developer (CotEditor, also with harmless damage) and 922 in a refusal. Not covered: a Mac App Store signature,

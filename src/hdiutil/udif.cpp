@@ -348,7 +348,7 @@ bool verify(const std::string& image, const Progress& progress, std::string* rep
                 progress(done, total);
         }
         if (crc != partition.crc) {
-            *error = "checksum of the image's data does not match";
+            *error = "checksum of " + partition.name + " does not match";
             return false;
         }
         char line[256];

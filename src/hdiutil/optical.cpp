@@ -30,6 +30,8 @@ struct Item
     std::vector<Item*> children;
     std::string isoName;
     std::string jolietName;
+    // Joliet sorts the names without the version of a file.
+    std::string jolietKey;
     // Folders: their directories in ISO 9660 and Joliet.
     uint32_t isoExtent;
     uint32_t isoSize;
@@ -186,7 +188,8 @@ static void jolietNames(Item* folder)
             candidate = name.substr(0, std::min(name.size(), max - suffix.size())) + suffix + extension;
         }
         used.push_back(ucs2(candidate));
-        child->jolietName = ucs2(candidate) + (folderName ? "" : std::string("\0;\0" "1", 4));
+        child->jolietKey = ucs2(candidate);
+        child->jolietName = child->jolietKey + (folderName ? "" : std::string("\0;\0" "1", 4));
     }
 }
 
@@ -230,7 +233,7 @@ static std::vector<std::pair<std::string, const Item*>> directoryEntries(const I
     entries.push_back({std::string(1, '\1'), folder->parent ? folder->parent : folder});
     std::vector<const Item*> children(folder->children.begin(), folder->children.end());
     if (joliet)
-        std::stable_sort(children.begin(), children.end(), [](const Item* a, const Item* b) { return a->jolietName < b->jolietName; });
+        std::stable_sort(children.begin(), children.end(), [](const Item* a, const Item* b) { return a->jolietKey < b->jolietKey; });
     for (const Item* child : children) {
         if (child->entry->type != Entry::Link)
             entries.push_back({joliet ? child->jolietName : child->isoName, child});
@@ -580,7 +583,7 @@ bool makeHybrid(const Entry& root, const HybridOptions& options, const std::stri
     while (!stack.empty()) {
         auto [entry, parent] = stack.back();
         stack.pop_back();
-        storage.push_back({entry, nullptr, {}, {}, {}, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {}});
+        storage.push_back({entry, nullptr, {}, {}, {}, {}, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {}});
         parents.push_back(parent);
         const size_t self = storage.size() - 1;
         for (auto child = entry->children.rbegin(); child != entry->children.rend(); ++child)

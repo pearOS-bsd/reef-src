@@ -11,6 +11,14 @@ add_executable(reef-authhelper src/authhelper/authhelper.c)
 # The loader of Mac programs and its Mach broker (`reef --mach-broker`).
 file(GLOB loader src/loader/*.cpp)
 add_executable(reef ${loader})
+# hdiutil: HFS+, ISO 9660, Joliet, UDF and UDIF images; LZFSE from upstream/.
+find_package(ICU REQUIRED COMPONENTS uc)
+find_package(LibLZMA REQUIRED)
+find_package(ZLIB REQUIRED)
+file(GLOB hdiutil src/hdiutil/*.cpp)
+add_executable(reef-hdiutil ${hdiutil} upstream/lzfse/lzfse_encode.c upstream/lzfse/lzfse_encode_base.c upstream/lzfse/lzfse_fse.c
+    upstream/lzfse/lzvn_decode_base.c upstream/lzfse/lzvn_encode_base.c upstream/lzfse/lzfse_decode.c upstream/lzfse/lzfse_decode_base.c)
+target_link_libraries(reef-hdiutil PRIVATE ICU::uc LibLZMA::LibLZMA ZLIB::ZLIB)
 
 # Needs the toolkit's headers (commit 7e25ddc) and libraries; left out without them.
 set(TOOLKIT_SRC "" CACHE PATH "checkout of cutefish-toolkit")
