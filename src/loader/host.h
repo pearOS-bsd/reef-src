@@ -20,6 +20,7 @@ struct pollfd;
 struct iovec;
 struct epoll_event;
 struct itimerspec;
+struct rusage;
 
 namespace cutefish::reef {
 
@@ -98,6 +99,9 @@ struct DarwinTimeval
 };
 
 struct DarwinStack;
+struct FileAction;
+struct SpawnAttributes;
+struct WaitResult;
 struct DarwinMessage;
 struct DarwinAddressInfo;
 
@@ -262,7 +266,13 @@ struct HostServices
     int (*getpassword)(uint32_t uid, const char* name, uint32_t* ids, char** strings, char* buffer, size_t size);
     int (*gethostname)(char* name, size_t size);
     void (*log)(const char* identity, int priority, const char* message);
-    void* unknown4f0[6];
+    int (*spawn)(int* process, const char* path, char* const* argv, char* const* environment, const FileAction* actions, uint32_t actionCount,
+                 const SpawnAttributes* attributes, const char* exceptionPorts);
+    int (*exec)(const char* path, char* const* argv, char* const* environment);
+    int (*fork)();
+    int (*wait4)(int process, int* status, int options, struct rusage* usage);
+    int (*setsid)();
+    int (*setpgid)(int process, int group);
     long (*getxattr)(const char* path, int fd, const char* name, void* value, size_t size, uint32_t options);
     int (*setxattr)(const char* path, int fd, const char* name, const void* value, size_t size, uint32_t options);
     int (*removexattr)(const char* path, int fd, const char* name, uint32_t options);
@@ -273,10 +283,12 @@ struct HostServices
     int (*inotifyInit)(int flags);
     int (*inotifyAddWatch)(int fd, const char* path, uint32_t mask);
     int (*inotifyRemoveWatch)(int fd, int watch);
-    void* unknown570[2];
+    int (*pidfdOpen)(int process, unsigned flags);
+    int (*waitExited)(int process, int* status);
     const char* reefPath;
     uint64_t* launchItems;
-    void* unknown590[2];
+    int (*error)();
+    void (*setError)(int error);
     int (*darwinError)(int error);
     int (*createThreadOnStack)(uintptr_t* thread, void* (*start)(void*), void* argument, void* stack, size_t stackSize);
     int (*threadStack)(uintptr_t thread, void** stack, size_t* size);
@@ -288,7 +300,7 @@ struct HostServices
     int (*sigwait)(uint32_t mask);
     int (*getdirentries)(int fd, HostEntry* entries, int count);
     const char* activationToken;
-    void* unknown5f8;
+    int (*waitid)(int type, uint32_t id, int options, WaitResult* result);
     void* bonjourRegister;
     void* bonjourSocket;
     void* bonjourNext;
@@ -345,6 +357,7 @@ int getPassword(uint32_t uid, const char* name, uint32_t* ids, char** strings, c
 // signals.cpp
 void addDarwinSignals(uint32_t mask, sigset_t* set);
 int emulatedSignalfd(int fd, uint32_t mask, int flags);
+int darwinSignal(int signal);
 
 // unsupported.cpp
 void showUnsupported(bool running, const std::string& reason);

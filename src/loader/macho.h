@@ -9,6 +9,7 @@
 
 namespace cutefish::reef {
 
+constexpr uint32_t MH_MAGIC = 0xfeedface;
 constexpr uint32_t MH_MAGIC_64 = 0xfeedfacf;
 constexpr uint32_t FAT_CIGAM = 0xbebafeca;
 constexpr uint32_t FAT_CIGAM_64 = 0xbfbafeca;

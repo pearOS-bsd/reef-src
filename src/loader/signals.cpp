@@ -269,7 +269,7 @@ static bool returnFromMissing(int signal, ucontext_t* context)
     return false;
 }
 
-static int darwinSignal(int signal)
+int darwinSignal(int signal)
 {
     for (int i = 1; i < 32; i++) {
         if (hostSignals[i] == signal)

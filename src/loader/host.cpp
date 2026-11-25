@@ -43,10 +43,11 @@ static bool keyUsed[KeyCount];
 static std::mutex keyMutex;
 
 static thread_local int isMain = -1;
-static thread_local uintptr_t stackEnd;
 static thread_local uintptr_t stackStart;
-static thread_local void* slots[KeyCount];
-static thread_local void* threadValue;
+static thread_local uintptr_t stackEnd;
+// Programs read these two at fixed distances from the thread pointer.
+static thread_local void* slots[KeyCount] __attribute__((tls_model("initial-exec")));
+static thread_local void* threadValue __attribute__((tls_model("initial-exec")));
 
 int darwinError(int error)
 {
