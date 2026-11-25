@@ -60,8 +60,8 @@ static bool append(const std::string& from, const std::string& to)
         }
         for (ssize_t done = 0; good && done < size;) {
             const ssize_t count = write(out, buffer + done, size_t(size - done));
-            good = count > 0;
             done += count;
+            good = count > 0;
         }
     }
     if (in >= 0)
@@ -107,16 +107,13 @@ static void didWriteData(WKDownloadRef, long long bytes, long long total, long l
 static void didFinish(WKDownloadRef, const void* info)
 {
     const Download* download = static_cast<const Download*>(info);
-    if (download->offset >= 0) {
-        const bool moved = download->partial ? append(download->path, download->target)
-                                             : rename(download->path.c_str(), download->target.c_str()) == 0;
-        if (!moved) {
-            if (download->client && download->client->failed) {
-                const Error error = {-3000, "NSURLErrorDomain", "The download could not be written.", download->url.c_str()};
-                download->client->failed(download->context, &error);
-            }
-            return;
+    if (download->offset >= 0
+        && !(download->partial ? append(download->path, download->target) : rename(download->path.c_str(), download->target.c_str()) == 0)) {
+        if (download->client && download->client->failed) {
+            const Error error = {-3000, "NSURLErrorDomain", "The download could not be written.", download->url.c_str()};
+            download->client->failed(download->context, &error);
         }
+        return;
     }
     if (download->client && download->client->finished)
         download->client->finished(download->context);
@@ -126,17 +123,18 @@ static void didFail(WKDownloadRef, WKErrorRef error, WKDataRef resumeData, const
 {
     const Download* download = static_cast<const Download*>(info);
     const bool resumable = resumeData && WKDataGetSize(resumeData);
-    const std::string path = download->offset >= 0 ? download->target : download->path;
+    const bool resumed = download->offset >= 0;
+    const std::string path = resumed ? download->target : download->path;
     bool kept = false;
     if (resumable && !download->path.empty()) {
-        if (download->offset < 0)
+        if (!resumed)
             kept = rename(download->path.c_str(), path.c_str()) == 0;
         else {
             kept = download->partial ? append(download->path, path) : rename(download->path.c_str(), path.c_str()) == 0;
             if (!kept)
                 unlink(download->path.c_str());
         }
-    } else if (download->offset >= 0)
+    } else if (resumed)
         unlink(download->path.c_str());
     if (kept && download->client && download->client->resumable) {
         struct stat status;

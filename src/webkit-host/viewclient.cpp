@@ -159,8 +159,8 @@ struct MenuItem
 {
     const char* title;
     int type;
-    uint32_t tag;
-    uint32_t depth;
+    int tag;
+    int depth;
     int enabled;
     int checked;
     int isLabel;
@@ -169,17 +169,9 @@ struct MenuItem
 static std::vector<MenuItem> menuItems(const WKViewMenuItem* items, size_t count)
 {
     std::vector<MenuItem> list(count);
-    for (size_t i = 0; i < count; i++) {
-        const WKViewMenuItem& from = items[i];
-        MenuItem& to = list[i];
-        to.title = from.title;
-        to.type = int(from.type);
-        to.tag = from.tag;
-        to.depth = from.depth;
-        to.enabled = from.enabled ? 1 : 0;
-        to.checked = from.checked ? 1 : 0;
-        to.isLabel = from.isLabel ? 1 : 0;
-    }
+    for (size_t i = 0; i < count; i++)
+        list[i] = {items[i].title, int(items[i].type), int(items[i].tag), int(items[i].depth), items[i].enabled, items[i].checked,
+                   items[i].isLabel};
     return list;
 }
 
@@ -225,13 +217,14 @@ void startDrag(WKViewRef, const WKViewDragData* data, uint32_t operations, const
 {
     View* view = viewOf(info);
     using Function = void (*)(void*, const Drag*, uint32_t, const void*, uint32_t, uint32_t, uint32_t, double, double);
-    if (!view->client->at<Function>(0xf0)) {
-        WKViewDragSourceEnded(view->view, {0, 0}, 0);
+    const auto function = view->client->at<Function>(0xf0);
+    if (!function) {
+        WKViewDragSourceEnded(view->view, hotspot, 0);
         return;
     }
     const Drag drag = {data->text, data->markup, data->url, data->urlTitle, data->fileURLs, int(data->fileURLCount),
                        data->image, int64_t(data->imageSize)};
-    view->client->at<Function>(0xf0)(view->context, &drag, operations, pixels, width, height, stride, hotspot.x, hotspot.y);
+    function(view->context, &drag, operations, pixels, width, height, stride, hotspot.x, hotspot.y);
 }
 
 static void copyPixels(View* view, const unsigned char* from, uint32_t width, uint32_t height, uint32_t stride, uint32_t format)

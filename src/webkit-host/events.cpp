@@ -198,13 +198,6 @@ struct Response
     WKFramePolicyListenerRef listener;
 };
 
-struct ResponseText
-{
-    std::string url;
-    std::string type;
-    std::string name;
-};
-
 void decidePolicyForResponse(WKPageRef, WKNavigationResponseRef navigation, WKFramePolicyListenerRef listener, WKTypeRef, const void* info)
 {
     View* view = viewOf(info);
@@ -213,19 +206,21 @@ void decidePolicyForResponse(WKPageRef, WKNavigationResponseRef navigation, WKFr
         WKFramePolicyListenerUse(listener);
         return;
     }
-    ResponseText text;
+    std::string url;
+    std::string type;
+    std::string name;
     Response value = {};
     if (WKURLResponseRef response = WKNavigationResponseCopyResponse(navigation)) {
-        text.url = takeUrl(WKURLResponseCopyURL(response));
-        text.type = takeString(WKURLResponseCopyMIMEType(response));
-        text.name = takeString(WKURLResponseCopySuggestedFilename(response));
+        url = takeUrl(WKURLResponseCopyURL(response));
+        type = takeString(WKURLResponseCopyMIMEType(response));
+        name = takeString(WKURLResponseCopySuggestedFilename(response));
         value.status = WKURLResponseHTTPStatusCode(response);
         value.size = WKURLResponseGetExpectedContentLength(response);
         WKRelease(response);
     }
-    value.url = text.url.c_str();
-    value.type = text.type.c_str();
-    value.name = text.name.c_str();
+    value.url = url.c_str();
+    value.type = type.c_str();
+    value.name = name.c_str();
     value.canShow = WKNavigationResponseCanShowMIMEType(navigation);
     if (WKFrameInfoRef frame = WKNavigationResponseCopyFrameInfo(navigation)) {
         value.isMainFrame = WKFrameInfoGetIsMainFrame(frame);

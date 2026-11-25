@@ -267,8 +267,9 @@ void find(View* view, const char* text, uint32_t flags)
         WKPageHideFindUI(view->page);
         return;
     }
+    const WKFindOptions options = findOptions(flags);
     WKStringRef string = makeString(text);
-    WKPageFindString(view->page, string, findOptions(flags), 1000);
+    WKPageFindString(view->page, string, options, 1000);
     WKRelease(string);
 }
 

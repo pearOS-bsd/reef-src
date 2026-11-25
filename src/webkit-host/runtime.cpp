@@ -251,8 +251,8 @@ void setScreens(const Screen* screens, int count, uint32_t primary)
         const Screen& screen = screens[i];
         WKScreenInfo info = {};
         info.identifier = screen.identifier;
-        info.frame = {{screen.x, screen.y}, {screen.width, screen.height}};
-        info.availableFrame = {{screen.availableX, screen.availableY}, {screen.availableWidth, screen.availableHeight}};
+        info.frame = WKRectMake(screen.x, screen.y, screen.width, screen.height);
+        info.availableFrame = WKRectMake(screen.availableX, screen.availableY, screen.availableWidth, screen.availableHeight);
         info.depth = screen.depth;
         info.depthPerComponent = screen.depthPerComponent;
         info.dpi = screen.dpi;
