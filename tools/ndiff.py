@@ -7,7 +7,7 @@ sys.path.insert(0, __file__.rsplit('/', 1)[0])
 import compare
 def listing(path, where):
     im = compare.Image(path)
-    a = int(where, 16) if re.fullmatch('[0-9a-f]+', where) else im.symbols.get(where) or next(v for k, v in im.symbols.items() if where in k and v in im.funcs)
+    a = int(where, 16) if re.fullmatch('[0-9a-f]+', where) else im.symbols.get(where) or max((v for k, v in im.symbols.items() if where in k and v in im.funcs), key=lambda v: im.funcs[v])
     out = []
     for i in im.md.disasm(im.data(a, im.funcs[a]), a):
         if i.mnemonic in ('nop', 'data16') or 'nop' in i.mnemonic or i.mnemonic == 'xchg' and i.op_str == 'ax, ax': continue
