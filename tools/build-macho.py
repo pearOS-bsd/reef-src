@@ -17,6 +17,7 @@ Each folder has a target.conf of `key = value` lines:
   sources   .c .m .S .cpp files in link order                           (required)
   sourcedir folder under the repository where sources not found in the target folder are (upstream code); $REPO and $SRC in cflags are
             the repository and the target folder
+  cflags.NAME  extra flags for the source NAME (as in `sources`), after cflags
   cflags    flags for every source, ldflags for the link, libs: dependencies as paths under the root, in load command order
             (`reexport:PATH` links it with -reexport_library)
   minos     deployment target, default 11.0
@@ -62,7 +63,7 @@ def build(root, out, folder):
             if s.endswith('.m'): cmd += ['-x', 'objective-c']
             if s.endswith('.cpp'): cmd += ['-x', 'c++']
             # the flags come first: libc++'s headers must be found before the C headers they wrap
-            cmd += shlex.split(c['cflags'].replace('$REPO', REPO).replace('$SRC', os.path.join(SRC, folder)))
+            cmd += shlex.split((c['cflags'] + ' ' + c.get('cflags.' + s, '')).replace('$REPO', REPO).replace('$SRC', os.path.join(SRC, folder)))
             cmd += ['-isystem', INCLUDE, '-isystem', RESOURCE, '-c', src, '-o', o]
             run(cmd); objects.append(o)
         libs = []
