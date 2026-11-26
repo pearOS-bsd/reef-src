@@ -46,34 +46,40 @@ struct SdBus
 
 static SdBus functions;
 
+// One function of libsystemd: whether it is there.
+template<typename Function>
+static bool load(void* library, Function& function, const char* name)
+{
+    function = reinterpret_cast<Function>(dlsym(library, name));
+    return function != nullptr;
+}
+
 static const SdBus* sdBus()
 {
     static const SdBus* const loaded = []() -> const SdBus* {
         void* library = dlopen("libsystemd.so.0", RTLD_NOW);
         if (!library)
             return nullptr;
-        functions.openSystem = reinterpret_cast<decltype(SdBus::openSystem)>(dlsym(library, "sd_bus_open_system"));
-        functions.flushCloseUnref = reinterpret_cast<decltype(SdBus::flushCloseUnref)>(dlsym(library, "sd_bus_flush_close_unref"));
-        functions.getFd = reinterpret_cast<decltype(SdBus::getFd)>(dlsym(library, "sd_bus_get_fd"));
-        functions.process = reinterpret_cast<decltype(SdBus::process)>(dlsym(library, "sd_bus_process"));
-        functions.callMethod = reinterpret_cast<decltype(SdBus::callMethod)>(dlsym(library, "sd_bus_call_method"));
-        functions.newMethodCall = reinterpret_cast<decltype(SdBus::newMethodCall)>(dlsym(library, "sd_bus_message_new_method_call"));
-        functions.append = reinterpret_cast<decltype(SdBus::append)>(dlsym(library, "sd_bus_message_append"));
-        functions.appendArray = reinterpret_cast<decltype(SdBus::appendArray)>(dlsym(library, "sd_bus_message_append_array"));
-        functions.openContainer = reinterpret_cast<decltype(SdBus::openContainer)>(dlsym(library, "sd_bus_message_open_container"));
-        functions.closeContainer = reinterpret_cast<decltype(SdBus::closeContainer)>(dlsym(library, "sd_bus_message_close_container"));
-        functions.call = reinterpret_cast<decltype(SdBus::call)>(dlsym(library, "sd_bus_call"));
-        functions.read = reinterpret_cast<decltype(SdBus::read)>(dlsym(library, "sd_bus_message_read"));
-        functions.readArray = reinterpret_cast<decltype(SdBus::readArray)>(dlsym(library, "sd_bus_message_read_array"));
-        functions.enterContainer = reinterpret_cast<decltype(SdBus::enterContainer)>(dlsym(library, "sd_bus_message_enter_container"));
-        functions.exitContainer = reinterpret_cast<decltype(SdBus::exitContainer)>(dlsym(library, "sd_bus_message_exit_container"));
-        functions.messageUnref = reinterpret_cast<decltype(SdBus::messageUnref)>(dlsym(library, "sd_bus_message_unref"));
-        functions.errorFree = reinterpret_cast<decltype(SdBus::errorFree)>(dlsym(library, "sd_bus_error_free"));
-        functions.matchSignal = reinterpret_cast<decltype(SdBus::matchSignal)>(dlsym(library, "sd_bus_match_signal"));
-        if (!functions.openSystem || !functions.flushCloseUnref || !functions.getFd || !functions.process || !functions.callMethod ||
-            !functions.newMethodCall || !functions.append || !functions.appendArray || !functions.openContainer || !functions.closeContainer ||
-            !functions.call || !functions.read || !functions.readArray || !functions.enterContainer || !functions.exitContainer ||
-            !functions.messageUnref || !functions.errorFree || !functions.matchSignal)
+        bool ok = true;
+        ok &= load(library, functions.openSystem, "sd_bus_open_system");
+        ok &= load(library, functions.flushCloseUnref, "sd_bus_flush_close_unref");
+        ok &= load(library, functions.getFd, "sd_bus_get_fd");
+        ok &= load(library, functions.process, "sd_bus_process");
+        ok &= load(library, functions.callMethod, "sd_bus_call_method");
+        ok &= load(library, functions.newMethodCall, "sd_bus_message_new_method_call");
+        ok &= load(library, functions.append, "sd_bus_message_append");
+        ok &= load(library, functions.appendArray, "sd_bus_message_append_array");
+        ok &= load(library, functions.openContainer, "sd_bus_message_open_container");
+        ok &= load(library, functions.closeContainer, "sd_bus_message_close_container");
+        ok &= load(library, functions.call, "sd_bus_call");
+        ok &= load(library, functions.read, "sd_bus_message_read");
+        ok &= load(library, functions.readArray, "sd_bus_message_read_array");
+        ok &= load(library, functions.enterContainer, "sd_bus_message_enter_container");
+        ok &= load(library, functions.exitContainer, "sd_bus_message_exit_container");
+        ok &= load(library, functions.messageUnref, "sd_bus_message_unref");
+        ok &= load(library, functions.errorFree, "sd_bus_error_free");
+        ok &= load(library, functions.matchSignal, "sd_bus_match_signal");
+        if (!ok)
             return nullptr;
         return &functions;
     }();
@@ -132,7 +138,7 @@ struct Registration : Client
     std::string domain;
     uint16_t port = 0;
     std::vector<std::vector<uint8_t>> records;
-    bool autoRename = false;
+    bool noAutoRename = false;
     int renames = 1;
     bool done = false;
     int result = 0;
@@ -157,23 +163,19 @@ static int addService(Registration& service)
     for (const std::vector<uint8_t>& record : service.records)
         bus->appendArray(message, 'y', record.data(), record.size());
     bus->closeContainer(message);
-    sd_bus_error error = SD_BUS_ERROR_NULL;
+    sd_bus_error error = {};
     r = bus->call(service.bus, message, 0, &error, nullptr);
     bus->messageUnref(message);
-    if (error.name && strcmp(error.name, "org.freedesktop.Avahi.CollisionError") == 0) {
-        bus->errorFree(&error);
-        if (r < 0)
-            return NameConflict;
-    } else {
-        bus->errorFree(&error);
-        if (r < 0)
-            return Unknown;
-    }
-    r = bus->callMethod(service.bus, "org.freedesktop.Avahi", service.path.c_str(), "org.freedesktop.Avahi.EntryGroup", "Commit", &error, nullptr, nullptr);
-    if (r >= 0)
-        return 0;
+    const bool collision = error.name && strcmp(error.name, "org.freedesktop.Avahi.CollisionError") == 0;
     bus->errorFree(&error);
-    return Unknown;
+    if (r < 0)
+        return collision ? NameConflict : Unknown;
+    r = bus->callMethod(service.bus, "org.freedesktop.Avahi", service.path.c_str(), "org.freedesktop.Avahi.EntryGroup", "Commit", &error, nullptr, "");
+    if (r < 0) {
+        bus->errorFree(&error);
+        return Unknown;
+    }
+    return 0;
 }
 
 static bool nextEvent(Client* client, BonjourEvent* event)
@@ -213,11 +215,11 @@ static int bonjourSocket(Client* client) { return sdBus()->getFd(client->bus); }
 // A new name after a collision: "Name (2)".
 static bool rename(Registration& service)
 {
-    if (!service.autoRename)
+    if (service.noAutoRename)
         return false;
     const SdBus* bus = sdBus();
-    sd_bus_error error = SD_BUS_ERROR_NULL;
-    bus->callMethod(service.bus, "org.freedesktop.Avahi", service.path.c_str(), "org.freedesktop.Avahi.EntryGroup", "Reset", &error, nullptr, nullptr);
+    sd_bus_error error = {};
+    bus->callMethod(service.bus, "org.freedesktop.Avahi", service.path.c_str(), "org.freedesktop.Avahi.EntryGroup", "Reset", &error, nullptr, "");
     bus->errorFree(&error);
     service.renames++;
     service.name = service.baseName + " (" + std::to_string(service.renames) + ")";
@@ -247,7 +249,7 @@ static int stateChanged(sd_bus_message* message, void* data, sd_bus_error*)
 }
 
 static int registerService(const char* name, const char* type, const char* domain, uint16_t port, const uint8_t* records, size_t length,
-                           int autoRename, Client** client)
+                           int noAutoRename, Client** client)
 {
     if (!type || !*type)
         return BadParameter;
@@ -302,7 +304,7 @@ static int registerService(const char* name, const char* type, const char* domai
         }
     }
     service->records = std::move(parsed);
-    service->autoRename = autoRename != 0;
+    service->noAutoRename = noAutoRename != 0;
     bus->matchSignal(service->bus, nullptr, "org.freedesktop.Avahi", service->path.c_str(), "org.freedesktop.Avahi.EntryGroup", "StateChanged",
                      stateChanged, service);
     int r = addService(*service);
