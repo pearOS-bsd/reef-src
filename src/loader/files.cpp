@@ -120,20 +120,20 @@ static bool hostReadable(uintptr_t address, size_t size)
     constexpr int Count = 256;
     char bytes[Count];
     iovec local[Count], remote[Count];
-    int count = 0;
     for (;;) {
-        remote[count] = {reinterpret_cast<void*>(address), 1};
-        local[count] = {&bytes[count], 1};
-        ++count;
-        address = (address & -page) + page;
-        const bool end = address - 1 >= last;
-        if (end || count == Count) {
-            if (process_vm_readv(getpid(), local, count, remote, count, 0) != count)
-                return false;
-            if (end)
+        for (int i = 0; i < Count; i++) {
+            remote[i] = {reinterpret_cast<void*>(address), 1};
+            local[i] = {&bytes[i], 1};
+            address = (address & -page) + page;
+            if (address - 1 >= last) {
+                const int count = i + 1;
+                if (process_vm_readv(getpid(), local, count, remote, count, 0) != count)
+                    return false;
                 return true;
-            count = 0;
+            }
         }
+        if (process_vm_readv(getpid(), local, Count, remote, Count, 0) != Count)
+            return false;
     }
 }
 
@@ -609,10 +609,10 @@ static int hostGetdirentries(int fd, HostEntry* entries, int count)
         return failure();
     int used = 0;
     for (long at = 0; at < size;) {
+        const dirent64* next = reinterpret_cast<const dirent64*>(buffer + at);
         // The rest is read again.
         if (used == count)
             return lseek(fd, entries[used - 1].offset, SEEK_SET) < 0 ? failure() : used;
-        const dirent64* next = reinterpret_cast<const dirent64*>(buffer + at);
         HostEntry& entry = entries[used++];
         entry.inode = next->d_ino;
         entry.offset = next->d_off;

@@ -1177,7 +1177,7 @@ void forgetSocket(int fd)
 bool pingSocket(int fd)
 {
     std::lock_guard lock(pingMutex);
-    return pings.contains(fd);
+    return pings.count(fd) != 0;
 }
 
 void addSocketServices(HostServices& services)
