@@ -7,9 +7,10 @@ set -e
 here=$(cd "$(dirname "$0")" && pwd)
 root=$1; shift
 for n in "$@"; do
+  ROOT_FILE=
   . "$here/$n/build.cfg"
-  d="$root/System/Library/$DEST/$n.framework/Versions/${VERSION:-A}"
-  mkdir -p "$d"
-  cp -f "$here/out/lib/$n.dylib" "$d/$n"
-  echo "installed $n -> $d/$n"
+  f="$root/${ROOT_FILE:-System/Library/$DEST/$n.framework/Versions/${VERSION:-A}/$n}"
+  mkdir -p "$(dirname "$f")"
+  cp -f "$here/out/lib/$n.dylib" "$f"
+  echo "installed $n -> $f"
 done

@@ -10,7 +10,7 @@ N=$1
 . ./$N/build.cfg
 SDK=$(xcrun --show-sdk-path)
 VERSION=${VERSION:-A}
-INSTALL=/System/Library/$DEST/$N.framework/Versions/$VERSION/$N
+INSTALL=${INSTALL_NAME:-/System/Library/$DEST/$N.framework/Versions/$VERSION/$N}
 OUT=$PWD/out; mkdir -p $OUT/mods $OUT/lib $OUT/inc
 DEPFLAGS=""
 for d in $DEPS; do DEPFLAGS="$DEPFLAGS $OUT/lib/$d.dylib"; done
@@ -35,6 +35,13 @@ if [ "$KIND" = wrapper ]; then
   clang $CCT -dynamiclib -install_name $INSTALL.reef-orig $OUT/obj/$N/stub.c -o $OUT/obj/$N/stub.dylib
   # linked under a temporary install name: ld ignores a dependency whose install name equals the output's
   LD="-Xlinker -install_name -Xlinker $INSTALL.wrapper"
+  if ! ls $N/Sources/*.swift >/dev/null 2>&1; then
+    # C / Objective-C only: the names are the same, no aliases needed
+    clang $CCT -dynamiclib $LD -Xlinker -reexport_library -Xlinker $OUT/obj/$N/stub.dylib $SYSLIBS $DEPFLAGS $OBJS -o $OUT/lib/$N.dylib
+    install_name_tool -id $INSTALL -change $INSTALL $INSTALL.reef-orig $OUT/lib/$N.dylib
+    echo "built wrapper $N (C)"
+    exit 0
+  fi
   build_wrapper() {
     swiftc $CT -sdk $SDK -emit-library -emit-module -module-name $MODULE -parse-as-library -enable-library-evolution \
       -swift-version 5 -O -I $OUT/mods $CM $EXTRA \
