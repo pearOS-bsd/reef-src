@@ -79,60 +79,53 @@ extension Scene {
 
 // MARK: Picker content (SPI)
 
+// Shapes taken from Apple's SwiftUI at runtime (generic signatures of the descriptors): see EVIDENCE.md.
 public protocol PickerContent {
-    associatedtype _IdentifiedView: PickerContent
+    associatedtype _IdentifiedView: View
     var _identifiedView: _IdentifiedView { get }
-}
-
-// How our picker contents turn into views (not part of Apple's interface).
-protocol _PickerRenderable {
-    var _renderedView: AnyView { get }
 }
 
 private func tagged<V: Hashable>(_ view: AnyView, _ value: V) -> AnyView { AnyView(view.tag(value)) }
 
-public struct PickerOption<Value, Content>: PickerContent, _PickerRenderable {
+// Any picker content or view as a view (tuple elements are of both kinds).
+private func anyView(_ e: Any) -> AnyView {
+    if let c = e as? any PickerContent { return AnyView(c._identifiedView) }
+    if let v = e as? any View { return AnyView(v) }
+    return AnyView(EmptyView())
+}
+
+public struct PickerOption<Value: Hashable, Content: View>: PickerContent {
     let value: Value
     let content: Content
     public init(value: Value, content: () -> Content) {
         self.value = value
         self.content = content()
     }
-    public var _identifiedView: some PickerContent { self }
-    var _renderedView: AnyView {
-        let view: AnyView = (content as? any View).map { AnyView($0) } ?? AnyView(EmptyView())
-        if let h = value as? any Hashable { return tagged(view, h) }
-        return view
+    public var _identifiedView: some View { tagged(AnyView(content), value) }
+}
+
+public struct _TuplePickerContent<Selection: Hashable, Parts>: PickerContent {
+    let parts: Parts
+    public init(_ parts: Parts) { self.parts = parts }
+    public var _identifiedView: some View {
+        let views = Mirror(reflecting: parts).children.map { anyView($0.value) }
+        return Group { ForEach(Array(views.enumerated()), id: \.offset) { $0.element } }
     }
 }
 
-public struct _TuplePickerContent<A: PickerContent, B: PickerContent>: PickerContent, _PickerRenderable {
-    let a: A
-    let b: B
-    public init(_ a: A, _ b: B) { self.a = a; self.b = b }
-    public var _identifiedView: some PickerContent { self }
-    var _renderedView: AnyView { AnyView(Group { render(a); render(b) }) }
-}
-
-public struct _DisabledPickerContent<A: PickerContent>: PickerContent, _PickerRenderable {
+public struct _DisabledPickerContent<A: PickerContent>: PickerContent {
     let base: A
     let isDisabled: Bool
     public init(_ base: A, _ isDisabled: Bool) { self.base = base; self.isDisabled = isDisabled }
-    public var _identifiedView: some PickerContent { self }
-    var _renderedView: AnyView { AnyView(render(base).disabled(isDisabled)) }
+    public var _identifiedView: some View { AnyView(base._identifiedView.disabled(isDisabled)) }
 }
 
-public struct _KeyboardShortcutPickerContent<A: PickerContent>: PickerContent, _PickerRenderable {
+public struct _KeyboardShortcutPickerContent<A: PickerContent>: PickerContent {
     let base: A
     let key: KeyEquivalent
     let modifiers: EventModifiers
     public init(_ base: A, _ key: KeyEquivalent, _ modifiers: EventModifiers) { self.base = base; self.key = key; self.modifiers = modifiers }
-    public var _identifiedView: some PickerContent { self }
-    var _renderedView: AnyView { AnyView(render(base).keyboardShortcut(key, modifiers: modifiers)) }
-}
-
-private func render<C: PickerContent>(_ c: C) -> AnyView {
-    (c as? _PickerRenderable)?._renderedView ?? AnyView(EmptyView())
+    public var _identifiedView: some View { AnyView(base._identifiedView.keyboardShortcut(key, modifiers: modifiers)) }
 }
 
 extension PickerContent {
@@ -144,14 +137,12 @@ extension PickerContent {
     }
 }
 
-public struct PickerBuilder<Selection> {
-    public struct Content<C> {
+public struct PickerBuilder<Selection: Hashable> {
+    public struct Content<C: PickerContent>: View {
         let content: C
         public init(_ content: C) { self.content = content }
+        public var body: some View { content._identifiedView }
     }
-}
-extension PickerBuilder.Content: View where C: PickerContent {
-    public var body: some View { render(content) }
 }
 
 extension Picker {
@@ -246,10 +237,50 @@ extension View {
     // The URL handler is not wired to Reef's open-URL event yet.
     public func onOpenURL(perform action: @escaping (URL) -> Void) -> some View { self }
 
-    // View-based toolbar content is dropped for now.
-    public func toolbar<A: View>(@ViewBuilder content: () -> A) -> some View { self }
+    // View-based toolbar content: one automatic item holding the views.
+    public func toolbar<A: View>(@ViewBuilder content: () -> A) -> some View {
+        let items = content()
+        return self.toolbar { ToolbarItem(placement: .automatic) { items } }
+    }
 }
 
 extension Image {
     public init(_internalSystemName name: String) { self.init(systemName: name) }
+}
+
+// MARK: Observable objects in the environment
+// Reef's SwiftUI does not hand the environment to a ButtonStyle (a style's @Environment sees the defaults, and
+// an Observable that is not there ends in a fatal error). Objects set with environment(_:) are therefore also
+// kept in a registry that the Environment(Type) initializer falls back on. One object per type, last one wins.
+
+private final class ObservableRegistry: @unchecked Sendable {
+    let lock = NSLock()
+    var objects: [ObjectIdentifier: AnyObject] = [:]
+}
+private let registry = ObservableRegistry()
+
+extension EnvironmentValues {
+    fileprivate subscript<T: AnyObject & Observable>(reefObservable id: ObjectIdentifier) -> T {
+        if let found = self[T.self] { return found }
+        registry.lock.lock(); defer { registry.lock.unlock() }
+        guard let object = registry.objects[id] as? T else {
+            fatalError("No Observable object of type \(T.self) found in the environment")
+        }
+        return object
+    }
+}
+
+extension Environment {
+    public init(_ objectType: Value.Type) where Value: AnyObject, Value: Observable {
+        self.init(\EnvironmentValues[reefObservable: ObjectIdentifier(objectType)] as KeyPath<EnvironmentValues, Value>)
+    }
+}
+
+extension View {
+    public func environment<T: AnyObject & Observable>(_ object: T?) -> some View {
+        if let object {
+            registry.lock.lock(); registry.objects[ObjectIdentifier(T.self)] = object; registry.lock.unlock()
+        }
+        return self.transformEnvironment(\.self) { $0[T.self] = object }
+    }
 }

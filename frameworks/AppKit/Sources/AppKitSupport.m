@@ -50,3 +50,13 @@ static NSUserInterfaceCompressionOptions *Make(NSString *i) { return [[NSUserInt
     return self;
 }
 @end
+
+// macOS 26: an appearance that carries a tint colour. Reef's AppKit has no tinted appearances: the
+// appearance itself is returned.
+@interface NSAppearance (ReefTint)
+- (NSAppearance *)appearanceByApplyingTintColor:(NSColor *)color;
+@end
+
+@implementation NSAppearance (ReefTint)
+- (NSAppearance *)appearanceByApplyingTintColor:(NSColor *)color { return self; }
+@end
