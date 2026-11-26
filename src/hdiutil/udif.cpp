@@ -281,20 +281,6 @@ static std::string escaped(const std::string& text)
     return result;
 }
 
-static std::string base64(const std::vector<uint8_t>& data)
-{
-    static const char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    std::string result;
-    for (size_t i = 0; i < data.size(); i += 3) {
-        const uint32_t n = data[i] << 16 | (i + 1 < data.size() ? data[i + 1] << 8 : 0) | (i + 2 < data.size() ? data[i + 2] : 0);
-        result += alphabet[n >> 18 & 63];
-        result += alphabet[n >> 12 & 63];
-        result += i + 1 < data.size() ? alphabet[n >> 6 & 63] : '=';
-        result += i + 2 < data.size() ? alphabet[n & 63] : '=';
-    }
-    return result;
-}
-
 // The property list with the block table of every partition.
 static std::string propertyList(const std::vector<Partition>& partitions, const std::vector<uint64_t>& ends)
 {
@@ -310,14 +296,20 @@ static std::string propertyList(const std::vector<Partition>& partitions, const 
         const std::string name = escaped(partitions[i].name);
         xml += "\t\t\t<dict>\n\t\t\t\t<key>Attributes</key>\n\t\t\t\t<string>0x0050</string>\n";
         xml += "\t\t\t\t<key>CFName</key>\n\t\t\t\t<string>" + name + "</string>\n";
-        xml += "\t\t\t\t<key>Data</key>\n\t\t\t\t<data>\n\t\t\t\t";
-        const std::string data = base64(mishBlock(partitions[i], ends[i]));
-        for (size_t at = 0; at < data.size(); at += 68) {
-            if (at)
-                xml += "\n\t\t\t\t";
-            xml += data.substr(at, 68);
+        const std::vector<uint8_t> block = mishBlock(partitions[i], ends[i]);
+        // Base64 in lines of 51 bytes.
+        static const char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        std::string text;
+        for (size_t at = 0; at < block.size(); at += 3) {
+            if (at != 0 && at % 51 == 0)
+                text += "\n\t\t\t\t";
+            const uint32_t n = block[at] << 16 | (at + 1 < block.size() ? block[at + 1] << 8 : 0) | (at + 2 < block.size() ? block[at + 2] : 0);
+            text += alphabet[n >> 18 & 63];
+            text += alphabet[n >> 12 & 63];
+            text += at + 1 < block.size() ? alphabet[n >> 6 & 63] : '=';
+            text += at + 2 < block.size() ? alphabet[n & 63] : '=';
         }
-        xml += "\n\t\t\t\t</data>\n";
+        xml += "\t\t\t\t<key>Data</key>\n\t\t\t\t<data>\n\t\t\t\t" + text + "\n\t\t\t\t</data>\n";
         xml += "\t\t\t\t<key>ID</key>\n\t\t\t\t<string>" + std::to_string(int(i)) + "</string>\n";
         xml += "\t\t\t\t<key>Name</key>\n\t\t\t\t<string>" + name + "</string>\n";
         xml += "\t\t\t</dict>\n";
