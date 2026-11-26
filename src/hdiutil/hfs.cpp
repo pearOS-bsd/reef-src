@@ -110,16 +110,17 @@ static void putDates(uint8_t* p, const Entry& entry)
 
 static uint16_t fold(uint16_t c)
 {
-    if (c < 0x100)
-        return lowerCaseLow[c];
-    const uint16_t table = lowerCaseHigh[c >> 8];
-    if (!table)
-        return c;
-    return lowerCaseHigh[table + (c & 0xff)];
+    if (c >= 0x100) {
+        const uint16_t table = lowerCaseHigh[c >> 8];
+        if (!table)
+            return c;
+        return lowerCaseHigh[table + (c & 0xff)];
+    }
+    return lowerCaseLow[c];
 }
 
 // The order of names in the catalog: case does not count, characters that fold to nothing are skipped.
-static int compareNames(const std::u16string& a, const std::u16string& b)
+int compareNames(const std::u16string& a, const std::u16string& b)
 {
     size_t i = 0;
     size_t j = 0;

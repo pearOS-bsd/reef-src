@@ -119,8 +119,8 @@ static bool scan(const std::string& path, const struct stat& status, Entry& entr
     entry.accessed = status.st_atim.tv_sec;
     entry.modified = status.st_mtim.tv_sec;
     entry.changed = status.st_ctim.tv_sec;
-    switch (status.st_mode & S_IFMT) {
-    case S_IFLNK: {
+    const mode_t kind = status.st_mode & S_IFMT;
+    if (kind == S_IFLNK) {
         entry.type = Entry::Link;
         std::string target(status.st_size + 1, 0);
         const ssize_t size = readlink(path.c_str(), target.data(), target.size());
@@ -133,7 +133,7 @@ static bool scan(const std::string& path, const struct stat& status, Entry& entr
         entry.size = target.size();
         return true;
     }
-    case S_IFREG:
+    if (kind == S_IFREG) {
         entry.type = Entry::File;
         entry.size = status.st_size;
         return true;

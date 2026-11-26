@@ -102,11 +102,11 @@ static Progress progressFor(const Arguments& arguments)
     auto last = std::make_shared<int>(-1);
     return [last](uint64_t done, uint64_t total) {
         const int permille = total ? int(done * 1000 / total) : 1000;
-        if (*last != permille) {
-            *last = permille;
-            printf("PERCENT:%f\n", permille / 10.0);
-            fflush(stdout);
-        }
+        if (*last == permille)
+            return;
+        *last = permille;
+        printf("PERCENT:%f\n", permille / 10.0);
+        fflush(stdout);
     };
 }
 
@@ -272,19 +272,15 @@ static int create(const Arguments& arguments)
     startProgress(arguments);
     const Progress progress = progressFor(arguments);
     // The file system is the first half of the work, its conversion the second.
-    if (!makeHfs(root, name, raw, [&progress](uint64_t done, uint64_t total) {
-            if (progress)
-                progress(done, total * 2);
-        }, &error)) {
+    const Progress first = progress ? Progress([&progress](uint64_t done, uint64_t total) { progress(done, total * 2); }) : Progress();
+    if (!makeHfs(root, name, raw, first, &error)) {
         unlink(raw.c_str());
         unlink(temporary.c_str());
         return fail("create", error);
     }
-    const bool converted = diskimage::convert(raw, temporary, options,
-                                              [&progress](uint64_t done, uint64_t total) {
-                                                  if (progress)
-                                                      progress(total + done, total * 2);
-                                              }, &error);
+    const Progress second =
+        progress ? Progress([&progress](uint64_t done, uint64_t total) { progress(total + done, total * 2); }) : Progress();
+    const bool converted = diskimage::convert(raw, temporary, options, second, &error);
     unlink(raw.c_str());
     if (!converted) {
         unlink(temporary.c_str());
