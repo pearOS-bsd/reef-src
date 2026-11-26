@@ -1,9 +1,9 @@
-#!/bin/sh
-# Runs on the Mac VM: build-mac.sh NAME...
+#!/bin/bash
+# Runs on the Mac VM: build-mac.sh NAME...   (up to 4 builds in parallel; only errors are shown)
 cd "$(dirname "$0")"; mkdir -p out
-for n in "$@"; do
-  app=out/$n.app; rm -rf $app; mkdir -p $app/Contents/MacOS $app/Contents/Resources
-  swiftc -O -swift-version 5 -target x86_64-apple-macos14.0 common/*.swift apps/$n/*.swift -o $app/Contents/MacOS/$n 2>out/$n.log || { echo "FAIL $n"; cat out/$n.log; continue; }
+build() {
+  n=$1; app=out/$n.app; rm -rf $app; mkdir -p $app/Contents/MacOS $app/Contents/Resources
+  swiftc -O -swift-version 5 -target x86_64-apple-macos14.0 common/*.swift apps/$n/*.swift -o $app/Contents/MacOS/$n >out/$n.log 2>&1 || { echo "FAIL $n"; grep -A3 'error:' out/$n.log | head -30; rm -rf $app; return; }
   [ -d apps/$n/res ] && cp -R apps/$n/res/. $app/Contents/Resources/
   cat > $app/Contents/Info.plist <<PL
 <?xml version="1.0" encoding="UTF-8"?>
@@ -21,4 +21,11 @@ for n in "$@"; do
 </dict></plist>
 PL
   codesign -s - -f $app >/dev/null 2>&1 || true
+  echo "ok $n"
+}
+export -f build 2>/dev/null
+for n in "$@"; do
+  build $n &
+  while [ $(jobs -r | wc -l) -ge 4 ]; do sleep 1; done
 done
+wait

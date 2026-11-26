@@ -93,7 +93,7 @@ extension View {
         self.background(GeometryReader { g in
             Color.clear
                 .onAppear { Harness.records[name] = Harness.fmt(g.frame(in: .global)) }
-                .onChange(of: g.size) { _ in Harness.records[name] = Harness.fmt(g.frame(in: .global)) }
+                .onChange(of: g.size) { _, _ in Harness.records[name] = Harness.fmt(g.frame(in: .global)) }
         })
     }
     /// Mark the view whose appearance means "final state reached". `log` lines are printed with the tree.
