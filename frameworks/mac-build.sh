@@ -32,6 +32,13 @@ if [ "$KIND" = wrapper ]; then
   # Support module whose symbols get Apple's names as aliases; Reef's original stays beside it as <name>.reef-orig and is re-exported.
   mkdir -p $OUT/obj/$N
   echo 'void reef_orig_stub(void){}' > $OUT/obj/$N/stub.c
+  # SLOT_ALIASES="_apples=_orig ...": Apple's symbol answers with a symbol of Reef's original (named in the stub so ld accepts the alias)
+  EXTRA_ALIAS=""
+  for pair in $SLOT_ALIASES; do
+    a=${pair%%=*}; o=${pair#*=}
+    echo "char $(echo $o | sed 's/^_//') = 0;" >> $OUT/obj/$N/stub.c
+    EXTRA_ALIAS="$EXTRA_ALIAS -Xlinker -alias -Xlinker $o -Xlinker $a"
+  done
   clang $CCT -dynamiclib -install_name $INSTALL.reef-orig $OUT/obj/$N/stub.c -o $OUT/obj/$N/stub.dylib
   # linked under a temporary install name: ld ignores a dependency whose install name equals the output's
   LD="-Xlinker -install_name -Xlinker $INSTALL.wrapper"
@@ -51,7 +58,7 @@ if [ "$KIND" = wrapper ]; then
   build_wrapper
   nm -gU $OUT/lib/$N.dylib > $OUT/obj/$N/nm.txt
   python3 ./alias.py $MODULE $APPLE_MODULE $N/apple-symbols.txt $OUT/obj/$N/nm.txt > $OUT/obj/$N/flags.txt
-  build_wrapper $(cat $OUT/obj/$N/flags.txt)
+  build_wrapper $(cat $OUT/obj/$N/flags.txt) $EXTRA_ALIAS
   # references to the framework itself must reach the original, not the wrapper
   install_name_tool -id $INSTALL -change $INSTALL $INSTALL.reef-orig $OUT/lib/$N.dylib
   # libraries Reef folds into the original (SwiftUICore into SwiftUI): REDIRECT="from ..."

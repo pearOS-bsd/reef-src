@@ -193,10 +193,11 @@ extension EnvironmentValues {
 
 // MARK: Representable reset (SPI requirement of NSViewRepresentable)
 
+// Reef's NSViewRepresentable has no _resetNSView requirement: its requirement descriptor is answered by the
+// descriptor of _overrideLayoutTraits (see build.cfg), so this default must stay a no-op: it can be reached
+// through that slot with the other function's arguments.
 extension NSViewRepresentable {
-    public func _resetNSView(_ nsView: NSViewType, coordinator: Coordinator, destroy: () -> Void) {
-        destroy()
-    }
+    public func _resetNSView(_ nsView: NSViewType, coordinator: Coordinator, destroy: () -> Void) {}
 }
 
 // MARK: Glass, scroll, list, text
