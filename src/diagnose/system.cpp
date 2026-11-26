@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cctype>
 #include <cerrno>
 #include <climits>
 #include <cstdlib>
@@ -45,7 +46,7 @@ static std::vector<std::string> namesIn(const std::string& path)
 static bool readNumber(const std::string& path, long& value)
 {
     const std::string text = trimmed(readFile(path));
-    if (text.empty() || text[0] < '0' || text[0] > '9')
+    if (text.empty() || !isdigit(static_cast<unsigned char>(text[0])))
         return false;
     value = std::stol(text);
     return true;
