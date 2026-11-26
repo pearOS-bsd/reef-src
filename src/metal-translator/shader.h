@@ -39,14 +39,18 @@ struct reef_mtl_binding
 // A sampler declared in the shader source. (0x38 bytes)
 struct reef_mtl_constant_sampler
 {
-    int index;                  // 0x00
-    int minFilter;              // 0x04
-    int magFilter;              // 0x08
-    int mipFilter;              // 0x0c
-    int maxAnisotropy;          // 0x10
-    int sAddress;               // 0x14
+    int sAddress;               // 0x00  MTLSamplerAddressMode
+    int tAddress;               // 0x04
+    int rAddress;               // 0x08
+    int minFilter;              // 0x0c  MTLSamplerMinMagFilter
+    int magFilter;              // 0x10
+    int mipFilter;              // 0x14  MTLSamplerMipFilter
     int normalized;             // 0x18  0: coordinates in pixels
-    int rest[7];                // 0x1c
+    int compare;                // 0x1c  MTLCompareFunction, -1 none
+    int borderColor;            // 0x20  MTLSamplerBorderColor
+    int maxAnisotropy;          // 0x24
+    double lodMinClamp;         // 0x28
+    double lodMaxClamp;         // 0x30
 };
 
 // A vertex attribute. (0x20 bytes)

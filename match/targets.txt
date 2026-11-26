@@ -9,4 +9,4 @@ lib/cutefish-reef/usr/libexec/reef-hdiutil reef-hdiutil 14
 bin/reef-diagnose reef-diagnose 38
 lib/cutefish-reef/host/libreef-appkit-host.so libreef-appkit-host.so 54
 lib/cutefish-reef/lib/libreef-metal-msl.so - 0
-lib/cutefish-reef/lib/libreef-metal-translator.so - 0
+lib/cutefish-reef/lib/libreef-metal-translator.so libreef-metal-translator.so 21
