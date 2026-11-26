@@ -43,7 +43,7 @@ public:
     using std::runtime_error::runtime_error;
 };
 
-// Thrown when the control flow has no structured form (caught: the state machine is used instead).
+// Thrown when the control flow has no structured form (caught: the structurizing passes, then the state machine).
 struct Unstructured
 {
 };
@@ -54,14 +54,14 @@ struct Root
     enum : int {
         Buffer,                 // an argument: "reef_kb0.w"
         Private,                // an alloca ("reef_p3") or a private global ("reef_g3")
-        Threadgroup,            // a global of address space 3: "reef_g3"
+        Threadgroup,            // a threadgroup argument ("reef_tg0") or a global of address space 3 ("reef_g3")
         Constant,               // a global constant with its value: "reef_c3"
         Texture,
         Sampler,                // also a constant sampler (__air_sampler_state)
         ReadSampler,            // the sampler of air.get_read_sampler
     };
     int kind = Buffer;          // 0x00
-    int index = 0;              // 0x04  its place in m_roots
+    int index = 0;              // 0x04  the Metal slot of an argument: [[buffer(n)]], [[texture(n)]], [[threadgroup(n)]] ...
     std::string name;           // 0x08  the GLSL array of words
     bool readOnly = false;      // 0x28
     uint64_t size = 0;          // 0x30  in words, at least one
@@ -106,13 +106,13 @@ public:
 
 private:
     // emitter.cpp: preparation of the function
-    void resolveFunctionConstants();                        // 0x35ce0
-    void runInitializers();                                 // 0x36c50
-    void prepare();                                         // 0x2fc40
-    void unrollLoops(llvm::FunctionAnalysisManager &analyses); // 0x27cc0
-    void expandConstantExpressions();                       // 0x27380
+    void resolveFunctionConstants();                        // 0x35ce0  values of the caller, is_function_constant_defined
+    void runInitializers();                                 // 0x36c50  llvm.global_ctors, run at translation time
+    void prepare();                                         // 0x2fc40  inlining, any/all of bools, the cleaning passes
+    void unrollLoops(llvm::FunctionAnalysisManager &analyses); // 0x27cc0  short loops over private memory
+    void expandConstantExpressions();                       // 0x27380  every constant expression operand becomes an instruction
     void structurize();                                     // 0x29060  the passes that make control flow structured
-    void reset();                                           // 0x272f0  forget names and addresses of values
+    void reset();                                           // 0x272f0  forget names and addresses of instructions
     // emitter.cpp: text
     void line(const std::string &text);                     // 0x275b0  one indented line of the body
     void require(const std::string &extension);             // 0x27680
@@ -124,13 +124,13 @@ private:
     std::string component(unsigned index);                  // 0x27900  "x", "y", "z", "w"
     static std::string identifier(const std::string &name); // 0x28960  other characters as _ and two hex digits
     std::string vectorPrefix(llvm::Type *element);          // 0x28f20  "vec", "uvec" ...
-    std::string asSigned(const std::string &value, llvm::Type *type);   // 0x2a6d0
+    std::string asSigned(const std::string &value, llvm::Type *type);   // 0x2a6d0  the value as a GLSL int
     std::string masked(const std::string &value, llvm::Type *type);     // 0x2ae20  only the bits of the type
     std::string element(const std::string &value, llvm::Type *type, unsigned index); // 0x2ccf0
     std::string integer(uint64_t value, llvm::Type *type);  // 0x2ede0  a literal
     std::string scalarConstant(llvm::Constant *constant, llvm::Type *type); // 0x2f300
     std::string elementOf(llvm::Value *value, const std::string &text, unsigned index); // 0x2f5a0
-    std::string fromSigned(const std::string &value, llvm::Type *type); // 0x2f700
+    std::string fromSigned(const std::string &value, llvm::Type *type); // 0x2f700  a GLSL int as the value of the type
     std::string helper(const std::string &name, const std::string &text); // 0x31a90  adds a GLSL function once, gives its name
     void requireHalf();                                     // 0x31e50  reef_half_bits, reef_half
     std::string structName(llvm::StructType *type);         // 0x31fa0
@@ -225,7 +225,7 @@ private:
     Shader &m_shader;                                       // 0x018
     llvm::Function *m_function;                             // 0x020
     const llvm::DataLayout &m_layout;                       // 0x028
-    std::string m_prefix;                                   // 0x030  "v", "f" or "k"
+    std::string m_prefix;                                   // 0x030  "v", "f" or "k": of the names of buffers
     std::unique_ptr<llvm::DominatorTree> m_dominators;      // 0x050
     std::unique_ptr<llvm::LoopInfo> m_loops;                // 0x058
     std::ostringstream m_body;                              // 0x060
@@ -239,35 +239,38 @@ private:
     std::map<std::string, std::string> m_helpers;           // 0x2a0  name, text
     std::vector<std::string> m_prologue;                    // 0x2d0  first statements of main()
     llvm::DenseMap<const llvm::Value *, std::string> m_names;     // 0x2e8  variables of instructions
-    llvm::DenseMap<const llvm::Value *, std::string> m_arguments; // 0x300
+    llvm::DenseMap<const llvm::Value *, std::string> m_arguments; // 0x300  expressions of the parameters
     llvm::DenseMap<const llvm::Value *, Address> m_addresses;     // 0x318
-    llvm::SmallPtrSet<const llvm::Value *, 16> m_set330;    // 0x330
+    llvm::SmallPtrSet<const llvm::Value *, 16> m_values;    // 0x330  only reset() touches it
     std::vector<std::pair<std::string, std::string>> m_variables; // 0x3d0  type, name
     int m_nextVariable = 0;                                 // 0x3e8
     std::vector<std::unique_ptr<Root>> m_roots;             // 0x3f0
     llvm::DenseMap<const llvm::Value *, Root *> m_pointerRoots;   // 0x408
     llvm::DenseMap<const llvm::Value *, Root *> m_argumentRoots;  // 0x420
     std::map<int, Texture> m_textures;                      // 0x438  by the index of the argument
-    // 0x468: std::deque of 200 or 400 byte elements
-    std::deque<char[400]> m_deque468;                       // 0x468
-    std::vector<void *> m_vector4b8;                        // 0x4b8
-    std::map<void *, std::pair<void *, void *>> m_map4d0;   // 0x4d0  nodes of 0x38 bytes
-    void *m_500 = nullptr;                                  // 0x500
+    // pointers.cpp (first version of the types: sizes and destructors as in the binary)
+    std::deque<Argument> m_members;                         // 0x468  resources of argument buffers, as arguments of their own
+    std::vector<std::pair<const llvm::Value *, Argument *>> m_memberValues; // 0x4b8
+    std::map<std::pair<const llvm::Value *, int64_t>, Root *> m_loadedRoots; // 0x4d0
+    void *m_unused500 = nullptr;                            // 0x500  only the constructor touches it
     std::set<llvm::BasicBlock *> m_written;                 // 0x508  blocks that are in the body
     std::map<llvm::BasicBlock *, int> m_numbers;            // 0x538  blocks of the state machine
-    bool m_568 = false;                                     // 0x568
+    bool m_machine = false;                                 // 0x568  the body is the state machine (nothing reads it)
     std::set<llvm::BasicBlock *> m_tails;                   // 0x570  blocks that soon leave the function: written at each branch
     std::map<llvm::BasicBlock *, llvm::BasicBlock *> m_merges; // 0x5a0  immediate post-dominators
     size_t m_repeated = 0;                                  // 0x5d0  instructions that were written again
     size_t m_repeatLimit = 0;                               // 0x5d8
     bool m_barrier = false;                                 // 0x5e0  a barrier of the threadgroup: main() must not return early
-    bool m_5e1 = false;                                     // 0x5e1
+    bool m_unused5e1 = false;                               // 0x5e1  only the constructor touches it
 };
 
-// 0x439c0
+// Translates the function of `info`. On failure, the text of the Unsupported is in `error`. 0x439c0
 bool translate(llvm::Module &module, const FunctionInfo &info, const Options &options, Shader &shader, std::string &error);
 
-// The vertex attributes of a function, their names kept in `strings`. 0x35750
+// The vertex attributes of a function, their names kept in `strings`, by their index. 0x35750
 std::vector<reef_mtl_attribute> attributesOf(const FunctionInfo &info, std::deque<std::string> &strings);
+
+// The options as text: a part of the key of a cached translation. 0x2e130
+std::string optionsKey(const Options &options);
 
 }
