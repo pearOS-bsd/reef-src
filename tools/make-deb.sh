@@ -1,21 +1,25 @@
 #!/bin/sh
-# Package open-reef: the files of the original package with its 12 ELF programs and libraries replaced by the ones built from
-# this repository (match/targets.txt: path under usr, name in the build folder). The Mac frameworks stay as they are.
-# open-reef conflicts with, replaces and provides the original package, so packages that depend on it stay satisfied.
-# usage: make-deb.sh ORIGINAL.deb BUILD_DIR OUT_DIR [COMMIT]   (COMMIT: what BUILD_DIR was built from, HEAD by default)
+# SPDX-FileCopyrightText: 2026 Alexandru Balan
+# SPDX-License-Identifier: BSD-2-Clause
+# Package open-reef: the files of the original package kept in upstream/cutefish-reef, with the 12 ELF programs and libraries
+# built from this repository (match/targets.txt: path under usr, name in the build folder). open-reef conflicts with,
+# replaces and provides the original package, so packages that depend on it stay satisfied.
+# usage: make-deb.sh BUILD_DIR OUT_DIR [COMMIT]   (COMMIT: what BUILD_DIR was built from, HEAD by default)
 set -e
-original=$1 build=$2 out=$3
+build=$1 out=$2
 here=$(cd "$(dirname "$0")/.." && pwd)
-commit=$(git -C "$here" rev-parse --short "${4:-HEAD}")
+base=$here/upstream/cutefish-reef
+commit=$(git -C "$here" rev-parse --short "${3:-HEAD}")
 version=0.1~git$(git -C "$here" log -1 --format=%cd --date=format:%Y%m%d%H%M%S "$commit").$commit
+field() { sed -n "s/^$1: //p" "$base/control"; }
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
-dpkg-deb -x "$original" "$work/pkg"
-field() { dpkg-deb -f "$original" "$1"; }
+mkdir "$work/pkg"
+cp -a "$base/usr" "$work/pkg/usr"
 while read -r path name minimum; do
     [ "$name" = "-" ] && continue
     [ -f "$build/$name" ] || { echo "make-deb.sh: $build/$name is missing" >&2; exit 1; }
-    [ -f "$work/pkg/usr/$path" ] || { echo "make-deb.sh: usr/$path is not in $original" >&2; exit 1; }
+    mkdir -p "$(dirname "$work/pkg/usr/$path")"
     install -m 755 "$build/$name" "$work/pkg/usr/$path"
     # As dh_strip does: no debug information, no .comment and .note sections.
     case $name in
@@ -23,13 +27,15 @@ while read -r path name minimum; do
         *) strip --remove-section=.comment --remove-section=.note "$work/pkg/usr/$path" ;;
     esac
 done < "$here/match/targets.txt"
+# The modes of the package, whatever the umask of the checkout: folders 755, files 644 or 755.
+chmod -R u+rwX,go+rX,go-w "$work/pkg"
 mkdir "$work/pkg/DEBIAN"
 (cd "$work/pkg" && find usr -type f -print0 | sort -z | xargs -0 md5sum > DEBIAN/md5sums)
 cat > "$work/pkg/DEBIAN/control" <<CONTROL
 Package: open-reef
 Version: $version
 Architecture: $(field Architecture)
-Maintainer: $(git -C "$here" config user.name) <$(git -C "$here" config user.email)>
+Maintainer: $(git -C "$here" log -1 --format='%an <%ae>' "$commit")
 Installed-Size: $(du -s --apparent-size -k "$work/pkg/usr" | cut -f1)
 Depends: $(field Depends)
 Conflicts: $(field Package)

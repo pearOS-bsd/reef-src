@@ -3,10 +3,10 @@ Source of the ELF programs and libraries of Reef, reconstructed function by func
 
 **Total of the 12 ELF files: 37.1 % of the code bytes (1421109 of 3828323) and 76.1 % of the functions (3850 of 5060) are the
 same as in the published binaries** (2026-11-26). `tools/total.py` computes it; every CI run prints it at the end of the match
-list (there without `libreef-webkit-host.so`, which needs headers CI does not have). Functions that are written but not the
+list. Functions that are written but not the
 same yet do not count.
 **Written: 100.0 % of the functions (5060 of 5060)**: every file; what was tested against the original is in the table. Now the
-functions that are written but not the same yet are tuned. The 199 Mach-O files of Reef (58.6 MB) are not part of this repository.
+functions that are written but not the same yet are tuned. The other files of the package (199 Mach-O files, resources) are kept unchanged in `upstream/cutefish-reef`.
 
 | target | matched |
 |---|---|
@@ -37,6 +37,8 @@ Run `tests/small.py` in the container after `build-match.sh` (build is in /tmp/b
 `reef-authhelper` and `login` are security sensitive: run them in a container, never install them setuid.
 
 ## Package
-`tools/make-deb.sh ORIGINAL.deb BUILD_DIR OUT_DIR [COMMIT]` makes `open-reef`: the original package with its 12 ELF files
-replaced by a build of this repository (CMake, as in `tools/build-match.sh`). It conflicts with, replaces and provides the
-original package, so it installs in its place.
+`tools/make-deb.sh BUILD_DIR OUT_DIR [COMMIT]` makes `open-reef`: the files of the original package kept unchanged in
+`upstream/cutefish-reef` (Mac frameworks, Swift libraries, resources, licences; `upstream/PROVENANCE.md`), with its 12 ELF
+files built from this repository (CMake, as in `tools/build-match.sh`). It conflicts with, replaces and provides the original
+package, so it installs in its place. CI publishes it in the release `open-reef-latest` after every push to main, and in a
+release of its own for every tag `v*`. On Ubuntu 24.04 it needs the steps of `docs/UBUNTU.md`.

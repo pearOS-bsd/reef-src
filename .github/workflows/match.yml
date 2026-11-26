@@ -1,7 +1,7 @@
 name: match
 on: [push, pull_request]
 permissions:
-  contents: read
+  contents: write
 jobs:
   match:
     runs-on: ubuntu-24.04
@@ -20,5 +20,33 @@ jobs:
           gh release download original-f3c1807 -R "$GITHUB_REPOSITORY" -p toolkit-7e25ddc.tar.gz -O /tmp/ts.tar.gz
           echo 'a7a01a39a3ad2663a714fad706ccd1dcb91db69e32c0ac3540b16428699b9b67  /tmp/ts.tar.gz' | sha256sum -c
           mkdir /tmp/tksrc && tar xzf /tmp/ts.tar.gz -C /tmp/tksrc
+          # The WebKit headers and a library with the same exported names to link against (tools/link-stub.py).
+          gh release download original-f3c1807 -R "$GITHUB_REPOSITORY" -p webkit-sdk-157ef16.tar.gz -O /tmp/wk.tar.gz
+          echo '85f91a724fe16c75309faa18cbfe2d139f4cd7ddf18326e0972bfe1d4e620fa3  /tmp/wk.tar.gz' | sha256sum -c
+          mkdir /tmp/wk && tar xzf /tmp/wk.tar.gz -C /tmp/wk && cp /tmp/wk/lib/libcutefish-webkit.so.2 /tmp/tklib/
+          mkdir /tmp/out
       - run: docker build -t reef-build docker
-      - run: docker run --rm -v "$PWD:/w:ro" -v /tmp/orig/usr:/o:ro -v /tmp/tksrc:/t:ro -v /tmp/tklib:/l:ro reef-build sh -c "sh /w/tools/build-match.sh /o /w /t /l && python3 /w/tests/small.py /o /tmp/b && python3 /w/tests/mach.py /o/bin/reef /tmp/b/reef && python3 /w/tests/hdiutil.py /o/lib/cutefish-reef/usr/libexec/reef-hdiutil /tmp/b/reef-hdiutil && LD_LIBRARY_PATH=/l python3 /w/tests/diagnose.py /o/bin/reef-diagnose /tmp/b/reef-diagnose && mkdir /tmp/apps && LD_LIBRARY_PATH=/l python3 -B /w/tests/dialogs.py /o /tmp/b /tmp/b/libuishim.so /tmp/apps && LD_LIBRARY_PATH=/l python3 -B /w/tests/package.py /o/libexec/cutefish-reef/reef-install-package /tmp/b/reef-install-package && sh /w/tests/appkit/run.sh /o/lib/cutefish-reef/host/libreef-appkit-host.so /tmp/b/libreef-appkit-host.so /t /l && LD_LIBRARY_PATH=/l sh /w/tests/metal/msl.sh /o/lib/cutefish-reef/lib/libreef-metal-msl.so /tmp/b/libreef-metal-msl.so && LD_LIBRARY_PATH=/l sh /w/tests/metal/run.sh /o/lib/cutefish-reef/lib/libreef-metal-translator.so /tmp/b/libreef-metal-translator.so /o/lib/cutefish-reef/lib/libreef-metal-msl.so /tmp/b/libreef-metal-msl.so"
+      - run: docker run --rm -v "$PWD:/w:ro" -v /tmp/orig/usr:/o:ro -v /tmp/tksrc:/t:ro -v /tmp/tklib:/l:ro -v /tmp/wk/include:/k:ro -v /tmp/out:/out reef-build sh -c "sh /w/tools/build-match.sh /o /w /t /l /k/cutefish-webkit /out/b && python3 /w/tests/small.py /o /tmp/b && python3 /w/tests/mach.py /o/bin/reef /tmp/b/reef && python3 /w/tests/hdiutil.py /o/lib/cutefish-reef/usr/libexec/reef-hdiutil /tmp/b/reef-hdiutil && LD_LIBRARY_PATH=/l python3 /w/tests/diagnose.py /o/bin/reef-diagnose /tmp/b/reef-diagnose && mkdir /tmp/apps && LD_LIBRARY_PATH=/l python3 -B /w/tests/dialogs.py /o /tmp/b /tmp/b/libuishim.so /tmp/apps && LD_LIBRARY_PATH=/l python3 -B /w/tests/package.py /o/libexec/cutefish-reef/reef-install-package /tmp/b/reef-install-package && sh /w/tests/appkit/run.sh /o/lib/cutefish-reef/host/libreef-appkit-host.so /tmp/b/libreef-appkit-host.so /t /l && LD_LIBRARY_PATH=/l sh /w/tests/metal/msl.sh /o/lib/cutefish-reef/lib/libreef-metal-msl.so /tmp/b/libreef-metal-msl.so && LD_LIBRARY_PATH=/l sh /w/tests/metal/run.sh /o/lib/cutefish-reef/lib/libreef-metal-translator.so /tmp/b/libreef-metal-translator.so /o/lib/cutefish-reef/lib/libreef-metal-msl.so /tmp/b/libreef-metal-msl.so"
+      - name: package
+        if: github.event_name == 'push'
+        run: sh tools/make-deb.sh /tmp/out/b /tmp/deb
+      - name: release
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          deb=$(ls /tmp/deb/*.deb)
+          notes="open-reef $(basename "$deb" _amd64.deb | cut -d_ -f2), built from $GITHUB_SHA: the files of the original package with its 12 ELF files built here. Install: sudo apt install ./$(basename "$deb")"
+          case "$GITHUB_REF" in
+          refs/tags/*)
+              gh release create "${GITHUB_REF#refs/tags/}" "$deb" -R "$GITHUB_REPOSITORY" --title "open-reef ${GITHUB_REF#refs/tags/}" --notes "$notes" ;;
+          *)
+              git tag -f open-reef-latest "$GITHUB_SHA" && git push -f origin open-reef-latest
+              gh release view open-reef-latest -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 ||
+                  gh release create open-reef-latest -R "$GITHUB_REPOSITORY" --prerelease --title "open-reef (main)" --notes "$notes"
+              gh release edit open-reef-latest -R "$GITHUB_REPOSITORY" --notes "$notes"
+              for asset in $(gh release view open-reef-latest -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name'); do
+                  gh release delete-asset open-reef-latest "$asset" -R "$GITHUB_REPOSITORY" -y
+              done
+              gh release upload open-reef-latest "$deb" -R "$GITHUB_REPOSITORY" ;;
+          esac
