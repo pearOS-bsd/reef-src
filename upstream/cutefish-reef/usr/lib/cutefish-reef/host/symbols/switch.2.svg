@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <mask id="switch-2-mask">
+      <rect width="24" height="24" fill="#fff" stroke="none"/>
+      <circle cx="16" cy="17.5" r="2.4" fill="#000" stroke="none"/>
+    </mask>
+  </defs>
+  <rect width="16" height="8" x="4" y="2.5" rx="4"/>
+  <circle cx="8" cy="6.5" r="2.4" fill="currentColor" stroke="none"/>
+  <rect width="16" height="8" x="4" y="13.5" rx="4" fill="currentColor" mask="url(#switch-2-mask)"/>
+</svg>

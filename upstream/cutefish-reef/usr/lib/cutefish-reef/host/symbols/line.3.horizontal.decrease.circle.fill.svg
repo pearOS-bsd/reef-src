@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <mask id="line-3-horizontal-decrease-circle-fill-mask">
+      <rect width="24" height="24" fill="#fff" stroke="none"/>
+      <g stroke="#000"><path d="M7 8.5h10M8.75 12h6.5M10.5 15.5h3"/></g>
+    </mask>
+  </defs>
+  <circle cx="12" cy="12" r="10" fill="currentColor" mask="url(#line-3-horizontal-decrease-circle-fill-mask)"/>
+</svg>

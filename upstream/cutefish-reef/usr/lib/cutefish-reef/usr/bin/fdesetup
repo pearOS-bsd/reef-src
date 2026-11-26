@@ -1,0 +1,20 @@
+#!/bin/sh
+# The platform's fdesetup for programs that ask about disk encryption.
+# FileVault does not exist here, so it reports as off.
+
+case "$1" in
+    status)
+        echo "FileVault is Off."
+        ;;
+    isactive)
+        echo "false"
+        exit 1
+        ;;
+    supportsauthrestart | haspersonalrecoverykey | hasinstitutionalrecoverykey | usingrecoverykey)
+        echo "false"
+        ;;
+    *)
+        echo "Usage: fdesetup <verb> <options>" >&2
+        exit 1
+        ;;
+esac

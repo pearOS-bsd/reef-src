@@ -1,0 +1,120 @@
+#!/bin/sh
+# SPDX-FileCopyrightText: 2026 Reion Wong <reionwong@gmail.com>
+# SPDX-License-Identifier: BSD-3-Clause
+
+# The platform's hdiutil for programs that run it: attaching a disk image
+# read-only through the desktop's mount service, and detaching it; reef's
+# own reef-hdiutil makes, converts and verifies images. License agreements
+# are not shown.
+
+usage() {
+    echo "usage: hdiutil attach [-mountpoint path] [-nobrowse] [-plist] image" >&2
+    echo "       hdiutil detach [-force] mountpoint" >&2
+    echo "       hdiutil makehybrid -o image [-hfs] [-iso] [-joliet] [-udf] source" >&2
+    echo "       hdiutil create -srcfolder folder [-volname name] [-format format] image" >&2
+    echo "       hdiutil convert image -format format -o output" >&2
+    echo "       hdiutil verify image" >&2
+    exit 1
+}
+
+service() {
+    busctl --user --timeout=120 call org.cutefish.Mounts1 /org/cutefish/Mounts1 org.cutefish.Mounts1 "$@"
+}
+
+# The string value of a key in busctl's printing of the reply's details.
+detail() {
+    printf '%s\n' "$1" | sed -n "s/.*\"$2\" s \"\(.*\)\"\$/\1/p"
+}
+
+attach() {
+    image=
+    mount_point=
+    hidden=false
+    plist=0
+    quiet=0
+    passphrase=0
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -mountpoint) shift; mount_point=$1 ;;
+            -nobrowse) hidden=true ;;
+            -plist) plist=1 ;;
+            -quiet) quiet=1 ;;
+            -stdinpass) passphrase=1 ;;
+            -owners | -drivekey | -section | -imagekey) shift ;;
+            -*) ;;
+            *) image=$1 ;;
+        esac
+        shift
+    done
+    [ -n "$image" ] || usage
+    case "$image" in
+        /*) ;;
+        *) image=$PWD/$image ;;
+    esac
+    # The writer of a passphrase fails if it is not read; encrypted images
+    # are not opened.
+    [ "$passphrase" = 0 ] || cat > /dev/null
+
+    if [ -n "$mount_point" ]; then
+        reply=$(service Mount 'sa{sv}' "$image" 2 mountPoint s "$mount_point" hidden b "$hidden") || exit 1
+    else
+        reply=$(service Mount 'sa{sv}' "$image" 1 hidden b "$hidden") || exit 1
+    fi
+    case "$reply" in
+        'sa{sv} "mounted"'*) ;;
+        *)
+            message=$(detail "$reply" message)
+            echo "hdiutil: attach failed - ${message:-$reply}" >&2
+            exit 1
+            ;;
+    esac
+    path=$(detail "$reply" path)
+    if [ "$plist" = 1 ]; then
+        cat <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>system-entities</key>
+	<array>
+		<dict>
+			<key>mount-point</key>
+			<string>$path</string>
+		</dict>
+	</array>
+</dict>
+</plist>
+EOF
+    elif [ "$quiet" = 0 ]; then
+        printf '\t\t%s\n' "$path"
+    fi
+}
+
+detach() {
+    target=
+    quiet=0
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -quiet) quiet=1 ;;
+            -*) ;;
+            *) target=$1 ;;
+        esac
+        shift
+    done
+    [ -n "$target" ] || usage
+    while [ "$target" != / ] && [ "${target%/}" != "$target" ]; do
+        target=${target%/}
+    done
+    service Unmount s "$target" > /dev/null || exit 1
+    [ "$quiet" = 1 ] || echo "\"${target##*/}\" ejected."
+}
+
+[ $# -ge 1 ] || usage
+verb=$1
+shift
+case "$verb" in
+    attach | mount) attach "$@" ;;
+    detach | eject) detach "$@" ;;
+    makehybrid | create | convert | verify) exec "${0%/*}/../libexec/reef-hdiutil" "$verb" "$@" ;;
+    *) echo "hdiutil: $verb: not supported" >&2; exit 1 ;;
+esac

@@ -1,0 +1,33 @@
+#!/bin/sh
+# The platform's csrutil for programs that ask for the system integrity
+# status. The system tree here is read-only to programs, so protection is
+# reported as enabled; changing it needs the recovery system, which does not
+# exist here.
+
+case "$1" in
+    status)
+        echo "System Integrity Protection status: enabled."
+        ;;
+    authenticated-root)
+        if [ "$2" = "status" ]; then
+            echo "Authenticated Root status: enabled"
+        else
+            echo "csrutil: This tool needs to be executed from Recovery OS." >&2
+            exit 1
+        fi
+        ;;
+    enable | disable | clear | netboot)
+        echo "csrutil: This tool needs to be executed from Recovery OS." >&2
+        exit 1
+        ;;
+    *)
+        echo "usage: csrutil <command>" >&2
+        echo "Modify the System Integrity Protection configuration." >&2
+        echo "Available commands:" >&2
+        echo "    status" >&2
+        echo "        Display the current configuration." >&2
+        echo "    authenticated-root status" >&2
+        echo "        Display the authenticated root configuration." >&2
+        exit 64
+        ;;
+esac

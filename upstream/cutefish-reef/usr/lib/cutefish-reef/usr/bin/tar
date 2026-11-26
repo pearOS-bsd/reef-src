@@ -1,0 +1,68 @@
+#!/bin/sh
+# The platform's tar for programs that run it, on the host's GNU tar: the
+# platform's options for its own metadata are dropped, and -k keeps
+# existing files without failing, as the platform's tar does.
+
+translate_short() {
+    # A bundle of short options, its dash optional; -k becomes GNU tar's
+    # --skip-old-files, the rest keep their meaning.
+    letters=${1#-}
+    out=""
+    keep=0
+    while [ -n "$letters" ]; do
+        letter=${letters%"${letters#?}"}
+        letters=${letters#?}
+        if [ "$letter" = k ]; then
+            keep=1
+        else
+            out="$out$letter"
+        fi
+    done
+    # Before the bundle, whose last option may take the next argument.
+    [ "$keep" = 1 ] && set_arg "--skip-old-files"
+    [ -n "$out" ] && set_arg "-$out"
+}
+
+set_arg() {
+    arguments="$arguments $(printf '%s' "$1" | sed "s/'/'\\\\''/g; s/^/'/; s/$/'/")"
+}
+
+arguments=""
+first=1
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --disable-copyfile | --no-mac-metadata | --mac-metadata | --no-fflags | --fflags | --no-acls \
+            | --no-same-permissions-mac | --hfsCompression | --nohfsCompression)
+            ;;
+        --keep-old-files)
+            set_arg "--skip-old-files"
+            ;;
+        --options | --format-options)
+            shift
+            ;;
+        --*)
+            set_arg "$1"
+            ;;
+        -*)
+            translate_short "$1"
+            ;;
+        *)
+            # The first argument may be a bundle without a dash: "xjf".
+            if [ "$first" = 1 ] && printf '%s' "$1" | grep -Eq '^[A-Za-z]+$'; then
+                translate_short "-$1"
+            else
+                set_arg "$1"
+            fi
+            ;;
+    esac
+    first=0
+    shift
+done
+
+for host in /usr/bin/tar /bin/tar; do
+    if [ -x "$host" ]; then
+        eval "exec $host $arguments"
+    fi
+done
+echo "tar: no tar on this system" >&2
+exit 1

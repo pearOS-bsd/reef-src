@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Reef
+Comment=Runs Mac applications
+Exec=/usr/bin/reef %f
+TryExec=/usr/bin/reef
+MimeType=application/x-apple-app;
+NoDisplay=true

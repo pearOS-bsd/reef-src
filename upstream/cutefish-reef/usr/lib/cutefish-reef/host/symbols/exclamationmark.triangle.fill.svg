@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <mask id="exclamationmark-triangle-fill-mask">
+      <rect width="24" height="24" fill="#fff" stroke="none"/>
+      <g stroke="#000"><path d="M12 9v4M12 17h.01"/></g>
+    </mask>
+  </defs>
+  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" fill="currentColor" mask="url(#exclamationmark-triangle-fill-mask)"/>
+</svg>

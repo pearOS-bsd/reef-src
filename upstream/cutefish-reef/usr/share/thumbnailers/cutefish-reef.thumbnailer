@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=/usr/bin/reef
+Exec=/usr/bin/reef /usr/lib/cutefish-reef/usr/libexec/icon-thumbnailer %i %o %s -ReefHeadless YES
+MimeType=application/x-apple-app;

@@ -1,0 +1,30 @@
+#!/bin/sh
+# The platform's profiles tool for programs that ask whether the machine is
+# managed. No device management exists here: the machine is not enrolled
+# and has no configuration profiles, as an unmanaged Mac reports.
+
+case "$1" in
+    status)
+        if [ "$2" = "-type" ] && [ "$3" = "enrollment" ]; then
+            echo "Enrolled via DEP: No"
+            echo "MDM enrollment: No"
+        elif [ "$2" = "-type" ] && [ "$3" = "bootstraptoken" ]; then
+            echo "profiles: Bootstrap Token supported on server: NO"
+            echo "profiles: Bootstrap Token escrowed to server: NO"
+        else
+            echo "profiles: There are no configuration profiles installed"
+        fi
+        ;;
+    list | show | -L | -P | -C)
+        echo "There are no configuration profiles installed"
+        ;;
+    help | -h | --help)
+        echo "Usage: profiles <command> [options]"
+        echo "    status, list, show"
+        ;;
+    *)
+        echo "profiles: unrecognized command \"$1\"" >&2
+        echo "Usage: profiles <command> [options]" >&2
+        exit 1
+        ;;
+esac

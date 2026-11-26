@@ -1,0 +1,10 @@
+Package: cutefish-reef
+Version: 0.1~git20261123144101.f3c1807+ci20261123163705
+Architecture: amd64
+Maintainer: Reion Wong <reionwong@gmail.com>
+Installed-Size: 68992
+Depends: cutefish-toolkit (>= 1.0~git20261123144101.7e25ddc), cutefish-webkit (>= 2.54.2~git20261120163706.157ef16), libc6 (>= 2.38), libclang-cpp19 (>= 1:19.1.7), libegl1, libfontconfig1 (>= 2.13.0), libfreetype6 (>= 2.9.1), libgbm1 (>= 12.0.0~0), libgcc-s1 (>= 3.0), libgles2, libglib2.0-0t64 (>= 2.12.0), libharfbuzz-subset0 (>= 6.0.0), libharfbuzz0b (>= 7.3.0), libicu76 (>= 76.1-1~), libllvm19 (>= 1:19.1.0), liblzma5 (>= 5.1.1alpha+20120614), libssl3t64 (>= 3.0.0), libstdc++6 (>= 14), libxml2 (>= 2.7.4), zlib1g (>= 1:1.2.11.dfsg), libva2, libva-drm2, libopenjp2-7, libpulse0, libsndfile1, libexttextcat-data, libcups2t64, libxslt1.1, libhyphen0, hyphen-en-us
+Section: misc
+Priority: optional
+Description: Cutefish reef
+ The application compatibility layer of the Cutefish desktop.

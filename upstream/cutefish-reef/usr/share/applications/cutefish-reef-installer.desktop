@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Installer
+Comment=Installs the applications of a package
+Exec=/usr/libexec/cutefish-reef/reef-install-package %f
+TryExec=/usr/libexec/cutefish-reef/reef-install-package
+MimeType=application/x-xar;
+NoDisplay=true

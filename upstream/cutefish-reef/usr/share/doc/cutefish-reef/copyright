@@ -1,0 +1,109 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: cutefish-reef
+Upstream-Contact: Reion Wong <reionwong@gmail.com>
+Comment:
+ This package is distributed in binary form. The full text of every license
+ named below is installed in /usr/share/doc/cutefish-reef/licenses/, and the
+ source of the files under the Apple Public Source License is installed in
+ /usr/share/doc/cutefish-reef/apsl-source/.
+ .
+ The package contains no software made by Apple other than the open-source
+ components listed below.
+
+Files: *
+Copyright: 2026 Reion Wong <reionwong@gmail.com>
+License: BSD-3-Clause
+ See licenses/reef/LICENSE.
+
+Files: appkit/AKScrollAcceleration.m
+Copyright: 2026 Reion Wong <reionwong@gmail.com>
+           1999-2009 Apple Inc.
+License: APSL-2.0
+ See licenses/apsl/LICENSE.apsl. The source of this file is in
+ apsl-source/AKScrollAcceleration.m.
+
+Files: corefoundation/platform/LocaleNames.c
+       corefoundation/platform/LocaleData.h
+Copyright: 2026 Reion Wong <reionwong@gmail.com>
+           2016-2024 Unicode, Inc.
+License: Unicode-3.0
+ Locale display names reimplemented from ICU, with data entries of Apple's
+ ICU 76 taken over unchanged. See licenses/icu/LICENSE.
+
+Files: host/video/vp9_tables.h
+Copyright: 2010 The WebM Project authors
+License: BSD-3-Clause
+ VP9 quantizer tables from libvpx. See licenses/libvpx/LICENSE.
+
+Files: third_party/corefoundation/*
+Copyright: 1998-2019 Apple Inc. and the Swift project authors
+License: Apache-2.0 with Runtime Library Exception
+ Core Foundation from swift-corelibs-foundation. Modified files are marked in
+ place. See licenses/corefoundation/LICENSE.
+
+Files: third_party/libdispatch/*
+Copyright: 2008-2016 Apple Inc. and the Swift project authors
+License: Apache-2.0
+ swift-corelibs-libdispatch. Modified files are marked in place. See
+ licenses/libdispatch/LICENSE.
+
+Files: third_party/swift/*
+Copyright: 2014-2025 Apple Inc. and the Swift project authors
+License: Apache-2.0 with Runtime Library Exception
+ The Swift standard library and runtime, with the framework overlays of
+ Swift 5.2 and 5.3. See licenses/swift/LICENSE.txt.
+
+Files: third_party/swift/string-processing/*
+Copyright: 2021-2025 Apple Inc. and the Swift project authors
+License: Apache-2.0 with Runtime Library Exception
+ swift-experimental-string-processing. See
+ licenses/swift-string-processing/LICENSE.txt.
+
+Files: third_party/swift/swift-foundation/*
+Copyright: 2014-2024 Apple Inc. and the Swift project authors
+License: Apache-2.0 with Runtime Library Exception
+ Parts of swift-foundation. Modified files are marked in place. See
+ licenses/swift-foundation/LICENSE.md.
+
+Files: third_party/libcxx/*
+       third_party/libcxxabi/*
+       third_party/libunwind/*
+Copyright: LLVM Project contributors
+License: Apache-2.0 with LLVM Exceptions
+ LLVM libc++, libc++abi and libunwind. libunwind is modified, marked in place.
+ See licenses/libcxx/LICENSE.TXT, licenses/libcxxabi/LICENSE.TXT and
+ licenses/libunwind/LICENSE.TXT.
+
+Files: third_party/lzfse/*
+Copyright: 2015-2016 Apple Inc.
+License: BSD-3-Clause
+ See licenses/lzfse/LICENSE.
+
+Files: third_party/lucide/*
+Copyright: 2026 Lucide Icons and Contributors
+           2013-2026 Cole Bemis (icons from Feather)
+License: ISC and MIT
+ See licenses/lucide/LICENSE.
+
+Files: third_party/tcl/*
+Copyright: Regents of the University of California, Sun Microsystems, Inc.,
+           Scriptics Corporation, ActiveState Corporation and other parties
+License: TCL
+ See licenses/tcl/license.terms.
+
+Files: third_party/tcl/libtommath/*
+Copyright: Tom St Denis and contributors
+License: Unlicense
+ LibTomMath is released into the public domain under the Unlicense.
+
+Files: third_party/curl/*
+Copyright: 1996-2025 Daniel Stenberg and many contributors
+License: curl
+ The curl headers; the library itself is the system's libcurl. See
+ licenses/curl/COPYING.
+
+Files: third_party/sqlite/*
+Copyright: none
+License: public-domain
+ The SQLite header; the library itself is the system's libsqlite3. The SQLite
+ authors have dedicated the code to the public domain.

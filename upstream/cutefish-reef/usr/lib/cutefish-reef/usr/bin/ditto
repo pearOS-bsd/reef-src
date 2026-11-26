@@ -1,0 +1,144 @@
+#!/bin/sh
+# The platform's ditto for programs that run it: copying trees, and making
+# or unpacking zip (-k) and cpio archives. Resource forks, quarantine,
+# extended attributes and ACLs have no meaning here and are ignored.
+
+usage() {
+    echo "usage: ditto [-v] [-V] [-X] [--rsrc] [--extattr] [--acl] src ... dst" >&2
+    echo "       ditto -c [-z | -j | -k] [--keepParent] src archive" >&2
+    echo "       ditto -x [-z | -j | -k] archive ... dst" >&2
+    exit 1
+}
+
+mode=copy
+zip=0
+compress=
+keep_parent=0
+verbose=0
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -c) mode=create ;;
+        -x) mode=extract ;;
+        -k) zip=1 ;;
+        -z) compress=gzip ;;
+        -j) compress=bzip2 ;;
+        -v | -V) verbose=1 ;;
+        -X | -h | -H | -L | -P) ;;
+        --keepParent) keep_parent=1 ;;
+        --zlibCompressionLevel | --arch | --bom) shift ;;
+        --rsrc | --norsrc | --noqtn | --qtn | --extattr | --noextattr | --acl | --noacl \
+            | --sequesterRsrc | --nocache | --hfsCompression | --nohfsCompression \
+            | --preserveHFSCompression | --nopreserveHFSCompression | --clone | --noclone) ;;
+        --) shift; break ;;
+        -) break ;;
+        -*) echo "ditto: unknown option $1" >&2; usage ;;
+        *) break ;;
+    esac
+    shift
+done
+[ $# -ge 2 ] || usage
+
+say() {
+    [ "$verbose" = 1 ] && echo "$@" >&2
+    return 0
+}
+
+case "$mode" in
+create)
+    [ $# -eq 2 ] || usage
+    source=$1
+    archive=$2
+    case "$archive" in /*) ;; *) archive=$(pwd)/$archive ;; esac
+    parent=$(dirname -- "$source")
+    name=$(basename -- "$source")
+    rm -f -- "$archive"
+    if [ "$zip" = 1 ]; then
+        say "ditto: creating zip archive $archive"
+        if [ "$keep_parent" = 1 ] || [ ! -d "$source" ]; then
+            (cd -- "$parent" && zip -qry "$archive" "./$name")
+        else
+            (cd -- "$source" && zip -qry "$archive" .)
+        fi
+    else
+        say "ditto: creating cpio archive $archive"
+        if [ "$keep_parent" = 1 ] || [ ! -d "$source" ]; then
+            list() { (cd -- "$parent" && find "$name"); }
+            directory=$parent
+        else
+            list() { (cd -- "$source" && find .); }
+            directory=$source
+        fi
+        case "$compress" in
+            gzip) list | (cd -- "$directory" && cpio -o -H odc --quiet) | gzip -c > "$archive" ;;
+            bzip2) list | (cd -- "$directory" && cpio -o -H odc --quiet) | bzip2 -c > "$archive" ;;
+            *) list | (cd -- "$directory" && cpio -o -H odc --quiet) > "$archive" ;;
+        esac
+    fi
+    ;;
+extract)
+    count=$#
+    destination=$(eval "echo \"\${$count}\"")
+    mkdir -p -- "$destination" || exit 1
+    while [ $# -gt 1 ]; do
+        archive=$1
+        say "ditto: extracting $archive"
+        # "-" reads the archive from standard input; unzip needs a file.
+        if [ "$zip" = 1 ] && [ "$archive" = - ]; then
+            spooled=$(mktemp) || exit 1
+            cat > "$spooled"
+            unzip -qq -o "$spooled" -d "$destination"
+            status=$?
+            rm -f -- "$spooled"
+            [ $status -le 1 ] || exit 1
+        elif [ "$zip" = 1 ]; then
+            unzip -qq -o -- "$archive" -d "$destination"
+            [ $? -le 1 ] || exit 1
+        elif [ "$archive" = - ]; then
+            case "$compress" in
+                gzip) (cd -- "$destination" && gzip -dc | cpio -idmu --quiet) || exit 1 ;;
+                bzip2) (cd -- "$destination" && bzip2 -dc | cpio -idmu --quiet) || exit 1 ;;
+                *) (cd -- "$destination" && cpio -idmu --quiet) || exit 1 ;;
+            esac
+        else
+            case "$archive" in /*) ;; *) archive=$(pwd)/$archive ;; esac
+            case "$compress" in
+                gzip) (cd -- "$destination" && gzip -dc -- "$archive" | cpio -idmu --quiet) || exit 1 ;;
+                bzip2) (cd -- "$destination" && bzip2 -dc -- "$archive" | cpio -idmu --quiet) || exit 1 ;;
+                *) (cd -- "$destination" && cpio -idmu --quiet < "$archive") || exit 1 ;;
+            esac
+        fi
+        rm -rf -- "$destination/__MACOSX"
+        shift
+    done
+    ;;
+copy)
+    count=$#
+    destination=$(eval "echo \"\${$count}\"")
+    if [ $count -gt 2 ]; then
+        mkdir -p -- "$destination" || exit 1
+    fi
+    while [ $# -gt 1 ]; do
+        source=$1
+        if [ -d "$source" ] && [ ! -L "$source" ]; then
+            if [ $count -gt 2 ]; then
+                target=$destination/$(basename -- "$source")
+            else
+                target=$destination
+            fi
+            mkdir -p -- "$target" || exit 1
+            say "ditto: copying $source to $target"
+            cp -a -- "$source"/. "$target"/ || exit 1
+        else
+            if [ -d "$destination" ]; then
+                target=$destination/$(basename -- "$source")
+            else
+                target=$destination
+                mkdir -p -- "$(dirname -- "$target")" || exit 1
+            fi
+            say "ditto: copying $source to $target"
+            cp -a -- "$source" "$target" || exit 1
+        fi
+        shift
+    done
+    ;;
+esac

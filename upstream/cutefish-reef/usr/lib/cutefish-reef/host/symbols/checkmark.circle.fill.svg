@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <defs>
+    <mask id="checkmark-circle-fill-mask">
+      <rect width="24" height="24" fill="#fff" stroke="none"/>
+      <g fill="none" stroke="#000"><path d="m7.75 12.25 2.75 2.75 5.75-6"/></g>
+    </mask>
+  </defs>
+  <circle cx="12" cy="12" r="10" fill="currentColor" mask="url(#checkmark-circle-fill-mask)"/>
+</svg>
