@@ -39,4 +39,13 @@ swift-6.0-RELEASE on: the version is 6.0, 6.1 or 6.2 (to be decided by function 
   port and the Darwin headers `Availability.h`, `TargetConditionals.h`, `os/*`, `mach/*`; the configuration Reef used is not known yet.
 - `libxar.1.dylib` is not upstream xar: it uses CommonCrypto (`CC_MD5`, `CC_SHA*`), libcompression, zlib and bzip2, not libxml2 or OpenSSL. It is Reef's own
   code (19 KB): it goes with the small C libraries, written from the decompilation.
-- `Tcl` says 8.6.14; not started (needs the Darwin `tclUnixPort.h` header set and the HAVE_* configuration).
+
+## Tcl 8.6.14 (`upstream/tcl`, tag core-8-6-14, unchanged)
+`System/Library/Frameworks/Tcl.framework`: 2510 of 2510 functions, 1228705 of 1228705 bytes. No build files of Reef exist, so the configuration was read from the binary
+(what it imports, its strings) and checked with the function match: threads (`USE_THREAD_ALLOC`, `-D_REENTRANT`), `-DNDEBUG` (no `___assert_rtn` import), `-DBUILD_tcl`
+(noreturn on `Tcl_Exit`), `MODULE_SCOPE` hidden, zlib and libtommath, `dlopen` (`tclLoadDl.c`), no CoreFoundation, no DTrace, no `cpuid`, `TCL_CFGVAL_ENCODING` utf-8,
+default encoding iso8859-1, `TCL_SHLIB_EXT` .dylib, `getpwnam_r` and friends with 5 arguments, `gethostbyname` without the MT-safe flag, `fts`, `mkstemps`, `nl_langinfo`.
+The sources are linked in the ASCII order of their paths (`generic/`, `libtommath/`, `unix/`); `tclTest*`, `tclUnixTest`, `tclStubLib*`, `tclLoadNone` and `tclXtNotify` are not in the binary.
+Header facts that changed code (`macho/include`): Darwin `WIFSTOPPED` (`WSTOPSIG != 0x13`), `P_tmpdir` = `/var/tmp/`, `EAI_SYSTEM` 11, `IPV6_V6ONLY` 27, `O_NOCTTY`, `select` without
+`$1050`, `realpath$DARWIN_EXTSN`, `htons` as an inline byte swap. Test: 47 scripts through the bytecode compiler, bignums, regexps, zlib, TclOO, files, `exec`, sockets and the event loop.
+(`open {|cat} r+` hangs under reef with the original too; it is not in the test.)

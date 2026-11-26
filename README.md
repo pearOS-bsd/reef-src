@@ -5,8 +5,8 @@ Source of the ELF programs and libraries of Reef, reconstructed function by func
 same as in the published binaries** (2026-11-26). `tools/total.py` computes it; every CI run prints it at the end of the match
 list. Functions that are written but not the
 same yet do not count.
-**Mach-O files rebuilt: 37 of 199 files; 2.8 % of the code bytes (603477 of 21566632) and 2.9 % of the functions (4353 of 147887) are the
-same as in the published files** (2026-11-26). `tools/check-macho.py` computes it (build, compare, behaviour tests); see `docs/MACHO.md`.
+**Mach-O files rebuilt: 38 of 199 files; 8.5 % of the code bytes (1832182 of 21566632) and 4.6 % of the functions (6863 of 147887) are the
+same as in the published files** (2026-11-27). `tools/check-macho.py` computes it (build, compare, behaviour tests); see `docs/MACHO.md`.
 
 **Written: 100.0 % of the functions (5060 of 5060)**: every file; what was tested against the original is in the table. Now the
 functions that are written but not the same yet are tuned. The other files of the package (199 Mach-O files, resources) are kept unchanged in `upstream/cutefish-reef`.
