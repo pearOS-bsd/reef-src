@@ -39,7 +39,7 @@ static bool outputScaleRendering = false;
 static bool exiting = false;
 static bool started = false;
 
-bool hasArgument(const char* name, const char* value)
+static bool hasArgument(const char* name, const char* value)
 {
     for (size_t i = 1; i < arguments.size(); i++) {
         if (arguments[i - 1] == name && arguments[i] == value)
@@ -152,7 +152,6 @@ base::dbus::Connection* sessionBus()
 static void createApplication(const std::vector<std::string>& given)
 {
     arguments = given;
-    argumentPointers.clear();
     for (std::string& argument : arguments)
         argumentPointers.push_back(argument.data());
     argumentPointers.push_back(nullptr);
@@ -316,7 +315,7 @@ void ensureApplication()
 {
     if (application || gettid() != getpid())
         return;
-    std::ifstream file("/proc/self/cmdline");
+    std::ifstream file("/proc/self/cmdline", std::ios::binary);
     std::vector<std::string> list;
     std::string argument;
     while (std::getline(file, argument, '\0'))

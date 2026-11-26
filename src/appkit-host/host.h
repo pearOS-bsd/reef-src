@@ -121,7 +121,6 @@ extern bool headlessStatusItems;
 extern std::string applicationId;
 // Whole numbers for programs, also where windows are drawn at the scale of the output.
 double renderScale(double scale);
-bool hasArgument(const char* name, const char* value);
 base::dbus::Connection* sessionBus();
 // The primary screen first.
 std::vector<ui::Application::Screen> screens();
