@@ -88,7 +88,9 @@ class Image:
         self.binds = {}      # address of a pointer -> imported symbol
         self.lazy = {}
         self.rebases = set()
-        if self.dyld: self.read_dyld()
+        if self.dyld:
+            try: self.read_dyld()
+            except IndexError: pass      # a table of a kind not decoded here (not needed for the function list)
         self.read_funcs()
         self.stubs = {}
         self.read_stubs()

@@ -11,8 +11,14 @@ for line in sys.stdin:
     print(line)
     row = re.match(r'(\S+): (\d+)/(\d+) functions, (\d+)/(\d+) bytes = ([\d.]+)%', line)
     written = re.match(r'written: (\d+)/(\d+) functions', line)
+    macho = re.match(r'macho: (\d+)/(\d+) files rebuilt, (\d+)/(\d+) functions, (\d+)/(\d+) bytes', line)
     total = re.match(r'total: (\d+)/(\d+) functions, (\d+)/(\d+) bytes = ([\d.]+)%', line)
-    if total:
+    if macho:
+        files, allfiles, same, functions, bytes_, size = (int(macho[i]) for i in range(1, 7))
+        text = re.sub(r'\*\*Mach-O files rebuilt: \d+ of \d+ files; [\d.]+ % of the code bytes \(\d+ of \d+\) and [\d.]+ % of the functions \(\d+ of \d+\) are the\s+same as in the published files\*\* \([\d-]+\)',
+                      '**Mach-O files rebuilt: %d of %d files; %.1f %% of the code bytes (%d of %d) and %.1f %% of the functions (%d of %d) are the\nsame as in the published files** (%s)'
+                      % (files, allfiles, 100 * bytes_ / size, bytes_, size, 100 * same / functions, same, functions, date), text)
+    elif total:
         same, functions, bytes_, size = (int(total[i]) for i in range(1, 5))
         text = re.sub(r'\*\*Total of the 12 ELF files: [\d.]+ % of the code bytes \(\d+ of \d+\) and [\d.]+ % of the functions \(\d+ of \d+\) are the\s+same as in the published binaries\*\* \([\d-]+\)',
                       '**Total of the 12 ELF files: %.1f %% of the code bytes (%d of %d) and %.1f %% of the functions (%d of %d) are the\nsame as in the published binaries** (%s)'
