@@ -34,3 +34,4 @@ usr/lib/libcharset.1
 usr/lib/libbsm.0
 System/Library/Frameworks/GameController.framework
 System/Library/Frameworks/CryptoTokenKit.framework
+usr/lib/libc++abi
