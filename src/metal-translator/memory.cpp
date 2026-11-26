@@ -45,17 +45,18 @@ static std::string loadFunctions(const Root &root, const std::string &suffix)
 static std::string storeFunctions(const Root &root, const std::string &suffix)
 {
     const bool shared = root.kind == Root::Buffer || root.kind == Root::Threadgroup;
+    const std::string &name = root.name;
     auto replace = [&](const std::string &mask, const std::string &bits) {
         if (shared)
-            return "atomicAnd(" + root.name + "[a >> 2], ~(" + mask + ")); atomicOr(" + root.name + "[a >> 2], " + bits + ");";
-        return root.name + "[a >> 2] = (" + root.name + "[a >> 2] & ~(" + mask + ")) | " + bits + ";";
+            return "atomicAnd(" + name + "[a >> 2], ~(" + mask + ")); atomicOr(" + name + "[a >> 2], " + bits + ");";
+        return name + "[a >> 2] = (" + name + "[a >> 2] & ~(" + mask + ")) | " + bits + ";";
     };
     return "void reef_st8_" + suffix + "(uint a, uint v) { uint s = (a & 3u) << 3; " + replace("0xffu << s", "((v & 0xffu) << s)")
            + " }\n"
              "void reef_st16_" + suffix + "(uint a, uint v) { if ((a & 1u) == 0u) { uint s = (a & 2u) << 3; "
            + replace("0xffffu << s", "((v & 0xffffu) << s)") + " return; } reef_st8_" + suffix + "(a, v); reef_st8_" + suffix
            + "(a + 1u, v >> 8); }\n"
-             "void reef_st32_" + suffix + "(uint a, uint v) { if ((a & 3u) == 0u) { " + root.name
+             "void reef_st32_" + suffix + "(uint a, uint v) { if ((a & 3u) == 0u) { " + name
            + "[a >> 2] = v; return; } reef_st16_" + suffix + "(a, v); reef_st16_" + suffix + "(a + 2u, v >> 16); }\n";
 }
 
