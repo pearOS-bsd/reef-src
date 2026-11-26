@@ -16,6 +16,7 @@ Each folder has a target.conf of `key = value` lines:
   version, compat   current and compatibility version of a dylib        (default 1.0.0)
   sources   .c .m .S .cpp files in link order                           (required)
   cflags    flags for every source, ldflags for the link, libs: dependencies as paths under the root, in load command order
+            (`reexport:PATH` links it with -reexport_library)
   minos     deployment target, default 11.0
 Compiler: -O2 with no stack protector and no NDEBUG is what the original was built with (docs/MACHO.md).
 """
@@ -57,7 +58,10 @@ def build(root, out, folder):
             if s.endswith('.m'): cmd += ['-x', 'objective-c']
             cmd += shlex.split(c['cflags']) + ['-c', src, '-o', o]
             run(cmd); objects.append(o)
-        libs = [os.path.join(root, l) for l in c['libs'].split()]
+        libs = []
+        for l in c['libs'].split():
+            # reexport:PATH adds the library with -reexport_library (a LC_REEXPORT_DYLIB); a plain PATH is a LC_LOAD_DYLIB
+            libs += ['-reexport_library', os.path.join(root, l[9:])] if l.startswith('reexport:') else [os.path.join(root, l)]
         cmd = [LLVM + '/ld64.lld', '-arch', 'x86_64', '-platform_version', 'macos', c['minos'], c['minos'], '-syslibroot', root]
         if c['type'] == 'dylib':
             cmd += ['-dylib', '-install_name', c['id'], '-current_version', c['version'], '-compatibility_version', c['compat']]
