@@ -386,6 +386,7 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
     @discardableResult
     public func update(_ op: Operation) -> Bool {
         let n = op.name
+        if getenv("REEF_LOG_DISPLAY") != nil { fputs("calculate: update(\(n))\n", stderr) }
         if !n.hasPrefix("digit") && n != "ee" { pendingExponent = false }
         let binaryOps: Set<String> = ["add", "subtract", "multiply", "divide", "power"]
         if evaluated {
