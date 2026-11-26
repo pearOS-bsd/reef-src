@@ -80,48 +80,59 @@ extension Scene {
 // MARK: Picker content (SPI)
 
 public protocol PickerContent {
-    associatedtype _IdentifiedView: View
+    associatedtype _IdentifiedView: PickerContent
     var _identifiedView: _IdentifiedView { get }
 }
 
-public struct PickerOption<Value, Content>: PickerContent {
+// How our picker contents turn into views (not part of Apple's interface).
+protocol _PickerRenderable {
+    var _renderedView: AnyView { get }
+}
+
+private func tagged<V: Hashable>(_ view: AnyView, _ value: V) -> AnyView { AnyView(view.tag(value)) }
+
+public struct PickerOption<Value, Content>: PickerContent, _PickerRenderable {
     let value: Value
     let content: Content
     public init(value: Value, content: () -> Content) {
         self.value = value
         self.content = content()
     }
-    public var _identifiedView: some View {
+    public var _identifiedView: some PickerContent { self }
+    var _renderedView: AnyView {
         let view: AnyView = (content as? any View).map { AnyView($0) } ?? AnyView(EmptyView())
-        if let h = value as? any Hashable { return AnyView(tagged(view, h)) }
+        if let h = value as? any Hashable { return tagged(view, h) }
         return view
     }
 }
 
-private func tagged<V: Hashable>(_ view: AnyView, _ value: V) -> some View { view.tag(value) }
-
-public struct _TuplePickerContent<A: PickerContent, B: PickerContent>: PickerContent {
+public struct _TuplePickerContent<A: PickerContent, B: PickerContent>: PickerContent, _PickerRenderable {
     let a: A
     let b: B
     public init(_ a: A, _ b: B) { self.a = a; self.b = b }
-    public var _identifiedView: some View {
-        Group { a._identifiedView; b._identifiedView }
-    }
+    public var _identifiedView: some PickerContent { self }
+    var _renderedView: AnyView { AnyView(Group { render(a); render(b) }) }
 }
 
-public struct _DisabledPickerContent<A: PickerContent>: PickerContent {
+public struct _DisabledPickerContent<A: PickerContent>: PickerContent, _PickerRenderable {
     let base: A
     let isDisabled: Bool
     public init(_ base: A, _ isDisabled: Bool) { self.base = base; self.isDisabled = isDisabled }
-    public var _identifiedView: some View { base._identifiedView.disabled(isDisabled) }
+    public var _identifiedView: some PickerContent { self }
+    var _renderedView: AnyView { AnyView(render(base).disabled(isDisabled)) }
 }
 
-public struct _KeyboardShortcutPickerContent<A: PickerContent>: PickerContent {
+public struct _KeyboardShortcutPickerContent<A: PickerContent>: PickerContent, _PickerRenderable {
     let base: A
     let key: KeyEquivalent
     let modifiers: EventModifiers
     public init(_ base: A, _ key: KeyEquivalent, _ modifiers: EventModifiers) { self.base = base; self.key = key; self.modifiers = modifiers }
-    public var _identifiedView: some View { base._identifiedView.keyboardShortcut(key, modifiers: modifiers) }
+    public var _identifiedView: some PickerContent { self }
+    var _renderedView: AnyView { AnyView(render(base).keyboardShortcut(key, modifiers: modifiers)) }
+}
+
+private func render<C: PickerContent>(_ c: C) -> AnyView {
+    (c as? _PickerRenderable)?._renderedView ?? AnyView(EmptyView())
 }
 
 extension PickerContent {
@@ -133,23 +144,25 @@ extension PickerContent {
     }
 }
 
-public struct PickerBuilder<Selection: Hashable> {
-    public struct Content<C: PickerContent>: View {
+public struct PickerBuilder<Selection> {
+    public struct Content<C> {
         let content: C
         public init(_ content: C) { self.content = content }
-        public var body: some View { content._identifiedView }
     }
+}
+extension PickerBuilder.Content: View where C: PickerContent {
+    public var body: some View { render(content) }
 }
 
 extension Picker {
-    public init<C: PickerContent>(selection: Binding<SelectionValue>, @ViewBuilder content: () -> C, @ViewBuilder label: () -> Label)
+    public init<C: PickerContent>(selection: Binding<SelectionValue>, content: () -> C, @ViewBuilder label: () -> Label)
         where Content == PickerBuilder<SelectionValue>.Content<C> {
         self.init(selection: selection, content: { PickerBuilder<SelectionValue>.Content(content()) }, label: label)
     }
 }
 
 extension Picker where Label == Text {
-    public init<C: PickerContent>(_ titleKey: LocalizedStringKey, selection: Binding<SelectionValue>, @ViewBuilder content: () -> C)
+    public init<C: PickerContent>(_ titleKey: LocalizedStringKey, selection: Binding<SelectionValue>, content: () -> C)
         where Content == PickerBuilder<SelectionValue>.Content<C> {
         self.init(titleKey, selection: selection, content: { PickerBuilder<SelectionValue>.Content(content()) })
     }
