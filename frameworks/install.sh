@@ -8,7 +8,7 @@ here=$(cd "$(dirname "$0")" && pwd)
 root=$1; shift
 for n in "$@"; do
   . "$here/$n/build.cfg"
-  d="$root/System/Library/$DEST/$n.framework/Versions/A"
+  d="$root/System/Library/$DEST/$n.framework/Versions/${VERSION:-A}"
   mkdir -p "$d"
   cp -f "$here/out/lib/$n.dylib" "$d/$n"
   echo "installed $n -> $d/$n"

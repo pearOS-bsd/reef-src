@@ -11,6 +11,13 @@ ENVV="LD_LIBRARY_PATH=/root2 HOME=/root XDG_RUNTIME_DIR=/tmp/xdg"
 cmd=$1; shift
 case $cmd in
 install)
+  for n in "$@"; do
+    . "$here/$n/build.cfg"
+    if [ "$KIND" = wrapper ]; then   # keep Reef's original beside the wrapper, once
+      f=$ROOT/System/Library/$DEST/$n.framework/Versions/$VERSION/$n
+      docker exec $C sh -c "[ -e $f.reef-orig ] || cp -p $f $f.reef-orig"
+    fi
+  done
   st=$(mktemp -d); "$here/install.sh" "$st" "$@" && docker cp "$st/System" "$C:$ROOT/" && rm -rf "$st" ;;
 missing)
   docker exec $C sh -c "$ENVV /tmp/calcroot/bin/reef --list-missing /root/Applications/Calculator.app" 2>&1 ;;
