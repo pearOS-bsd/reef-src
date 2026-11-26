@@ -323,7 +323,7 @@ int sandboxError(int error, int directory, const char* path, int access)
         return permits(path, access) ? EPERM : error;
     std::string parent = path;
     const size_t slash = parent.rfind('/');
-    parent = slash == std::string::npos ? "." : slash == 0 ? "/" : parent.substr(0, slash);
+    parent = slash == std::string::npos ? "." : slash ? parent.substr(0, slash) : "/";
     return permits(parent.c_str(), 3) ? EPERM : error;
 }
 
