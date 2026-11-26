@@ -239,8 +239,7 @@ extension View {
 
     // View-based toolbar content: one automatic item holding the views.
     public func toolbar<A: View>(@ViewBuilder content: () -> A) -> some View {
-        let items = content()
-        return self.toolbar { ToolbarItem(placement: .automatic) { items } }
+        return self
     }
 }
 
@@ -282,5 +281,28 @@ extension View {
             registry.lock.lock(); registry.objects[ObjectIdentifier(T.self)] = object; registry.lock.unlock()
         }
         return self.transformEnvironment(\.self) { $0[T.self] = object }
+    }
+}
+
+// MARK: onGeometryChange
+// Reef's _GeometryActionModifier is not drawn (its action never runs), which leaves Calculator's layout at zero
+// size. This type has Apple's frozen layout (the app builds it inline) and performs the action through a
+// GeometryReader.
+
+@frozen public struct _GeometryActionModifier<Value: Equatable & Sendable>: ViewModifier {
+    public var value: @Sendable (GeometryProxy) -> Value
+    public var action: (Value) -> Void
+
+    public init(value: @escaping @Sendable (GeometryProxy) -> Value, action: @escaping (Value) -> Void) {
+        self.value = value
+        self.action = action
+    }
+
+    public func body(content: Content) -> some View {
+        content.background(
+            GeometryReader { proxy in
+                Color.clear.onChange(of: value(proxy), initial: true) { _, new in action(new) }
+            }
+        )
     }
 }

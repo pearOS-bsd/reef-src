@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
 import SwiftUI
+import Foundation
 import AppKit
 import Calculate
 
@@ -79,7 +80,7 @@ extension CalculateExpression {
     }
 
     public func label(for operation: Operation, fontSize: CGFloat) -> Label {
-        Label(operation.text)
+        return Label(operation.text)
     }
 
     public func label(for button: CalculatorButton, fontSize: CGFloat) -> Label {

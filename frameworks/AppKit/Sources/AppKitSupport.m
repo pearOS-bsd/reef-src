@@ -60,3 +60,50 @@ static NSUserInterfaceCompressionOptions *Make(NSString *i) { return [[NSUserInt
 @implementation NSAppearance (ReefTint)
 - (NSAppearance *)appearanceByApplyingTintColor:(NSColor *)color { return self; }
 @end
+
+// Debug aid: REEF_DUMP_VIEWS=<seconds> prints the view tree of every window once.
+static void DumpView(NSView *v, int depth) {
+    fprintf(stderr, "%*s%s frame=%s hidden=%d alpha=%.2f\n", depth * 2, "", object_getClassName(v),
+            NSStringFromRect(v.frame).UTF8String, v.hidden, v.alphaValue);
+    for (NSView *s in v.subviews) DumpView(s, depth + 1);
+}
+
+__attribute__((constructor)) static void ReefDumpViews(void) {
+    const char *t = getenv("REEF_DUMP_VIEWS");
+    if (!t) return;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(atof(t) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        for (NSWindow *w in NSApp.windows) {
+            fprintf(stderr, "WINDOW %s %s\n", object_getClassName(w), NSStringFromRect(w.frame).UTF8String);
+            DumpView(w.contentView, 1);
+            fprintf(stderr, "contentSize=%s min=%s max=%s mask=%lu autoresize=%lu fitting=%s intrinsic=%s styleMask=%lx\n", NSStringFromSize(w.contentView.superview ? w.contentView.superview.frame.size : w.contentLayoutRect.size).UTF8String,
+                    NSStringFromSize(w.contentMinSize).UTF8String, NSStringFromSize(w.contentMaxSize).UTF8String, (unsigned long)w.contentView.autoresizingMask, (unsigned long)w.contentView.autoresizingMask,
+                    NSStringFromSize(w.contentView.fittingSize).UTF8String, NSStringFromSize(w.contentView.intrinsicContentSize).UTF8String, (unsigned long)w.styleMask);
+            if (getenv("REEF_FIX_FRAME")) {
+                NSRect r = w.contentView.frame; r.size.width = w.contentLayoutRect.size.width;
+                fprintf(stderr, "fix width -> %s\n", NSStringFromRect(r).UTF8String);
+                w.contentView.frame = r;
+            }
+        }
+    });
+}
+
+// Reef bug: a SwiftUI window whose content has a flexible width can come up with a hosting view of width 0
+// (fittingSize is NaN), and the layout never recovers (Calculator). While the content view is that narrow, give it
+// the width of the window's content area.
+static void ReefFixWindows(void) {
+    for (NSWindow *w in NSApp.windows) {
+        NSView *v = w.contentView;
+        if (!v || ![NSStringFromClass(v.class) containsString:@"NSHostingView"]) continue;
+        CGFloat want = w.contentLayoutRect.size.width;
+        if (want > 1 && !(v.frame.size.width > 1)) {
+            NSRect r = v.frame; r.size.width = want;
+            v.frame = r;
+        }
+    }
+}
+
+__attribute__((constructor)) static void ReefFixHostingWidth(void) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [NSTimer scheduledTimerWithTimeInterval:0.25 repeats:YES block:^(NSTimer *t) { ReefFixWindows(); }];
+    });
+}
