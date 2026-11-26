@@ -389,8 +389,8 @@ Image* Linker::load(const std::string& path, std::string& error)
     return image;
 }
 
-Linker::Linker(const std::string& root)
-    : m_root(root)
+Linker::Linker(std::string root)
+    : m_root(std::move(root))
 {
     current = this;
 }

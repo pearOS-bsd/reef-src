@@ -73,7 +73,7 @@ using InitializedCallback = void (*)(const char* path, const void* header);
 class Linker
 {
 public:
-    explicit Linker(const std::string& root);
+    explicit Linker(std::string root);
 
     static Linker* current;
 
