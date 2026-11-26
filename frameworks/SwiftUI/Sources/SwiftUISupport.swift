@@ -306,3 +306,29 @@ extension View {
         )
     }
 }
+
+// MARK: NavigationSplitView
+// Reef's NavigationSplitView ignores columnVisibility (the sidebar is always there) and reports a fitting size
+// of 0 x 0, which broke the size of Calculator's window. This one honours the visibility and has a size.
+
+public struct NavigationSplitView<Sidebar: View, Content: View, Detail: View>: View {
+    let visibility: Binding<NavigationSplitViewVisibility>?
+    let sidebar: Sidebar
+    let detail: Detail
+
+    public init(columnVisibility: Binding<NavigationSplitViewVisibility>, @ViewBuilder sidebar: () -> Sidebar, @ViewBuilder detail: () -> Detail) where Content == EmptyView {
+        self.visibility = columnVisibility
+        self.sidebar = sidebar()
+        self.detail = detail()
+    }
+
+    public var body: some View {
+        HStack(spacing: 0) {
+            if (visibility?.wrappedValue ?? .all) != .detailOnly {
+                sidebar.frame(width: 220)
+                Divider()
+            }
+            detail
+        }
+    }
+}

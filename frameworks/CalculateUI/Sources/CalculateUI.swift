@@ -74,17 +74,20 @@ extension CalculateExpression {
 
     public struct Label: View {
         let text: String
+        let fontSize: CGFloat
         public var caption: AttributedString? { nil }
-        init(_ text: String) { self.text = text }
-        public var body: some View { Text(text) }
+        init(_ text: String, fontSize: CGFloat) { self.text = text; self.fontSize = fontSize }
+        public var body: some View {
+            Text(text).font(.system(size: fontSize * 1.4))
+        }
     }
 
     public func label(for operation: Operation, fontSize: CGFloat) -> Label {
-        return Label(operation.text)
+        return Label(operation.text, fontSize: fontSize)
     }
 
     public func label(for button: CalculatorButton, fontSize: CGFloat) -> Label {
-        Label("\(button)")
+        Label("\(button)", fontSize: fontSize)
     }
 
     public func copyToClipboard(overridePlaintext: String?) {
