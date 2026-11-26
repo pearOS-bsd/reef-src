@@ -30,3 +30,6 @@ usr/lib/swift/libswift_signal
 usr/lib/swift/libswiftSpatial
 usr/lib/swift/libswift_stdio
 usr/lib/swift/libswiftXPC
+usr/lib/libcharset.1
+usr/lib/libbsm.0
+System/Library/Frameworks/GameController.framework
