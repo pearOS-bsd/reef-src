@@ -51,6 +51,8 @@ struct Run
     uint64_t length;
 };
 
+} // namespace
+
 // A block table of the image: its sectors and the CRC32 of their data.
 struct Partition
 {
@@ -61,6 +63,8 @@ struct Partition
     uint32_t crc;
     std::vector<Run> runs;
 };
+
+namespace {
 
 struct SourceImage
 {

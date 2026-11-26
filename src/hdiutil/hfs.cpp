@@ -39,14 +39,6 @@ struct Node
     uint32_t blockCount;
 };
 
-// A record of the catalog: its key and what follows it.
-struct Record
-{
-    uint32_t parent;
-    std::u16string name;
-    std::vector<uint8_t> data;
-};
-
 struct Tree
 {
     std::vector<std::vector<uint8_t>> nodes;
@@ -57,6 +49,16 @@ struct Tree
     uint32_t lastLeaf;
 };
 
+} // namespace
+
+// A record of the catalog: its key and what follows it.
+struct Record
+{
+    uint32_t parent;
+    std::u16string name;
+    std::vector<uint8_t> data;
+};
+
 // A node being filled: records from the front, their offsets at the end.
 struct NodeBuffer
 {
@@ -65,8 +67,6 @@ struct NodeBuffer
     size_t free = 14;
     std::vector<uint16_t> offsets;
 };
-
-} // namespace
 
 static void put16(uint8_t* p, uint16_t value)
 {
