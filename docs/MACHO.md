@@ -31,7 +31,8 @@ The Darwin C headers in `macho/include` are written by hand; the details that ch
 `stat$INODE64`, `fopen$DARWIN_EXTSN` asm labels.
 libunwind (inside `libSystem.B.dylib`): compiles from the same tree, 35 of 77 functions match with plain flags; Reef modified it and the version may differ: open.
 CoreFoundation: the original has CFListFormatter, CFRelativeDateTimeFormatter, CFDateComponents and CFCalendar, which swift-corelibs-foundation has from
-swift-6.0-RELEASE on: the version is 6.0, 6.1 or 6.2 (to be decided by function match). Tcl: the version string is 8.6.14 (not 8.5).
+swift-6.0-RELEASE on. The version is 6.0: the original has the misspelt `_CFLocaleCreateLocaleIdentiferByReplacingLanguageCodeAndScriptCode` that 6.1 corrected, and not
+`_CFPosixSpawnFileActionsChdir` that 6.1 added.
 
 ## Findings on the other upstream libraries (2026-11-26)
 - `libdispatch.dylib` (swift-corelibs-libdispatch, version not yet decided; swift-6.0-RELEASE is the first guess): it is the Linux backend (imports `epoll_create1`, `eventfd`,
@@ -49,3 +50,21 @@ The sources are linked in the ASCII order of their paths (`generic/`, `libtommat
 Header facts that changed code (`macho/include`): Darwin `WIFSTOPPED` (`WSTOPSIG != 0x13`), `P_tmpdir` = `/var/tmp/`, `EAI_SYSTEM` 11, `IPV6_V6ONLY` 27, `O_NOCTTY`, `select` without
 `$1050`, `realpath$DARWIN_EXTSN`, `htons` as an inline byte swap. Test: 47 scripts through the bytecode compiler, bignums, regexps, zlib, TclOO, files, `exec`, sockets and the event loop.
 (`open {|cat} r+` hangs under reef with the original too; it is not in the test.)
+
+## CoreFoundation and libdispatch: what was found (2026-11-27), not built yet
+Both files are the swift-corelibs sources (CoreFoundation of swift-corelibs-foundation 6.0, libdispatch 6.0) built in a mixed configuration that the sources do not select by themselves, and with
+changes of Reef:
+- CoreFoundation (`System/Library/Frameworks/CoreFoundation.framework/.../CoreFoundation`, 1 MB of code, 2546 functions): `DEPLOYMENT_RUNTIME_SWIFT` is 0 (the constant strings are `__cfstring`, not
+  `.cfstr.data`), with `DEPLOYMENT_RUNTIME_OBJC` and the classes `__NSCFArray` ..., `NSArray`, `NSCache`, `NSCalendar`, `NSCharacterSet` defined inside (Reef's code). It has the Linux paths of
+  CFPlatform.c (it defines `OSAtomicAdd32` ... itself, which the sources do only for `TARGET_OS_LINUX || TARGET_OS_BSD`) and of CFRunLoop.c (imports `epoll_create1`, `eventfd`, `timerfd_create`)
+  and also the Darwin ones (`_NSGetExecutablePath`, `__dyld_image_count`, `mach_msg`, `mach_port_*`, `kCFBuddhistCalendar` as own symbols and not as `alias`, which Mach-O does not have).
+  ICU: `<_foundation_unicode/...>` (swift-foundation-icu 74, `icuSources/include`) with `U_DISABLE_RENAMING`, linked to `libicucore.A.dylib` (plain `_ucal_open`). `reef_host_symbol` and
+  `reef_report_unsupported` are imported: Reef changed the sources. A probe (not committed: `~/.pear/tmp/tk/macho/probe`) with `-U__APPLE__ -D__linux__ -D__unix__ -DDEPLOYMENT_RUNTIME_SWIFT=0
+  -DDEPLOYMENT_RUNTIME_OBJC=1 -DHAVE_STRLCPY -DHAVE_STRLCAT -fconstant-cfstrings -fno-common -fexceptions -fblocks -O2` compiles 74 of the 90 sources; linked with unresolved symbols allowed,
+  619 of the 1775 functions that exist in both match (14.7 % of those bytes); the result is the same for 6.0, 6.1 and 6.2, so the match does not decide the version, the typo above does.
+  Open: the Darwin half (`TARGET_OS_MAC` with `TARGET_OS_LINUX`: which file takes which branch), Reef's changes, the `__NSCF` classes, `CFMachPort`, `CFMessagePort`, `CFFileDescriptor`,
+  `CFNotificationCenter` (not in swift-corelibs: Reef's own code, 145 functions), the `_foundation_unicode` headers at upstream/ with provenance.
+- libdispatch (`usr/lib/system/libdispatch.dylib`, 636 functions): it is built as `__APPLE__` (the Apple branch of `internal.h`: `os/availability.h`, `mach/*`, `mach_msg`, `mach_port_*`) with the
+  epoll backend of `event_config.h` (`__linux__` is true there: `epoll_create1`, `eventfd`, `timerfd_create`, `signalfd`) and the ObjC classes `OS_dispatch_*` (`data.m`, `object.m`); it also imports
+  `kevent` and `kqueue`. The generic `config/config.h` of the repository is the Apple one. Needs the Apple private headers (`os/tsd.h`, `pthread/private.h`, `mach/*`, `voucher`, `firehose`),
+  which have to be written from the symbols; not started beyond this analysis.
