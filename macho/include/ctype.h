@@ -9,6 +9,24 @@ extern "C" {
 int isalnum(int); int isalpha(int); int isblank(int); int iscntrl(int); int isdigit(int); int isgraph(int); int islower(int);
 int isprint(int); int ispunct(int); int isspace(int); int isupper(int); int isxdigit(int); int tolower(int); int toupper(int);
 typedef unsigned int __uint32_t;
+typedef int __darwin_rune_t;
+typedef struct { __darwin_rune_t __min, __max, __map; __uint32_t *__types; } _RuneRange;
+typedef struct {
+    char __magic[8];
+    char __encoding[32];
+    __darwin_rune_t (*__sgetrune)(const char *, unsigned long, char const **);
+    int (*__sputrune)(__darwin_rune_t, char *, unsigned long, char **);
+    __darwin_rune_t __invalid_rune;
+    __uint32_t __runetype[256];
+    __darwin_rune_t __maplower[256];
+    __darwin_rune_t __mapupper[256];
+    _RuneRange __runetype_ext, __maplower_ext, __mapupper_ext;
+    void *__variable;
+    int __variable_len;
+    int __ncharclasses;
+    void *__charclasses;
+} _RuneLocale;
+extern _RuneLocale _DefaultRuneLocale;
 #define _CTYPE_A 0x00000100L
 #define _CTYPE_C 0x00000200L
 #define _CTYPE_D 0x00000400L

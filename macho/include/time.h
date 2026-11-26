@@ -13,6 +13,9 @@ struct tm { int tm_sec, tm_min, tm_hour, tm_mday, tm_mon, tm_year, tm_wday, tm_y
 #define CLOCKS_PER_SEC 1000000
 #define CLOCK_REALTIME 0
 #define CLOCK_MONOTONIC 6
+#define CLOCK_MONOTONIC_RAW 4
+#define CLOCK_PROCESS_CPUTIME_ID 12
+#define CLOCK_THREAD_CPUTIME_ID 16
 #define TIME_UTC 1
 clock_t clock(void); double difftime(time_t, time_t); time_t mktime(struct tm *); time_t time(time_t *);
 char *asctime(const struct tm *); char *ctime(const time_t *); struct tm *gmtime(const time_t *); struct tm *localtime(const time_t *);

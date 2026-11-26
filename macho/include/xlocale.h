@@ -39,6 +39,9 @@ size_t mbrlen_l(const char *, size_t, mbstate_t *, locale_t); int mbtowc_l(wchar
 wint_t btowc_l(int, locale_t); int wctob_l(wint_t, locale_t);
 int snprintf_l(char *, size_t, locale_t, const char *, ...); int asprintf_l(char **, locale_t, const char *, ...); int vasprintf_l(char **, locale_t, const char *, va_list);
 int sscanf_l(const char *, locale_t, const char *, ...);
+int iswctype_l(wint_t, wctype_t, locale_t); wctype_t wctype_l(const char *, locale_t); wctype_t wctrans_l(const char *, locale_t); wint_t towctrans_l(wint_t, wctrans_t, locale_t);
+size_t mbsnrtowcs_l(wchar_t *, const char **, size_t, size_t, mbstate_t *, locale_t); size_t wcsnrtombs_l(char *, const wchar_t **, size_t, size_t, mbstate_t *, locale_t);
+struct lconv *localeconv_l(locale_t);
 int ___mb_cur_max(void); int ___mb_cur_max_l(locale_t);
 #define MB_CUR_MAX_L(l) ___mb_cur_max_l(l)
 #ifdef __cplusplus

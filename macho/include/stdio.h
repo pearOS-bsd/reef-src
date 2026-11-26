@@ -25,7 +25,7 @@ int putchar(int);
 int fputs(const char *, FILE *);
 int fputc(int, FILE *);
 int fflush(FILE *);
-FILE *fopen(const char *, const char *);
+FILE *fopen(const char *, const char *) __asm("_fopen$DARWIN_EXTSN");
 FILE *fdopen(int, const char *);
 int fclose(FILE *);
 size_t fread(void *, size_t, size_t, FILE *);
@@ -38,8 +38,10 @@ int vfscanf(FILE *, const char *, va_list); int vscanf(const char *, va_list);
 int fgetc(FILE *); int getc(FILE *); int getchar(void); int putc(int, FILE *); int ungetc(int, FILE *);
 char *fgets(char *, int, FILE *); int fseek(FILE *, long, int); long ftell(FILE *); void rewind(FILE *); void clearerr(FILE *);
 int setvbuf(FILE *, char *, int, size_t); void setbuf(FILE *, char *); void perror(const char *); int remove(const char *); int rename(const char *, const char *);
-FILE *freopen(const char *, const char *, FILE *); FILE *tmpfile(void); char *tmpnam(char *);
+FILE *freopen(const char *, const char *, FILE *) __asm("_freopen$DARWIN_EXTSN"); FILE *tmpfile(void); char *tmpnam(char *);
 typedef long long fpos_t; int fgetpos(FILE *, fpos_t *); int fsetpos(FILE *, const fpos_t *);
+int fseeko(FILE *, long long, int); long long ftello(FILE *); int fileno(FILE *);
+long getline(char **, size_t *, FILE *); int dprintf(int, const char *, ...); int asprintf(char **, const char *, ...); int vasprintf(char **, const char *, va_list);
 #define BUFSIZ 1024
 #define SEEK_SET 0
 #define SEEK_CUR 1

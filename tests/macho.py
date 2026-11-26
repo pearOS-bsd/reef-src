@@ -33,10 +33,10 @@ def swap(loader, install, file):
 def compile_test(source, conf, name):
     program = os.path.join(work, name)
     flags = bm.shlex.split(conf.get('testflags', '').replace('$REPO', bm.REPO))
-    cc = [bm.LLVM + '/clang', '--target=x86_64-apple-macos12', '-O1', '-fno-stack-protector', '-w', '-nostdinc', '-isystem', bm.RESOURCE,
-          '-isystem', bm.INCLUDE, '-I' + os.path.dirname(source)]
+    cc = [bm.LLVM + '/clang', '--target=x86_64-apple-macos12', '-O1', '-fno-stack-protector', '-w', '-nostdinc', '-I' + os.path.dirname(source)]
     if source.endswith('.m'): cc += ['-x', 'objective-c', '-fobjc-arc']
-    if source.endswith('.cpp'): cc += ['-x', 'c++', '-std=c++20']
+    if source.endswith('.cpp'): cc += ['-x', 'c++']
+    flags += ['-isystem', bm.INCLUDE, '-isystem', bm.RESOURCE]     # after the flags: libc++'s headers wrap the C ones
     subprocess.run(cc + flags + ['-c', source, '-o', program + '.o'], check=True)
     libs = conf.get('testlibs') or conf['install'] + ' usr/lib/libSystem.B.dylib'
     subprocess.run([bm.LLVM + '/ld64.lld', '-arch', 'x86_64', '-platform_version', 'macos', '12.0', '12.0', '-syslibroot', root, '-o', program, program + '.o']
