@@ -158,10 +158,10 @@ static std::unique_ptr<llvm::Module> parseBitcode(llvm::StringRef bitcode, llvm:
     return std::move(*module);
 }
 
-static std::string sha256(llvm::StringRef data)
+static std::string sha256(const std::string &data)
 {
     static const char digits[] = "0123456789abcdef";
-    const std::array<uint8_t, 32> hash = llvm::SHA256::hash(llvm::arrayRefFromStringRef(data));
+    const std::array<uint8_t, 32> hash = llvm::SHA256::hash(llvm::arrayRefFromStringRef<uint8_t>(data));
     std::string text;
     for (const uint8_t byte : hash) {
         text += digits[byte >> 4];
