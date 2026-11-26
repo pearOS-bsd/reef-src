@@ -135,7 +135,7 @@ static std::string prefix(const std::string& process, const Work& work, const ch
     return formattedTime(work.time) + " " + process + " tid " + std::to_string(work.thread) + " " + state + " ";
 }
 
-static std::string description(double now, const Work& work)
+static std::string description(const Work& work, double now)
 {
     return work.name + " for " + std::to_string(long(now - work.issued)) + " ms: " + work.detail;
 }
@@ -146,7 +146,7 @@ static std::string otherWork(const std::deque<Work>& all, double now, const Work
     for (const Work& other : all) {
         if (&other == &work)
             continue;
-        text += (text.empty() ? "" : "; ") + description(now, other);
+        text += (text.empty() ? "" : "; ") + description(other, now);
     }
     return text.empty() ? "nothing else" : text;
 }
@@ -167,14 +167,14 @@ static void watch()
             if (status == EGL_TIMEOUT_EXPIRED_KHR) {
                 if (elapsed > stuck && !work->logged) {
                     work->logged = true;
-                    logLine(prefix(process, *work, "RUNNING") + description(now, *work) + " | also running: "
+                    logLine(prefix(process, *work, "RUNNING") + description(*work, now) + " | also running: "
                             + otherWork(pending, now, *work));
                 }
                 ++work;
                 continue;
             }
             if (elapsed > slow)
-                logLine(prefix(process, *work, "SLOW") + description(now, *work) + " | also running: "
+                logLine(prefix(process, *work, "SLOW") + description(*work, now) + " | also running: "
                         + otherWork(pending, now, *work));
             destroySync(work->display, work->sync);
             work = pending.erase(work);
@@ -239,7 +239,7 @@ void hostGpuWorkMeasured(const char* name, const char* detail, int running, int 
     const double now = milliseconds();
     work.issued = now - duration;
     std::lock_guard<std::mutex> lock(mutex);
-    logLine(prefix(process, work, running ? "RUNNING" : "SLOW") + description(now, work) + " | also running: "
+    logLine(prefix(process, work, running ? "RUNNING" : "SLOW") + description(work, now) + " | also running: "
             + otherWork(pending, now, work));
 }
 
