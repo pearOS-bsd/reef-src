@@ -19,12 +19,6 @@ static void ignoreMessage(void*, const char*)
 {
 }
 
-template<typename Function>
-static void resolve(void* library, Function& function, const char* name)
-{
-    function = reinterpret_cast<Function>(dlsym(library, name));
-}
-
 static VaApi load()
 {
     VaApi api = {};
@@ -34,38 +28,38 @@ static VaApi load()
     void* drm = dlopen("libva-drm.so.2", RTLD_NOW);
     if (!drm)
         return api;
-    resolve(library, api.initialize, "vaInitialize");
-    resolve(library, api.terminate, "vaTerminate");
-    resolve(library, api.errorStr, "vaErrorStr");
-    resolve(library, api.setErrorCallback, "vaSetErrorCallback");
-    resolve(library, api.setInfoCallback, "vaSetInfoCallback");
-    resolve(library, api.maxNumProfiles, "vaMaxNumProfiles");
-    resolve(library, api.queryConfigProfiles, "vaQueryConfigProfiles");
-    resolve(library, api.maxNumEntrypoints, "vaMaxNumEntrypoints");
-    resolve(library, api.queryConfigEntrypoints, "vaQueryConfigEntrypoints");
-    resolve(library, api.getConfigAttributes, "vaGetConfigAttributes");
-    resolve(library, api.createConfig, "vaCreateConfig");
-    resolve(library, api.destroyConfig, "vaDestroyConfig");
-    resolve(library, api.createSurfaces, "vaCreateSurfaces");
-    resolve(library, api.destroySurfaces, "vaDestroySurfaces");
-    resolve(library, api.createContext, "vaCreateContext");
-    resolve(library, api.destroyContext, "vaDestroyContext");
-    resolve(library, api.createBuffer, "vaCreateBuffer");
-    resolve(library, api.destroyBuffer, "vaDestroyBuffer");
-    resolve(library, api.beginPicture, "vaBeginPicture");
-    resolve(library, api.renderPicture, "vaRenderPicture");
-    resolve(library, api.endPicture, "vaEndPicture");
-    resolve(library, api.syncSurface, "vaSyncSurface");
-    resolve(library, api.maxNumImageFormats, "vaMaxNumImageFormats");
-    resolve(library, api.queryImageFormats, "vaQueryImageFormats");
-    resolve(library, api.createImage, "vaCreateImage");
-    resolve(library, api.deriveImage, "vaDeriveImage");
-    resolve(library, api.getImage, "vaGetImage");
-    resolve(library, api.destroyImage, "vaDestroyImage");
-    resolve(library, api.mapBuffer, "vaMapBuffer");
-    resolve(library, api.unmapBuffer, "vaUnmapBuffer");
-    resolve(library, api.exportSurfaceHandle, "vaExportSurfaceHandle");
-    resolve(drm, api.getDisplayDRM, "vaGetDisplayDRM");
+    api.initialize = reinterpret_cast<decltype(api.initialize)>(dlsym(library, "vaInitialize"));
+    api.terminate = reinterpret_cast<decltype(api.terminate)>(dlsym(library, "vaTerminate"));
+    api.errorStr = reinterpret_cast<decltype(api.errorStr)>(dlsym(library, "vaErrorStr"));
+    api.setErrorCallback = reinterpret_cast<decltype(api.setErrorCallback)>(dlsym(library, "vaSetErrorCallback"));
+    api.setInfoCallback = reinterpret_cast<decltype(api.setInfoCallback)>(dlsym(library, "vaSetInfoCallback"));
+    api.maxNumProfiles = reinterpret_cast<decltype(api.maxNumProfiles)>(dlsym(library, "vaMaxNumProfiles"));
+    api.queryConfigProfiles = reinterpret_cast<decltype(api.queryConfigProfiles)>(dlsym(library, "vaQueryConfigProfiles"));
+    api.maxNumEntrypoints = reinterpret_cast<decltype(api.maxNumEntrypoints)>(dlsym(library, "vaMaxNumEntrypoints"));
+    api.queryConfigEntrypoints = reinterpret_cast<decltype(api.queryConfigEntrypoints)>(dlsym(library, "vaQueryConfigEntrypoints"));
+    api.getConfigAttributes = reinterpret_cast<decltype(api.getConfigAttributes)>(dlsym(library, "vaGetConfigAttributes"));
+    api.createConfig = reinterpret_cast<decltype(api.createConfig)>(dlsym(library, "vaCreateConfig"));
+    api.destroyConfig = reinterpret_cast<decltype(api.destroyConfig)>(dlsym(library, "vaDestroyConfig"));
+    api.createSurfaces = reinterpret_cast<decltype(api.createSurfaces)>(dlsym(library, "vaCreateSurfaces"));
+    api.destroySurfaces = reinterpret_cast<decltype(api.destroySurfaces)>(dlsym(library, "vaDestroySurfaces"));
+    api.createContext = reinterpret_cast<decltype(api.createContext)>(dlsym(library, "vaCreateContext"));
+    api.destroyContext = reinterpret_cast<decltype(api.destroyContext)>(dlsym(library, "vaDestroyContext"));
+    api.createBuffer = reinterpret_cast<decltype(api.createBuffer)>(dlsym(library, "vaCreateBuffer"));
+    api.destroyBuffer = reinterpret_cast<decltype(api.destroyBuffer)>(dlsym(library, "vaDestroyBuffer"));
+    api.beginPicture = reinterpret_cast<decltype(api.beginPicture)>(dlsym(library, "vaBeginPicture"));
+    api.renderPicture = reinterpret_cast<decltype(api.renderPicture)>(dlsym(library, "vaRenderPicture"));
+    api.endPicture = reinterpret_cast<decltype(api.endPicture)>(dlsym(library, "vaEndPicture"));
+    api.syncSurface = reinterpret_cast<decltype(api.syncSurface)>(dlsym(library, "vaSyncSurface"));
+    api.maxNumImageFormats = reinterpret_cast<decltype(api.maxNumImageFormats)>(dlsym(library, "vaMaxNumImageFormats"));
+    api.queryImageFormats = reinterpret_cast<decltype(api.queryImageFormats)>(dlsym(library, "vaQueryImageFormats"));
+    api.createImage = reinterpret_cast<decltype(api.createImage)>(dlsym(library, "vaCreateImage"));
+    api.deriveImage = reinterpret_cast<decltype(api.deriveImage)>(dlsym(library, "vaDeriveImage"));
+    api.getImage = reinterpret_cast<decltype(api.getImage)>(dlsym(library, "vaGetImage"));
+    api.destroyImage = reinterpret_cast<decltype(api.destroyImage)>(dlsym(library, "vaDestroyImage"));
+    api.mapBuffer = reinterpret_cast<decltype(api.mapBuffer)>(dlsym(library, "vaMapBuffer"));
+    api.unmapBuffer = reinterpret_cast<decltype(api.unmapBuffer)>(dlsym(library, "vaUnmapBuffer"));
+    api.exportSurfaceHandle = reinterpret_cast<decltype(api.exportSurfaceHandle)>(dlsym(library, "vaExportSurfaceHandle"));
+    api.getDisplayDRM = reinterpret_cast<decltype(api.getDisplayDRM)>(dlsym(drm, "vaGetDisplayDRM"));
     api.loaded = api.initialize && api.terminate && api.maxNumProfiles && api.queryConfigProfiles && api.maxNumEntrypoints
         && api.queryConfigEntrypoints && api.createConfig && api.destroyConfig && api.createSurfaces && api.destroySurfaces
         && api.createContext && api.destroyContext && api.createBuffer && api.destroyBuffer && api.beginPicture
