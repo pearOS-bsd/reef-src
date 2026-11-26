@@ -6,7 +6,7 @@
 set -e
 here=$(cd "$(dirname "$0")" && pwd)
 KEY=${MAC_KEY:-$HOME/fbsd-vm/id_ed25519}
-SSH="ssh -p ${MAC_PORT:-2229} -i $KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=no ${MAC_USER:-alex}@localhost"
+SSH="ssh -p ${MAC_PORT:-2229} -i $KEY -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=no ${MAC_USER:-alex}@localhost"
 R=fwbuild
 tar -C "$here" --exclude=out --exclude=.git -cf - . | $SSH "mkdir -p $R && cd $R && tar xf -"
 for n in "$@"; do $SSH "sh $R/mac-build.sh $n"; done
