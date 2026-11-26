@@ -32,3 +32,11 @@ The Darwin C headers in `macho/include` are written by hand; the details that ch
 libunwind (inside `libSystem.B.dylib`): compiles from the same tree, 35 of 77 functions match with plain flags; Reef modified it and the version may differ: open.
 CoreFoundation: the original has CFListFormatter, CFRelativeDateTimeFormatter, CFDateComponents and CFCalendar, which swift-corelibs-foundation has from
 swift-6.0-RELEASE on: the version is 6.0, 6.1 or 6.2 (to be decided by function match). Tcl: the version string is 8.6.14 (not 8.5).
+
+## Findings on the other upstream libraries (2026-11-26)
+- `libdispatch.dylib` (swift-corelibs-libdispatch, version not yet decided; swift-6.0-RELEASE is the first guess): it is the Linux backend (imports `epoll_create1`, `eventfd`,
+  `kevent`, `kqueue`) with the Objective-C classes `OS_dispatch_*` (src/data.m, object.m), linked for Mach-O. Building it needs the generated `config/config.h` of that
+  port and the Darwin headers `Availability.h`, `TargetConditionals.h`, `os/*`, `mach/*`; the configuration Reef used is not known yet.
+- `libxar.1.dylib` is not upstream xar: it uses CommonCrypto (`CC_MD5`, `CC_SHA*`), libcompression, zlib and bzip2, not libxml2 or OpenSSL. It is Reef's own
+  code (19 KB): it goes with the small C libraries, written from the decompilation.
+- `Tcl` says 8.6.14; not started (needs the Darwin `tclUnixPort.h` header set and the HAVE_* configuration).
