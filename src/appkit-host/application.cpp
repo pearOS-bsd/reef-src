@@ -129,9 +129,9 @@ void hostSetDark(int dark)
     ui::Theme theme = dark ? ui::Theme::dark() : ui::Theme::light();
     const ui::Theme& current = ui::Theme::current();
     theme.highlight = current.highlight;
+    theme.fontPointSize = current.fontPointSize;
     theme.fontFamily = current.fontFamily;
     theme.fixedFontFamily = current.fixedFontFamily;
-    theme.fontPointSize = current.fontPointSize;
     theme.iconTheme = current.iconTheme;
     theme.continuousCorners = current.continuousCorners;
     ui::Theme::setCurrent(theme);
