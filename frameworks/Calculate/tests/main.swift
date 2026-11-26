@@ -25,7 +25,7 @@ let keys: [String: Op] = [
 
 func state(_ e: CalculateExpression) -> String {
     let rich = e.rich.tokens.map { $0.text }.joined(separator: "|")
-    let err = e.error.map { ($0 as NSError).code.description } ?? "-"
+    let err = e.error.map { let n = $0 as NSError; return n.code == -1000 || n.code == -2004 ? n.code.description : "\(n.code)(\(n.localizedDescription)|\(n.localizedFailureReason ?? ""))" } ?? "-"
     return "expr=\(e.expression) rich=[\(rich)] result=\(e.result?.formattedResult ?? "nil") clear=\(e.prefersClear) err=\(err)"
 }
 

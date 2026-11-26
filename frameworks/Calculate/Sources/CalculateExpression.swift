@@ -16,6 +16,7 @@ enum Tok: Equatable {
     case neg              // unary minus of a negated operand: ( - x )
     case fn(String)       // sin cos tan ln log ...: followed by .open
     case sqrt
+    case cbrt
     case const(String)    // π 𝑒
     case ee(String)       // exponent digits of 2e3
 
@@ -27,7 +28,12 @@ enum Tok: Equatable {
     }
 }
 
-struct EngineError: Error { let code: Int; let reason: String }
+struct EngineError: Error {
+    let code: Int; let reason: String
+    static let domain = EngineError(code: -2003, reason: "Undefined")
+    static let overflow = EngineError(code: -2000, reason: "Overflow")
+    static let divideByZero = EngineError(code: -2004, reason: "Undefined")
+}
 
 // Minimal engine of milestone 2: an infix expression editor with live evaluation in decimal arithmetic.
 // The rules come from observing Apple's Calculate.framework (see EVIDENCE.md).
@@ -51,6 +57,7 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
     var clearsEntry = true
     var repeatable: (String, [Tok])?
     var pendingExponent = false
+    var evaluated = false
 
     public init(_ expression: String, options: [CalculateKey: Any], base: Base, id: UUID) {
         self.options = options
@@ -101,8 +108,9 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
         case .open: return "("
         case .close: return ")"
         case .neg: return "-"
-        case .fn(let s): return s
+        case .fn(let s): return raw ? ["sin^-1": "asin", "cos^-1": "acos", "tan^-1": "atan", "log2": "log"][s] ?? s : s
         case .sqrt: return "√"
+        case .cbrt: return raw ? "√" : "∛"
         case .const(let s): return raw && s == "𝑒" ? "e" : s
         case .ee(let s): return "e" + s
         }
@@ -140,7 +148,7 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
         case .open: return .openParenthesis
         case .close: return .closeParenthesis
         case .neg: return .neg
-        case .fn, .sqrt: return .function
+        case .fn, .sqrt, .cbrt: return .function
         case .const(let s): return s == "π" ? .pi : .eulerNumber
         case .num, .ee: return .number
         }
@@ -155,7 +163,9 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
     public var rich: RichExpression {
         var toks = tokens + Array(repeating: Tok.close, count: openDepth)
         if toks.isEmpty { toks = [.num("0")] }
-        return richExpression(toks)
+        let r = richExpression(toks)
+        if pendingExponent, let last = r.tokens.last { last.text += "e" }
+        return r
     }
 
     // The exponent operand of ^ is the "right" expression of the ^ token; a square root keeps its operand in parentheses.
@@ -191,7 +201,7 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
                 i = min(end, toks.count)
                 continue
             }
-            if case .sqrt = t {
+            if t == .sqrt || t == .cbrt {
                 r.tokens.append(RichToken(type: .function, text: "√"))
                 // operand in parentheses
                 var j = i + 1
@@ -200,14 +210,15 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
                     if toks[j] == .open { var d = 0; while end < toks.count { if toks[end] == .open { d += 1 }; if toks[end] == .close { d -= 1; if d == 0 { end += 1; break } }; end += 1 } }
                     else { end = j + 1 }
                 }
-                if toks[j..<min(end, toks.count)].first == .open {
-                    r.tokens += richExpression(Array(toks[j..<min(end, toks.count)])).tokens
-                } else {
-                    r.tokens.append(RichToken(type: .openParenthesis, text: "("))
-                    r.tokens += richExpression(Array(toks[j..<min(end, toks.count)])).tokens
-                    r.tokens.append(RichToken(type: .closeParenthesis, text: ")"))
-                }
+                r.tokens.append(RichToken(type: .openParenthesis, text: "("))
+                r.tokens += richExpression(Array(toks[j..<min(end, toks.count)])).tokens
+                r.tokens.append(RichToken(type: .closeParenthesis, text: ")"))
                 i = min(end, toks.count)
+                continue
+            }
+            if case .ee(let d) = t, let last = r.tokens.last {
+                last.text += "e" + d      // 2e3 is one token
+                i += 1
                 continue
             }
             r.tokens.append(RichToken(type: tokenType(t), text: text(t, raw: true)))
@@ -236,9 +247,9 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
 
     public var error: Error? {
         if case .failure(let e) = evaluation {
-            let info = e.code == -1000
-                ? [NSLocalizedDescriptionKey: "Math error", NSLocalizedFailureReasonErrorKey: "Check the expression for math errors and spelling mistakes"]
-                : [NSLocalizedDescriptionKey: e.reason, NSLocalizedFailureReasonErrorKey: e.code == -2004 ? "Numbers cannot be divided by zero" : e.reason]
+            let reasons = [-1000: "Check the expression for math errors and spelling mistakes", -2004: "Numbers cannot be divided by zero",
+                           -2003: "Input value is out of range", -2000: "Result is too large"]
+            let info = [NSLocalizedDescriptionKey: e.reason, NSLocalizedFailureReasonErrorKey: reasons[e.code] ?? e.reason]
             return NSError(domain: "com.apple.calculateframework", code: e.code, userInfo: info)
         }
         return nil
@@ -261,7 +272,8 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
         let neg = (r < 0)
         if neg { s = "-" + s.replacingOccurrences(of: "-", with: "") }
         _ = n
-        let e = r.exponent
+        var e = r.exponent
+        if e > 0 && s.count + e <= 34 { s += String(repeating: "0", count: e); e = 0 }
         return s + "E" + (e < 0 ? "-" : "+") + String(abs(e))
     }
 
@@ -291,7 +303,7 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
         case .failure:
             tokens = []
         }
-        openDepth = 0; entering = false; clearsEntry = false
+        openDepth = 0; entering = false; clearsEntry = false; evaluated = true
     }
 
     func lastBinary() -> (String, [Tok])? {
@@ -342,7 +354,7 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
         default:
             return nil
         }
-        if start > 0, tokens[start - 1] == .sqrt { start -= 1 }
+        if start > 0, tokens[start - 1] == .sqrt || tokens[start - 1] == .cbrt { start -= 1 }
         return start..<tokens.count
     }
 
@@ -354,7 +366,13 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
     @discardableResult
     public func update(_ op: Operation) -> Bool {
         let n = op.name
-        clearsEntry = true
+        if !n.hasPrefix("digit") && n != "ee" { pendingExponent = false }
+        let binaryOps: Set<String> = ["add", "subtract", "multiply", "divide", "power"]
+        if evaluated {
+            if n.hasPrefix("digit") || n == "decimal" { tokens = []; entering = false }
+            evaluated = false
+            if !binaryOps.contains(n) { clearsEntry = true }
+        } else { clearsEntry = true }
         if n.hasPrefix("digit") && n != "digit00" && n != "digitFF" && n.count == 6 {
             return typeDigit(String(n.last!))
         }
@@ -387,6 +405,18 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
             guard let r = lastOperand() else { return false }
             if tokens.last == .pct { tokens.insert(.open, at: r.lowerBound); tokens += [.close, .pct] } else { tokens.append(.pct) }
             entering = false; return true
+        case "cubeRoot", "root":
+            guard let r = lastOperand() else { return false }
+            tokens.insert(n == "cubeRoot" ? .cbrt : .sqrt, at: r.lowerBound); entering = false; return true
+        case "exponentialBase2": return prefixPower([.num("2")])
+        case "exponentialBase10": return prefixPower([.num("10")])
+        case "exponentialBaseEuler": return prefixPower([.const("𝑒")])
+        case "logarithmBase2": return function("log2")
+        case "random":
+            let r = Int.random(in: 0..<100_000_000)
+            let digits = String(format: "%08d", r)
+            if tokens.last?.isOperand == true { tokens.append(.op("×")) }
+            tokens.append(.num("0." + digits)); entering = false; return true
         case "pi": return constant("π")
         case "eulerNumber": return constant("𝑒")
         case "ee": pendingExponent = lastOperand() != nil; return pendingExponent
@@ -394,16 +424,16 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
             if tokens.last?.isOperand == true { tokens.append(.op("×")) }
             tokens.append(.open); openDepth += 1; entering = false; return true
         case "closeParenthesis":
-            guard openDepth > 0 else { return false }
+            guard openDepth > 0, tokens.last != .open, !(tokens.last.map { if case .fn = $0 { return true } else { return false } } ?? false) else { return false }
             tokens.append(.close); openDepth -= 1; entering = false; return true
         case "sine": return function("sin")
         case "cosine": return function("cos")
         case "tangent": return function("tan")
         case "logarithmNatural": return function("ln")
         case "logarithmBase10": return function("log")
-        case "inverseSine": return function("sin⁻¹")
-        case "inverseCosine": return function("cos⁻¹")
-        case "inverseTangent": return function("tan⁻¹")
+        case "inverseSine": return function("sin^-1")
+        case "inverseCosine": return function("cos^-1")
+        case "inverseTangent": return function("tan^-1")
         case "hyperbolicSine": return function("sinh")
         case "hyperbolicCosine": return function("cosh")
         case "hyperbolicTangent": return function("tanh")
@@ -448,6 +478,13 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
         return true
     }
 
+    func prefixPower(_ base: [Tok]) -> Bool {
+        guard let r = lastOperand() else { return false }
+        tokens.insert(contentsOf: base + [.op("^")], at: r.lowerBound)
+        entering = false
+        return true
+    }
+
     func power(_ p: Int) -> Bool {
         guard lastOperand() != nil else { return false }
         tokens += [.op("^"), .num(String(p))]
@@ -478,10 +515,21 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
         let slice = Array(tokens[r])
         if slice.count >= 3, slice.first == .open, slice[1] == .neg, slice.last == .close {
             tokens.replaceSubrange(r, with: slice[2..<(slice.count - 1)])
+        } else if slice.count >= 3, slice.first == .open, slice.last == .close, isGroup(slice) {
+            tokens.replaceSubrange(r, with: [.open, .neg] + slice[1...])
         } else {
             tokens.replaceSubrange(r, with: [.open, .neg] + slice + [.close])
         }
         entering = false
+        return true
+    }
+
+    func isGroup(_ t: [Tok]) -> Bool {
+        var d = 0
+        for (i, x) in t.enumerated() {
+            if x == .open { d += 1 }
+            if x == .close { d -= 1; if d == 0 && i < t.count - 1 { return false } }
+        }
         return true
     }
 
@@ -604,7 +652,7 @@ struct Parser {
 
     func startsOperand(_ t: Tok) -> Bool {
         switch t {
-        case .num, .open, .fn, .sqrt, .const, .neg, .ee: return true
+        case .num, .open, .fn, .sqrt, .cbrt, .const, .neg, .ee: return true
         default: return false
         }
     }
@@ -629,7 +677,8 @@ struct Parser {
         let bd = NSDecimalNumber(decimal: b).doubleValue
         if bd == bd.rounded(), abs(bd) < 10000 {
             let n = Int(bd)
-            if Double(n) * log10(max(abs(NSDecimalNumber(decimal: a).doubleValue), 1e-300)) > 120 { throw EngineError(code: -2004, reason: "Undefined") }
+            if a == 0 && n == 0 { throw EngineError.domain }
+            if Double(n) * log10(max(abs(NSDecimalNumber(decimal: a).doubleValue), 1e-300)) > 120 { throw EngineError.overflow }
             if n >= 0 { return Foundation.pow(a, n) }
             if a == 0 { throw EngineError(code: -2004, reason: "Undefined") }
             return 1 / Foundation.pow(a, -n)
@@ -651,14 +700,15 @@ struct Parser {
 
     static func factorial(_ v: Decimal) throws -> Decimal {
         let d = NSDecimalNumber(decimal: v).doubleValue
-        if d < 0 { throw EngineError(code: -2004, reason: "Undefined") }
-        if d == d.rounded() && d <= 170 {
+        if d < 0 { throw EngineError.domain }
+        if d > 98 { throw EngineError.overflow }
+        if d == d.rounded() {
             var r = Decimal(1)
             if d >= 2 { for k in 2...Int(d) { r *= Decimal(k) } }
             return r
         }
         let g = tgamma(d + 1)
-        guard g.isFinite else { throw EngineError(code: -2004, reason: "Undefined") }
+        guard g.isFinite else { throw EngineError.overflow }
         return Decimal(g)
     }
 
@@ -683,14 +733,18 @@ struct Parser {
             return v
         case .const(let c):
             i += 1
-            return c == "π" ? Decimal(Double.pi) : Decimal(M_E)
+            return c == "π" ? Decimal(string: "3.141592653589793238462643383279503")! : Decimal(string: "2.718281828459045235360287471352662")!
         case .neg:
             i += 1
             return -(try power())
+        case .cbrt:
+            i += 1
+            let v = try postfixBase()
+            return Decimal(Foundation.cbrt(NSDecimalNumber(decimal: v).doubleValue))
         case .sqrt:
             i += 1
             let v = try postfixBase()
-            if v < 0 { throw EngineError(code: -2004, reason: "Undefined") }
+            if v < 0 { throw EngineError.domain }
             return Decimal(NSDecimalNumber(decimal: v).doubleValue.squareRoot())
         case .open:
             i += 1
@@ -724,20 +778,26 @@ struct Parser {
         case "cos": return fix(Foundation.cos(rad))
         case "tan":
             let c = Foundation.cos(rad)
-            if abs(c) < 1e-15 { throw EngineError(code: -2004, reason: "Undefined") }
+            if abs(c) < 1e-15 { throw EngineError.domain }
             return fix(Foundation.tan(rad))
         case "ln":
-            if x <= 0 { throw EngineError(code: -2004, reason: "Undefined") }
+            if x == 0 { throw EngineError.divideByZero }
+            if x < 0 { throw EngineError.domain }
             return fix(Foundation.log(x))
         case "log":
-            if x <= 0 { throw EngineError(code: -2004, reason: "Undefined") }
+            if x == 0 { throw EngineError.divideByZero }
+            if x < 0 { throw EngineError.domain }
             return fix(Foundation.log10(x))
+        case "log2":
+            if x == 0 { throw EngineError.divideByZero }
+            if x < 0 { throw EngineError.domain }
+            return fix(Foundation.log2(x))
         case "sinh": return fix(Foundation.sinh(x))
         case "cosh": return fix(Foundation.cosh(x))
         case "tanh": return fix(Foundation.tanh(x))
-        case "sin⁻¹": return fix(degrees ? asin(x) * 180 / .pi : asin(x))
-        case "cos⁻¹": return fix(degrees ? acos(x) * 180 / .pi : acos(x))
-        case "tan⁻¹": return fix(degrees ? atan(x) * 180 / .pi : atan(x))
+        case "sin^-1": if abs(x) > 1 { throw EngineError.domain }; return fix(degrees ? asin(x) * 180 / .pi : asin(x))
+        case "cos^-1": if abs(x) > 1 { throw EngineError.domain }; return fix(degrees ? acos(x) * 180 / .pi : acos(x))
+        case "tan^-1": return fix(degrees ? atan(x) * 180 / .pi : atan(x))
         default: throw math()
         }
     }

@@ -78,3 +78,102 @@ sin 3 0
 rad 1 sin
 rad pi sin
 rad 1 cos
+2 ee 3
+2 ee 3 + 1
+1 . 5 ee 2
+5 + 3 * 2 ie
+5 + 3 * 2 ie rep
+1 0 - 2 - 3 ie rep
+2 * 3 + 4 ie rep
+5 * 4 ie rep rep
+( 2 + 3 ) ie
+( 2 + 3 ) * 4 ie rep
+1 + ( 2 * ( 3 + 4
+sin ( 3 0
+sin 3 0 + 1
+2 sin
+1 sin cos
+3 neg sqrt
+4 neg sqrt
+0 inv
+2 ln
+0 ln
+1 0 log
+2 pow 0 . 5
+2 pow 1 0 neg
+0 pow 0
+1 0 0 % %
+5 + 5 % + 5 %
+2 0 0 + 1 0 % + 1 0 %
+5 0 % * 2 0 0
+1 0 0 * 5 0 %
+9 9 9 9 9 9 9 9 9 9 + 1
+9 9 9 9 9 9 9 9 9 9 9 9 + 1
+1 / 7
+2 / 3
+1 0 / 4
+1 / 8
+1 / 1 6
+1 / 1 0 0 0
+1 / 1 0 0 0 0
+1 / 3 0 0 0 0 0
+7 . 0 0 0
+0 . 0 0 1
+0 . 0 0 0 0 0 0 0 0 0 1
+1 0 0 0 0 0 0 0 0 0 0
+1 0 0 0 0 0 0 0 0 0 0 0
+5 - 7
+5 - 7 * 2
+3 neg * 2 neg
+3 neg + 4 neg
+7 % 3
+7 % 3 +
+7 . 5 % 2
+1 0 % 3
+pi * 2
+pi * 2 ie
+e pow 2
+2 e
+e e
+pi pi
+( ) 
+) 
+( 3 ) neg
+( 3 + 4 ) sq
+2 + 3 ) 
+1 2 + 3 * 4 - 5 / 2
+5 AC 3
+5 + AC 3
+5 + 3 ie AC
+5 + 3 ie 4
+5 + 3 ie + 4
+5 + 3 ie neg
+5 + 3 ie del
+5 + 3 ie C
+5 + 3 ie sqrt
+9 9 9 fact
+1 7 0 fact
+1 7 1 fact
+2 0 fact
+rad 3 sin
+rad 3 cos
+rad 1 tan
+rad pi tan
+9 0 tan
+9 0 cos
+rad pi 2 / cos
+1 asin
+1 acos
+1 atan
+2 asin
+1 sinh
+1 cosh
+1 tanh
+1 0 2x
+5 ex
+5 10x
+5 2x
+8 log2
+2 7 cuberoot
+2 7 root
+1 0 ex 2
