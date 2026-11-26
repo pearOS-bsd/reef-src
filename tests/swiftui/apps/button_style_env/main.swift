@@ -29,7 +29,7 @@ struct V: View {
             VStack {
                 Button("Inherited") { }.buttonStyle(EnvButtonStyle()).probe("inherited")
             }.environment(\.customAccent, .green)
-            Text("probe").environment(\.customPadding, 7).modifier(ReadPad()).probe("plain-read")
+            Text("probe").modifier(ReadPad()).environment(\.customPadding, 7).probe("plain-read")
         }
         .frame(width: 400, height: 260)
         .finalState("button_style_env")
