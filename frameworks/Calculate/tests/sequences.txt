@@ -1,0 +1,80 @@
+1 2 + 3 =
+1 2 + 3 ie
+1 2 + 3 ie rep
+1 2 + 3 ie rep ie rep
+5 + 3 * 2
+9 / 0
+9 / 0 ie
+1 0 0 + 1 0 %
+5 0 - 1 0 %
+1 0 0 * 5 %
+2 0 0 / 5 0 %
+5 %
+5 % %
+8 + 5 % %
+5 % 2
+5 neg
+5 neg neg
+5 + 3 neg
+5 + neg
+1 2 3 del del
+5 del
+5 + 3 del del
+7 . 5 + . 2 5
+1 . 5 . 5
+. 
+0 0
+0 5
+1 / 3
+1 / 3 ie
+1 0 0 / 3
+2 pow 1 0 0
+2 pow 1 0 0 0
+2 pow 3 pow 2
+2 pow 3 neg
+3 + 4 AC
+3 + 4 C
+3 + 4 C 5
+1 2 C
+1 2 C C
+5 + *
+5 + - 3
+( 1 + 2 ) * 3
+( 1 + 2
+2 + ( 3 * 4 )
+3 ( 4
+3 pi
+pi 2
+2 pi
+e
+1 0 e 3
+2 sqrt
+2 sqrt 3
+9 sqrt
+2 + 3 sqrt
+5 sq
+2 + 3 sq
+3 cube
+5 fact
+7 fact
+1 0 fact
+3 . 5 fact
+0 fact
+4 inv
+1 inv
+sin 3 0
+3 0 sin
+9 0 sin
+1 8 0 sin
+0 cos
+6 0 cos
+4 5 tan
+1 ln
+1 0 0 log
+1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
+0 . 1 + 0 . 2
+1 0 / 3 * 3
+1 e 3
+rad 1 sin
+rad pi sin
+rad 1 cos

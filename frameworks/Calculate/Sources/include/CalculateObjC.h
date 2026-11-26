@@ -62,7 +62,9 @@ typedef enum CalculateFormat { CalculateFormatDefault = 0, CalculateFormatDecima
 @property (nonatomic, readonly) BOOL isPartialExpression;
 @property (nonatomic, readonly) BOOL isTrivial;
 @property (nonatomic, readonly, nullable) CalculateTerm *inputValueAndUnit;
+@property (nonatomic, readonly) NSDecimalNumber *decimal;
 - (instancetype)initWithValue:(double)value;
+- (instancetype)initWithDecimal:(NSDecimalNumber *)decimal formatter:(nullable NSNumberFormatter *)formatter;
 - (nullable CalculateResult *)convertedTo:(CalculateUnit *)unit;
 @end
 

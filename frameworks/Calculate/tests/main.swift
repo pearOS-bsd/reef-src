@@ -25,8 +25,8 @@ let keys: [String: Op] = [
 
 func state(_ e: CalculateExpression) -> String {
     let rich = e.rich.tokens.map { $0.text }.joined(separator: "|")
-    let err = e.error.map { "\($0)" } ?? "-"
-    return "expr=\(e.expression) rich=[\(rich)] result=\(e.result?.formattedResult ?? "nil") clear=\(e.prefersClear) err=\(err) removed=\(e.removed?.tokens.map { $0.text }.joined(separator: "|") ?? "-")"
+    let err = e.error.map { ($0 as NSError).code.description } ?? "-"
+    return "expr=\(e.expression) rich=[\(rich)] result=\(e.result?.formattedResult ?? "nil") clear=\(e.prefersClear) err=\(err)"
 }
 
 func dump(_ x: Any, _ depth: Int, _ indent: String) {
