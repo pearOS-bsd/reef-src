@@ -97,7 +97,7 @@ struct Bzip2Functions
 } // namespace
 
 // libbz2 when it is there: it is opened the first time it is needed.
-static const Bzip2Functions& bzip2()
+static inline const Bzip2Functions& bzip2()
 {
     static const Bzip2Functions functions = [] {
         void* library = dlopen("libbz2.so.1.0", RTLD_NOW);
@@ -191,34 +191,36 @@ static uint32_t compressChunk(int format, int level, const std::vector<uint8_t>&
         output->clear();
         return Ignore;
     }
+    uint32_t type = 0;
     if (format == UDZO) {
         uLongf size = compressBound(input.size());
         output->resize(size);
         const int result = compress2(output->data(), &size, input.data(), input.size(), level > 0 ? level : 1);
         output->resize(size);
-        if (result == Z_OK && output->size() < input.size())
-            return Zlib;
+        if (result == Z_OK)
+            type = Zlib;
     } else if (format == UDBZ) {
         const Bzip2Functions& functions = bzip2();
         unsigned size = input.size() + 600 + input.size() / 100;
         output->resize(size);
         if (functions.compress) {
-            const int result = functions.compress(reinterpret_cast<char*>(output->data()), &size,
-                                                  reinterpret_cast<char*>(const_cast<uint8_t*>(input.data())), input.size(),
-                                                  level > 0 ? level : 9, 0, 0);
+            const bool compressed = functions.compress(reinterpret_cast<char*>(output->data()), &size,
+                                                       reinterpret_cast<char*>(const_cast<uint8_t*>(input.data())), input.size(),
+                                                       level > 0 ? level : 9, 0, 0) == 0;
             output->resize(size);
-            if (result == 0 && output->size() < input.size())
-                return Bzip2;
+            if (compressed)
+                type = Bzip2;
         }
     } else if (format == ULFO) {
-        std::vector<uint8_t> scratch(lzfse_encode_scratch_size());
-        output->resize(input.size() + 0x1000);
-        const size_t size = lzfse_encode_buffer(output->data(), output->size(), input.data(), input.size(), scratch.data());
-        if (size) {
+        size_t size;
+        {
+            std::vector<uint8_t> scratch(lzfse_encode_scratch_size());
+            output->resize(input.size() + 0x1000);
+            size = lzfse_encode_buffer(output->data(), output->size(), input.data(), input.size(), scratch.data());
             output->resize(size);
-            if (output->size() < input.size())
-                return Lzfse;
         }
+        if (size)
+            type = Lzfse;
     } else if (format == ULMO) {
         lzma_options_lzma options;
         lzma_lzma_preset(&options, level > 0 ? std::min(level, 9) : 6);
@@ -232,10 +234,12 @@ static uint32_t compressChunk(int format, int level, const std::vector<uint8_t>&
             const lzma_ret result = lzma_code(&stream, LZMA_FINISH);
             output->resize(output->size() - stream.avail_out);
             lzma_end(&stream);
-            if (result == LZMA_STREAM_END && output->size() < input.size())
-                return Lzma;
+            if (result == LZMA_STREAM_END)
+                type = Lzma;
         }
     }
+    if (type && output->size() < input.size())
+        return type;
     *output = input;
     return Raw;
 }
