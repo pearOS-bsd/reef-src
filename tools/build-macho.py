@@ -77,6 +77,9 @@ def build(root, out, folder):
         # the file name goes into the UUID: link under the name the file will have
         tmp = os.path.join(work, os.path.basename(c['install']))
         run(cmd + ['-o', tmp] + objects + libs)
+        if os.environ.get('MACHO_KEEP_OBJECTS'):     # for the analysis of a file that is built from many sources: <dir>/<source>.o
+            os.makedirs(os.environ['MACHO_KEEP_OBJECTS'], exist_ok=True)
+            for s_, o_ in zip(c['sources'].split(), objects): shutil.copy(o_, os.path.join(os.environ['MACHO_KEEP_OBJECTS'], s_ + '.o'))
         shutil.copy(tmp, target)
     finally:
         shutil.rmtree(work)

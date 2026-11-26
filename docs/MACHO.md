@@ -53,8 +53,8 @@ Header facts that changed code (`macho/include`): Darwin `WIFSTOPPED` (`WSTOPSIG
 
 ## CoreFoundation 6.0: first stage (2026-11-27), not yet a target in `macho/targets.txt`
 `upstream/corefoundation` (swift-corelibs-foundation `swift-6.0-RELEASE`, Sources/CoreFoundation) and `upstream/icu` (swift-foundation-icu ICU 74 headers) are unchanged; `upstream/libdispatch`
-holds the 6.0 headers (the file itself comes later). `macho/System/Library/Frameworks/CoreFoundation.framework` builds 83 of the 90 sources with the configuration read from the binary and
-links with `-undefined dynamic_lookup`: 1740 of 2084 functions that exist in both match, 63.0 % of those bytes (`tools/compare-macho.py --present`).
+holds the 6.0 headers (the file itself comes later). `macho/System/Library/Frameworks/CoreFoundation.framework` builds all 89 sources with the configuration read from the binary and
+links with `-undefined dynamic_lookup`: 1948 of 2258 functions that exist in both match, 70.7 % of those bytes (`tools/compare-macho.py --present`).
 What the function match showed:
 - Mach-O, not Linux, but with Linux parts: `-U__APPLE__ -D__linux__ -D__unix__` (CF takes its Linux branches: it defines `OSAtomic*`, `_CFThreadRef`, `/etc/localtime`), `Boolean` is `unsigned char`
   (the Mac `MacTypes.h`, `__MACTYPES__`), `-fno-common -fexceptions -fblocks -fconstant-cfstrings`, constant strings are the builtin (`__cfstring`), the source path in asserts is
@@ -65,8 +65,9 @@ What the function match showed:
   puts it back (`CF_IS_OBJC`, `CF_OBJC_FUNCDISPATCHV`, `CF_OBJC_CALLV`, the constant string class excluded for CFString) and `tools/macho-gen-cf-objc.py` writes the Foundation declarations
   the calls need (`include/Foundation/NSDispatch.h`; BOOL return for Boolean).
 - Names that share an address in the original (`NSLocaleCalendar` = `kCFLocaleCalendar` ...) are `.set` aliases in `aliases/<File>.h`, included per file (`tools/macho-gen-aliases.py` finds them).
-- Not built yet: CFRunLoop (the original has the mach ports, `epoll` and the dispatch timers together: `mk_timer_cancel`, `AbsoluteTime`, `poll.h` come from Reef's headers), CFSocket,
-  CFBundle_ResourceFork, CFBundle_Tables, CFLocaleKeys (aliases), CFSystemDirectories (sysdir), CFTimeZone_WindowsMapping.
+- Every source is compiled as Objective-C (`-x objective-c`; the block descriptors carry the extended layout then), except CFURLAccess.c. CFRunLoop takes its Linux branch (`epoll`, `timerfd`, `ppoll`) with
+  the dispatch timers of `DEPLOYMENT_RUNTIME_OBJC`; `AbsoluteTime` and `<dispatch/private.h>` are Reef's headers. Names that the function match flags as differing only in the use of `kCF...` or `NS...`
+  constants are the same symbol (aliases) or a GOT access to a symbol of a file that is not in this image yet.
 - Missing from swift-corelibs and so Reef's own (to be reconstructed from the binary and `~/Desktop/Macos_Test/decompiled`): about 145 C functions (CFMachPort, CFMessagePort, CFFileDescriptor,
   CFNotificationCenter, CFUserNotification, CFURL bookmarks and FSRef, CFXML, CFStringTokenizer, `OSAtomic*` ones that CF does not define, `__CFBridgeInitialize`, ...) and about 1000 Objective-C
   methods (`__NSCF*`, `NSString`, `NSURL`, `NSNumber`, `NSInvocation`, `NSCache`, `NSRunLoop` ...). Reef's CF also imports `reef_host_symbol` and `reef_report_unsupported`.
