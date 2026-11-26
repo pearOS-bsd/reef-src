@@ -185,9 +185,6 @@ public func evaluateError(_ string: String, options: [CalculateKey: Any]) throws
 open class StocksKitCurrencyCache {
     public static let shared = StocksKitCurrencyCache()
     public static var isEnabled: Bool { false }
-    public struct Provider: Sendable {
-        let id: String
-    }
     open var needsRefresh: Bool { false }
     open var lastRefreshDate: Date? { get async { nil } }
     open func refresh() async -> Bool { false }

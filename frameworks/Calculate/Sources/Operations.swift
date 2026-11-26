@@ -49,7 +49,7 @@ extension CalculateExpression {
 
     public class Operation: Hashable {
         let name: String
-        let text: String
+        public let text: String
         init(_ name: String, _ text: String) { self.name = name; self.text = text }
         public static func == (a: Operation, b: Operation) -> Bool { a.name == b.name }
         public func hash(into h: inout Hasher) { h.combine(name) }
