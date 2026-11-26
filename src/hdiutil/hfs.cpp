@@ -208,13 +208,10 @@ static bool keptComposed(uint32_t c)
 }
 
 // The name as HFS+ keeps it: ':' is what the Mac shows as '/'.
-static std::u16string hfsName(const std::string& name)
+std::u16string hfsName(const std::string& name)
 {
     std::string mac = name;
-    for (char& c : mac) {
-        if (c == ':')
-            c = '/';
-    }
+    std::replace(mac.begin(), mac.end(), ':', '/');
     const std::u16string units = utf16(mac);
     std::u16string result;
     std::u16string run;
@@ -223,7 +220,7 @@ static std::u16string hfsName(const std::string& name)
         uint32_t c = unit;
         size_t length = 1;
         if (unit - 0xd800u < 0x400 && i + 1 < units.size()) {
-            c = (unit - 0xd800) * 0x400 + units[i + 1] + 0x2400;
+            c = units[i + 1] + 0x2400 + (unit - 0xd800) * 0x400;
             length = 2;
         }
         if (keptComposed(c)) {
