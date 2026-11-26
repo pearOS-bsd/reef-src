@@ -1,5 +1,6 @@
 {
  "renames": {
+  "CGContextRef": "CGContext",
   "NSBlockOperation": "BlockOperation",
   "NSBundle": "Bundle",
   "NSByteCountFormatter": "ByteCountFormatter",

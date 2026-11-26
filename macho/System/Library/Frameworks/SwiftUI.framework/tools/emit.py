@@ -91,6 +91,9 @@ class Emitter:
         self.used_names = collections.defaultdict(set)
         self.problems = collections.Counter()
         self.files = collections.defaultdict(list)
+        self.track = None
+        self.promote = set()
+        self.phantom = {}
 
     # ------------------------------------------------------------------------------------------ keys
     def name_of(self, n):
@@ -206,6 +209,8 @@ class Emitter:
             if mod == '__C_Synthesized' and not rel: s = self.renames.get(nm, nm)
         elif mod:
             if mod == 'SwiftUI':
+                if self.track is not None: self.track.add(self.key(n))
+                if self.key(n) not in self.types: self.phantom.setdefault(self.key(n), (n, args))
                 s = 'SwiftUI.' + esc_member(self.emitted_name(n))
             else:
                 s = mod + '.' + esc_member(nm)
@@ -214,6 +219,7 @@ class Emitter:
                 s = 'SwiftUI.' + self.emitted_name(n)
             else:
                 ps = self.nominal_name(par, env, args)
+                if self.track is not None and self.key(n) in self.types: self.track.add(self.key(n))
                 s = ps + '.' + esc_member(self.emitted_name(n) if self.key(par).startswith('SwiftUI') else nm)
         if own is not None and own:
             s += '<' + ', '.join(own) + '>'
@@ -475,7 +481,10 @@ class Emitter:
                 self.problems['type without symbol'] += 1; continue
             node = t.c[0].c[0]
             if node.k == 'Type': node = node.c[0]
-            ti = TypeInfo(key=self.key(node), node=node, kind=c.kind, ctx=c, name=self.name_of(node),
+            k = self.key(node)
+            if k.startswith('__C.') or k.startswith('__C_Synthesized.'):
+                continue   # metadata of an imported C/Objective-C type, emitted by every user of it
+            ti = TypeInfo(key=k, node=node, kind=c.kind, ctx=c, name=self.name_of(node),
                           exported=c.symbol in self.exports, disc=self.disc_of(node))
             ti.ename = ti.name
             self.types[ti.key] = ti
@@ -740,6 +749,30 @@ class Emitter:
         return ''
 
     def member_decl(self, ent, cinfo):
+        """lines declaring one entity; types used by a public declaration become public"""
+        outer = self.track
+        self.track = set()
+        try:
+            r = self._member_decl(ent, cinfo)
+            if r and re.match(r'\s*(@\w+ )?(public|open)\b', r[0]): self.promote |= self.track
+            return r
+        finally:
+            if outer is not None: outer |= self.track
+            self.track = outer
+
+    def tracked(self, public, fn, *a):
+        """call fn; when public, the SwiftUI types it prints become public"""
+        outer = self.track
+        self.track = set()
+        try:
+            r = fn(*a)
+            if public: self.promote |= self.track
+            return r
+        finally:
+            if outer is not None: outer |= self.track
+            self.track = outer
+
+    def _member_decl(self, ent, cinfo):
         """lines declaring one entity"""
         n = ent['node']; k = ent['kind']
         env = cinfo['env']
@@ -889,8 +922,8 @@ class Emitter:
             if tt is not None and tt.k == 'Weak': pre = 'weak '
             elif tt is not None and tt.k == 'Unowned': pre = 'unowned '
             elif tt is not None and tt.k == 'Unmanaged': pre = 'unowned(unsafe) '
-            ty = self.ty(t, env)
             ent = vars_by_name.get(nm)
+            ty = self.tracked(bool(ent is not None and ent['exp']), self.ty, t, env)
             acc = ''
             if ent is not None:
                 consumed.add(id(ent))
@@ -911,7 +944,7 @@ class Emitter:
             nm = esc(r['name'])
             if r['type']:
                 t = self.g.mtype(r['type'])
-                s = self.ty(t, env)
+                s = self.tracked(ti.exported, self.ty, t, env)
                 if not s.startswith('('): s = '(' + s + ')'
                 out.append('%scase %s%s' % ('indirect ' if r['indirect'] else '', nm, s))
             else:
@@ -932,14 +965,14 @@ class Emitter:
         attrs = ''
         if ti.kind == 'class':
             sc = getattr(ti.ctx, 'superclass', None)
-            if sc: inherit.append(self.ty(self.g.mtype(sc), env))
+            if sc: inherit.append(self.tracked(ti.exported, self.ty, self.g.mtype(sc), env))
             if ti.exported and (ti.key in self.subclassed or any(e['exp'] & {'MethodDescriptor', 'DispatchThunk'} for e in ti.members)):
                 acc = 'open '
             elif not (ti.ctx.ksf & (1 << 15)) and ti.key not in self.subclassed:
                 attrs += 'final '
         if ti.kind == 'enum' and ti.exported and not any('EnumCase' in e['roles'] for e in ti.members) and ti.ctx.fields and ti.ctx.fields['records']:
             attrs = '@frozen ' + attrs
-        reqs = self.own_reqs(ti, env)
+        reqs = self.tracked(ti.exported, self.own_reqs, ti, env)
         kw = {'struct': 'struct', 'enum': 'enum', 'class': 'class'}[ti.kind]
         head = '%s%s%s %s%s' % (attrs, acc, kw, esc(ti.ename), gps)
         if inherit: head += ': ' + ', '.join(inherit)
@@ -1062,10 +1095,10 @@ class Emitter:
             base = cf['tyn'].c[0]
             if base.k.startswith('BoundGeneric'): base = base.c[0].c[0]
             env, _, name = self.extern_env(base)
-        pname = self.ty(cf['pn'], Env())
+        pname = self.tracked(cf['exported'], self.ty, cf['pn'], Env())
         head = 'extension %s: %s' % (name, pname)
         if cf['sig'] is not None:
-            reqs = self.sig_reqs(cf['sig'], env)
+            reqs = self.tracked(cf['exported'], self.sig_reqs, cf['sig'], env)
             if reqs: head += ' where ' + ', '.join(reqs)
         L = [head + ' {']
         pub = 'public ' if cf['exported'] and (ti is None or ti.exported) else ''
@@ -1076,7 +1109,7 @@ class Emitter:
             for nm, tn in a['records']:
                 if nm in nested or nm in members or nm in done: continue
                 tt = self.g.mtype(tn)
-                s = self.ty(tt, env)
+                s = self.tracked(bool(pub), self.ty, tt, env)
                 if 'opaque' in s or 'some ' in s or '/*' in s: continue
                 done.add(nm)
                 L.append('    %stypealias %s = %s' % (pub, esc(nm), s))
@@ -1127,7 +1160,7 @@ class Emitter:
             kind = 'extern'
         head = 'extension %s' % name
         if b['sig'] is not None:
-            reqs = self.sig_reqs(b['sig'], env)
+            reqs = self.tracked(any(e['exp'] for e in b['ents']), self.sig_reqs, b['sig'], env)
             if reqs: head += ' where ' + ', '.join(reqs)
         cinfo = dict(env=env, depth=depth, kind=kind if kind != 'protocol' else 'protoext', self_key=tk)
         L = [head + ' {']
@@ -1147,6 +1180,33 @@ class Emitter:
         self.collect_classes()
         self.attach()
         self.collect_conformances()
+        for i in range(6):
+            self.promote = set()
+            self.emit_all()
+            new = [k for k in self.promote if k in self.types and not self.types[k].exported]
+            for k in list(new):
+                t = self.types[k]
+                while t is not None:
+                    if not t.exported: t.exported = True; self.problems['promoted to public'] += 1
+                    t = self.types.get(t.parent_key)
+            if not new: break
+        files = self.emit_all()
+        files['Support/Skeleton.swift'].append(SKELETON)
+        # types without metadata in the binary (internal, only passed around): declared empty, kind from the mangling
+        ph = []
+        for k, (n, args) in sorted(self.phantom.items()):
+            if '#' in k or k.count('.') != 1: continue
+            kw = {'Structure': 'struct', 'Class': 'final class', 'Enum': 'enum'}.get(n.k)
+            if kw is None: continue
+            pub = 'public ' if k in self.promote else ''
+            ph.append('%s%s %s {}' % (pub, kw, esc(self.name_of(n))))
+            self.problems['type without metadata'] += 1
+        if ph: files['Support/TypesWithoutMetadata.swift'].append('\n'.join(ph))
+        self.write(files)
+        print('problems:', dict(self.problems), file=sys.stderr)
+
+    def emit_all(self):
+        self.alias_done = {}
         files = collections.defaultdict(list)
         owner_file = {}
         for ti in self.top:
@@ -1178,9 +1238,7 @@ class Emitter:
             nm = self.name_of(ent['node']) or 'global'
             gl[areas.global_file(nm)].extend(self.member_decl(ent, cinfo))
         for f, lines in gl.items(): files[f].append('\n'.join(lines))
-        files['Support/Skeleton.swift'].append(SKELETON)
-        self.write(files)
-        print('problems:', dict(self.problems), file=sys.stderr)
+        return files
 
     def write(self, files):
         out = self.g.out
