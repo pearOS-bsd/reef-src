@@ -469,8 +469,7 @@ std::string Emitter::componentwise(llvm::Type *type, const std::vector<std::stri
         for (size_t i = 0; i < pattern.size(); ++i) {
             const char c = pattern[i];
             if (c == '$' && i + 1 < pattern.size() && unsigned(pattern[i + 1] - '0') < 10) {
-                const std::string &value = values[pattern[i + 1] - '0'];
-                text += width(type) > 1 ? value + "." + component(index) : value;
+                text += width(type) > 1 ? values[pattern[i + 1] - '0'] + "." + component(index) : values[pattern[i + 1] - '0'];
                 ++i;
                 continue;
             }
