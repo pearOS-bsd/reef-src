@@ -110,6 +110,7 @@ def split_types(enc):
         while i < len(enc) and enc[i].isdigit(): i += 1
     return out
 
+KNOWN = {'NSObject', 'NSString', 'NSArray', 'NSDictionary', 'NSNumber'}
 STRUCTS = {'CGSize': 'CGSize', 'CGPoint': 'CGPoint', 'CGRect': 'CGRect', '_NSRange': 'NSRange', 'NSRange': 'NSRange', 'CGAffineTransform': 'CGAffineTransform',
            'CGVector': 'CGVector', '_NSZone': 'struct _NSZone', 'CGImage': 'struct CGImage', 'CGColor': 'struct CGColor', 'CGPath': 'struct CGPath'}
 extra_structs = {}
@@ -147,6 +148,7 @@ def ctype(e, hint=None):
         return ctype(inner) + ' *'
     if c == '{':
         name = e[1:].split('=')[0]
+        if name == '?': return 'void *'
         if name in STRUCTS: return STRUCTS[name]
         body = e[len(name) + 2:-1]
         extra_structs[name] = body
@@ -250,7 +252,7 @@ def main():
     text = []; unresolved = []
     foreign = collections.OrderedDict()
     for c in classes:
-        if c.super and c.super not in defined and c.super not in foreign and c.super != 'NSObject': foreign[c.super] = c.start
+        if c.super and c.super not in defined and c.super not in foreign and c.super not in KNOWN: foreign[c.super] = c.start
     mapping_count = collections.Counter()
     for c in classes:
         ivar_by_off = {o: (n, t, s) for o, n, t, s in c.ivars}
@@ -261,6 +263,7 @@ def main():
         for name, attrs in c.props:
             d, ivar, dyn, getter, setter, ro = property_decl(name, attrs, c.ivars)
             decls.append(d)
+            if ivar is None: continue          # no instance variable: the accessors are written out
             accessors[getter or name] = ('get', name)
             if not ro: accessors[setter or 'set%s%s:' % (name[0].upper(), name[1:])] = ('set', name)
         for name, attrs in c.cprops:
@@ -303,9 +306,24 @@ def main():
         if s and s['name'] == '__const' and s['seg'] == '__DATA_CONST':
             p = I.pointer(a)
             if p in cf: consts.append('NSString *const %s = @"%s";' % (name.lstrip('_'), cf[p].replace('\\', '\\\\').replace('"', '\\"')))
+    body_all = '\n'.join(text)
+    used = set(re.findall(r'\b([A-Z][A-Za-z0-9_]+) \*', body_all)) - defined - set(foreign) - KNOWN
+    used |= set(re.findall(r'^@interface \w+ : (\w+)', body_all, re.M)) - defined - set(foreign) - KNOWN
+    used -= {'NSObject', 'NSCoder', 'NSData', 'NSDate', 'NSURL', 'NSError', 'NSSet', 'NSUUID', 'NSMutableArray', 'NSMutableDictionary', 'NSBundle', 'NSLocale', 'NSRunLoop', 'NSIndexSet', 'NSCharacterSet', 'NSTimeZone', 'NSNotification'}
+    protos = set()
+    for m in re.finditer(r'^@interface [^\n<]*<([^>\n]*)>', body_all, re.M): protos |= {x.strip() for x in m.group(1).split(',')}
+    protos -= {'NSObject', 'NSCopying', 'NSMutableCopying', 'NSCoding', 'NSSecureCoding'}
     pre = '#import <Foundation/Foundation.h>\n\n'
+    if used: pre += '@class %s;\n' % ', '.join(sorted(used))
+    for pr in sorted(protos): pre += '@protocol %s\n@end\n' % pr
+    pre += '\n'
     for name, start in foreign.items(): pre += '@interface %s : NSObject%s\n@end\n\n' % (name, ('\n{\n    char _padding[%d];\n}' % (start - 8)) if start > 8 else '')
-    structs = ''.join('struct %s { %s };\n' % (n, ' '.join('%s f%d;' % (ctype(e), k) for k, e in enumerate(split_types(b.replace('"', '')) ))) for n, b in extra_structs.items())
+    structs = ''; done = set()
+    while len(done) < len(extra_structs):
+        for n, b in list(extra_structs.items()):
+            if n in done: continue
+            done.add(n)
+            structs = 'struct %s { %s };\n' % (n, ' '.join('%s f%d;' % (ctype(e), k) for k, e in enumerate(split_types(re.sub(r'"[^"]*"', '', b))))) + structs
     open(out, 'w').write(HEADER % ('%s.' % os.path.basename(path)) + '\n' + pre + structs + '\n' + '\n'.join(text) + '\n' + '\n'.join(consts) + '\n')
     sys.stderr.write('%d classes, %d methods written, %d unresolved\n' % (len(classes), mapping_count['written'], mapping_count['unresolved']))
     def ver(v): return '%d.%d.%d' % (v >> 16, (v >> 8) & 255, v & 255)

@@ -23,7 +23,8 @@ Compiler: -O2 with no stack protector and no NDEBUG is what the original was bui
 import os, sys, subprocess, shlex, shutil, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(os.path.dirname(HERE), 'macho')
+INCLUDE = os.path.join(os.path.dirname(HERE), 'macho', 'include')
+SRC = os.environ.get('MACHO_SRC', os.path.join(os.path.dirname(HERE), 'macho'))   # MACHO_SRC: drafts outside the checkout
 LLVM = '/usr/lib/llvm-19/bin'
 RESOURCE = '/usr/lib/llvm-19/lib/clang/19/include'
 
@@ -54,7 +55,7 @@ def build(root, out, folder):
             o = os.path.join(work, '%d_%s.o' % (len(objects), os.path.basename(s)))
             src = os.path.join(SRC, folder, s)
             cmd = [LLVM + '/clang', '--target=x86_64-apple-macos' + c['minos'], '-O2', '-nostdinc', '-isystem', RESOURCE,
-                   '-isystem', os.path.join(SRC, 'include'), '-I' + os.path.dirname(src), '-w']
+                   '-isystem', INCLUDE, '-I' + os.path.dirname(src), '-w']
             if s.endswith('.m'): cmd += ['-x', 'objective-c']
             cmd += shlex.split(c['cflags']) + ['-c', src, '-o', o]
             run(cmd); objects.append(o)
