@@ -1,0 +1,86 @@
+// SPDX-FileCopyrightText: 2026 Reion Wong <reionwong@gmail.com>
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// Reconstructed from the published binary.
+// The functions of libexpat, in the order of the table that the host fills in.
+
+#define SYMBOLS(X) \
+    X(0, XML_DefaultCurrent) \
+    X(1, XML_ErrorString) \
+    X(2, XML_ExpatVersion) \
+    X(3, XML_ExpatVersionInfo) \
+    X(4, XML_ExternalEntityParserCreate) \
+    X(5, XML_FreeContentModel) \
+    X(6, XML_GetBase) \
+    X(7, XML_GetBuffer) \
+    X(8, XML_GetCurrentByteCount) \
+    X(9, XML_GetCurrentByteCount64) \
+    X(10, XML_GetCurrentByteIndex) \
+    X(11, XML_GetCurrentByteIndex64) \
+    X(12, XML_GetCurrentColumnNumber) \
+    X(13, XML_GetCurrentColumnNumber64) \
+    X(14, XML_GetCurrentLineNumber) \
+    X(15, XML_GetCurrentLineNumber64) \
+    X(16, XML_GetErrorCode) \
+    X(17, XML_GetFeatureList) \
+    X(18, XML_GetIdAttributeIndex) \
+    X(19, XML_GetInputContext) \
+    X(20, XML_GetInputContext64) \
+    X(21, XML_GetParsingStatus) \
+    X(22, XML_GetPropertyBool) \
+    X(23, XML_GetPropertyDouble) \
+    X(24, XML_GetPropertyUInt64) \
+    X(25, XML_GetSpecifiedAttributeCount) \
+    X(26, XML_MemFree) \
+    X(27, XML_MemMalloc) \
+    X(28, XML_MemRealloc) \
+    X(29, XML_Parse) \
+    X(30, XML_ParseBuffer) \
+    X(31, XML_ParserCreate) \
+    X(32, XML_ParserCreateNS) \
+    X(33, XML_ParserCreate_MM) \
+    X(34, XML_ParserFree) \
+    X(35, XML_ParserReset) \
+    X(36, XML_ResumeParser) \
+    X(37, XML_SetAttlistDeclHandler) \
+    X(38, XML_SetBase) \
+    X(39, XML_SetCdataSectionHandler) \
+    X(40, XML_SetCharacterDataHandler) \
+    X(41, XML_SetCommentHandler) \
+    X(42, XML_SetDefaultHandler) \
+    X(43, XML_SetDefaultHandlerExpand) \
+    X(44, XML_SetDoctypeDeclHandler) \
+    X(45, XML_SetElementDeclHandler) \
+    X(46, XML_SetElementHandler) \
+    X(47, XML_SetEncoding) \
+    X(48, XML_SetEndCdataSectionHandler) \
+    X(49, XML_SetEndDoctypeDeclHandler) \
+    X(50, XML_SetEndElementHandler) \
+    X(51, XML_SetEndNamespaceDeclHandler) \
+    X(52, XML_SetEntityDeclHandler) \
+    X(53, XML_SetExternalEntityRefHandler) \
+    X(54, XML_SetExternalEntityRefHandlerArg) \
+    X(55, XML_SetHashSalt) \
+    X(56, XML_SetHashSalt16Bytes) \
+    X(57, XML_SetNamespaceDeclHandler) \
+    X(58, XML_SetNotStandaloneHandler) \
+    X(59, XML_SetNotationDeclHandler) \
+    X(60, XML_SetParamEntityParsing) \
+    X(61, XML_SetProcessingInstructionHandler) \
+    X(62, XML_SetPropertyBool) \
+    X(63, XML_SetPropertyDouble) \
+    X(64, XML_SetPropertyUInt64) \
+    X(65, XML_SetReparseDeferralEnabled) \
+    X(66, XML_SetReturnNSTriplet) \
+    X(67, XML_SetSkippedEntityHandler) \
+    X(68, XML_SetStartCdataSectionHandler) \
+    X(69, XML_SetStartDoctypeDeclHandler) \
+    X(70, XML_SetStartElementHandler) \
+    X(71, XML_SetStartNamespaceDeclHandler) \
+    X(72, XML_SetUnknownEncodingHandler) \
+    X(73, XML_SetUnparsedEntityDeclHandler) \
+    X(74, XML_SetUserData) \
+    X(75, XML_SetXmlDeclHandler) \
+    X(76, XML_StopParser) \
+    X(77, XML_UseForeignDTD) \
+    X(78, XML_UseParserAsHandlerArg)

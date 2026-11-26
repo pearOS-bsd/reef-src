@@ -1,2 +1,5 @@
 # Rebuilt Mach-O files: folders under macho/, in build order.
 usr/lib/libz.1
+usr/lib/libexpat.1
+usr/lib/libcups.2
+usr/lib/libicucore.A

@@ -62,7 +62,9 @@ for folder in folders:
             os.makedirs('/run/user/%d' % os.getuid(), exist_ok=True)
             run = subprocess.run([loader, program, directory] + conf.get('testargs', '').split(), capture_output=True, timeout=120, cwd=directory, stdin=subprocess.DEVNULL)
             results.append((run.returncode, run.stdout, frame.sub(b'', run.stderr)))
-        if results[0][0] != 0 or not results[0][1]:
+        if b'a host library function is missing' in results[0][2] and results[0] == results[1]:
+            print('%s/%s: same, but the host has no such library, so the call was not tried' % (folder, name))
+        elif results[0][0] != 0 or not results[0][1]:
             print('%s/%s: the test itself fails with the original: exit %d, %d bytes of output %s' % (folder, name, results[0][0], len(results[0][1]), results[0][2][-300:])); failed += 1
         elif results[0] == results[1]:
             print('%s/%s: same, exit %d, %d lines' % (folder, name, results[0][0], results[0][1].count(b'\n')))
