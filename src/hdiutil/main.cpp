@@ -16,16 +16,12 @@
 #include <unistd.h>
 #include <utility>
 
-namespace {
-
 struct Arguments
 {
     std::vector<std::string> positional;
     std::vector<std::pair<std::string, std::string>> values;
     std::set<std::string> flags;
 };
-
-} // namespace
 
 // The options of Apple's hdiutil that take a value; the others are flags.
 static const std::set<std::string> valued = {
@@ -38,7 +34,7 @@ static const std::set<std::string> valued = {
     "-alternatemount",
 };
 
-static std::string value(const Arguments& arguments, const std::string& name, const std::string& fallback)
+inline std::string value(const Arguments& arguments, const std::string& name, const std::string& fallback)
 {
     for (const auto& [option, given] : arguments.values) {
         if (option == name)
@@ -47,7 +43,7 @@ static std::string value(const Arguments& arguments, const std::string& name, co
     return fallback;
 }
 
-static std::vector<std::string> values(const Arguments& arguments, const std::string& name)
+inline std::vector<std::string> values(const Arguments& arguments, const std::string& name)
 {
     std::vector<std::string> found;
     for (const auto& [option, given] : arguments.values) {
@@ -159,12 +155,12 @@ static bool finish(const std::string& temporary, const std::string& path, std::s
     const mode_t mask = umask(0);
     umask(mask);
     chmod(temporary.c_str(), ~mask & 0666);
-    const int result = rename(temporary.c_str(), path.c_str());
-    if (result != 0) {
+    if (rename(temporary.c_str(), path.c_str()) != 0) {
         *error = path + ": " + strerror(errno);
         unlink(temporary.c_str());
+        return false;
     }
-    return result == 0;
+    return true;
 }
 
 static bool convertOptions(const Arguments& arguments, diskimage::ConvertOptions* options, std::string* error)
