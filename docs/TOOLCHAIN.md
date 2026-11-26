@@ -27,3 +27,8 @@ The Metal libraries and the host library have not been checked yet.
 - A `const` local captured by a lambda is copied where a non-const one is moved.
 - Tools: `tools/ndiff.py` (listing diff with stack offsets masked), `tools/variants.py` (ranks source variants).
 - Code that matches nothing still has to behave the same: the test found a wrong layout hint in a function that looked right.
+
+## Link order
+The sources of each target are listed in CMakeLists.txt in the order the published files were linked, read from the
+addresses of each file's functions in `.text`. A template (COMDAT) function is kept from the first object that emits it, and
+its code depends on that file's context: the loader gained 5 functions from the order alone.

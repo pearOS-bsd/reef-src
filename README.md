@@ -1,7 +1,7 @@
 # reef-src (private)
 Source of the ELF programs and libraries of Reef, reconstructed function by function. Linux only. BSD-3-Clause (see NOTICE).
 
-**Total of the 12 ELF files: 34.9 % of the code bytes (1337833 of 3828323) and 74.2 % of the functions (3757 of 5060) are the
+**Total of the 12 ELF files: 35.0 % of the code bytes (1341476 of 3828323) and 74.3 % of the functions (3762 of 5060) are the
 same as in the published binaries** (2026-11-26). `tools/total.py` computes it; every CI run prints it at the end of the match
 list (there without `libreef-webkit-host.so`, which needs headers CI does not have). Functions that are written but not the
 same yet do not count.
@@ -16,7 +16,7 @@ functions that are written but not the same yet are tuned. The 199 Mach-O files 
 | `reef-unsupported` | 105/107 functions, 60.2 % of bytes; open: `main` and its cold part |
 | `libreef-webkit-host.so` | 213/260 functions, 45.2 % of bytes; all 100 table entries written, the same output as the original in `tests/webkit.py` (JSON, input, data, find, screens); views, downloads and dialogs not run yet |
 | `reef-install-package` | 175/210 functions, 38.9 % of bytes; everything written, the same output as the original in `tests/package.py` (listing and command line installation); the window and the D-Bus helper not run yet |
-| `reef` (loader) | 576/979 functions, 27.1 % of bytes; all written (the Mach broker last); the same output as the original in `tests/mach.py` (files, ports, processes, signals, sockets, threads) and `tests/loader.py` |
+| `reef` (loader) | 581/979 functions, 27.6 % of bytes; all written (the Mach broker last); the same output as the original in `tests/mach.py` (files, ports, processes, signals, sockets, threads) and `tests/loader.py` |
 | `reef-hdiutil` | 75/196 functions, 14.1 % of bytes; all written (LZFSE from `upstream/`, its 21 functions match); the same images and output as the original in `tests/hdiutil.py` (46 cases: HFS+, ISO 9660, Joliet, UDF, the seven UDIF formats, verify, errors) |
 | `reef-diagnose` | 308/401 functions, 38.8 % of bytes; all written; the same reports as the original in `tests/diagnose.py` (20 cases on made up machines), see `docs/DIAGNOSE.md` |
 | `libreef-appkit-host.so` | 1458/1768 functions, 54.7 % of bytes; all 317 table entries written; the same behaviour as the original in `tests/appkit` (drawing, windows, planes, input, menus, OpenGL without a display) and in the tests of the units (fonts, text, PDF, video, sound, cameras, D-Bus, icons, dialogs, drags; see `docs/APPKIT-HOST.md`) |
