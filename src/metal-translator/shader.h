@@ -99,7 +99,7 @@ struct Options
     int threadgroupSize[3] = {1, 1, 1};         // 0x10
     std::vector<ConstantValue> constants;       // 0x20
     std::map<int, int> threadgroupMemory;       // 0x38  [[threadgroup(n)]]: its length
-    int last = 0;                               // 0x68
+    int last = 0;                               // 0x68  bit 0: quad_broadcast with GL_KHR_shader_subgroup
 };
 
 // The result of a translation. (0x110 bytes)
