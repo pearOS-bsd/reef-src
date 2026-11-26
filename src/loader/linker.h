@@ -176,8 +176,6 @@ private:
 std::vector<std::string>& reports();
 // reef --list-missing[=json]: what a program or bundle needs that reef does not have.
 int listMissing(Linker& linker, const std::string& path, bool json);
-void report(const char* format, ...) __attribute__((format(printf, 1, 2)));
-std::string directoryOf(const std::string& path);
 // The name of the missing function a stub address stands for.
 const char* missingFunction(uintptr_t address);
 bool stubsReturnZero();

@@ -25,7 +25,7 @@ static std::vector<std::string> reportList;
 
 std::vector<std::string>& reports() { return reportList; }
 
-void report(const char* format, ...)
+static void report(const char* format, ...)
 {
     char text[4096];
     va_list arguments;
@@ -36,10 +36,10 @@ void report(const char* format, ...)
     while (!message.empty() && message.back() == '\n')
         message.pop_back();
     fprintf(stderr, "reef: %s\n", message.c_str());
-    reportList.push_back(message);
+    reportList.push_back(std::move(message));
 }
 
-std::string directoryOf(const std::string& path)
+static std::string directoryOf(const std::string& path)
 {
     const size_t slash = path.rfind('/');
     if (slash == std::string::npos)
