@@ -11,6 +11,8 @@ extern "C" {
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
 #define _SC_PAGESIZE 29
+#define _SC_GETGR_R_SIZE_MAX 70
+#define _SC_GETPW_R_SIZE_MAX 71
 #define _SC_NPROCESSORS_ONLN 58
 #define _SC_NPROCESSORS_CONF 57
 #define _SC_IOV_MAX 56
@@ -22,7 +24,12 @@ int close(int); ssize_t read(int, void *, size_t); ssize_t write(int, const void
 int unlink(const char *); int unlinkat(int, const char *, int); int rmdir(const char *); int link(const char *, const char *); int symlink(const char *, const char *);
 ssize_t readlink(const char *, char *, size_t); ssize_t readlinkat(int, const char *, char *, size_t); int access(const char *, int); char *getcwd(char *, size_t); int chdir(const char *);
 int truncate(const char *, off_t); int ftruncate(int, off_t); int fsync(int); long sysconf(int); pid_t getpid(void); uid_t getuid(void); int dup(int); int dup2(int, int);
-int rename(const char *, const char *); unsigned sleep(unsigned); int usleep(unsigned); int pipe(int[2]);
+int rename(const char *, const char *);
+uid_t geteuid(void); gid_t getgid(void); gid_t getegid(void); pid_t getppid(void); pid_t fork(void); int execvp(const char *, char *const[]); int execv(const char *, char *const[]);
+void _exit(int) __attribute__((noreturn)); int mkstemp(char *); char *mkdtemp(char *); int chown(const char *, uid_t, gid_t); int lchown(const char *, uid_t, gid_t); int fchown(int, uid_t, gid_t);
+int pathconf(const char *, int); extern char **environ; int setuid(uid_t); int setgid(gid_t); int pthread_atfork(void (*)(void), void (*)(void), void (*)(void));
+int mkstemps(char *, int); char *getwd(char *); int fchdir(int); pid_t setsid(void); pid_t getpgrp(void); int setpgid(pid_t, pid_t); int gethostname(char *, size_t); int tcgetpgrp(int); int fdatasync(int);
+unsigned alarm(unsigned); int pause(void); int getopt(int, char *const[], const char *); int mkfifo(const char *, mode_t); int mknod(const char *, mode_t, dev_t); unsigned sleep(unsigned); int usleep(unsigned); int pipe(int[2]);
 #ifdef __cplusplus
 }
 #endif

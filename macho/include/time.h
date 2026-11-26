@@ -17,7 +17,7 @@ struct tm { int tm_sec, tm_min, tm_hour, tm_mday, tm_mon, tm_year, tm_wday, tm_y
 #define CLOCK_PROCESS_CPUTIME_ID 12
 #define CLOCK_THREAD_CPUTIME_ID 16
 #define TIME_UTC 1
-clock_t clock(void); double difftime(time_t, time_t); time_t mktime(struct tm *); time_t time(time_t *);
+void tzset(void); extern char *tzname[2]; clock_t clock(void); double difftime(time_t, time_t); time_t mktime(struct tm *); time_t time(time_t *);
 char *asctime(const struct tm *); char *ctime(const time_t *); struct tm *gmtime(const time_t *); struct tm *localtime(const time_t *);
 struct tm *gmtime_r(const time_t *, struct tm *); struct tm *localtime_r(const time_t *, struct tm *);
 size_t strftime(char *, size_t, const char *, const struct tm *); char *strptime(const char *, const char *, struct tm *);

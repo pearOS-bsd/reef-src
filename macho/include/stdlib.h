@@ -30,7 +30,7 @@ void *bsearch(const void *, const void *, size_t, size_t, int (*)(const void *, 
 int mblen(const char *, size_t); size_t mbstowcs(wchar_t *, const char *, size_t); int mbtowc(wchar_t *, const char *, size_t);
 size_t wcstombs(char *, const wchar_t *, size_t); int wctomb(char *, wchar_t);
 int arc4random_uniform(unsigned); unsigned arc4random(void); void arc4random_buf(void *, size_t);
-char *realpath(const char *, char *);
+char *realpath(const char *, char *) __asm("_realpath$DARWIN_EXTSN");
 #ifdef __cplusplus
 }
 #endif

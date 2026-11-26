@@ -58,7 +58,7 @@ def build(root, out, folder):
             o = os.path.join(work, '%d_%s.o' % (len(objects), os.path.basename(s)))
             src = os.path.join(SRC, folder, s)
             if not os.path.exists(src) and 'sourcedir' in c: src = os.path.join(REPO, c['sourcedir'], s)
-            cmd = [LLVM + '/clang', '--target=x86_64-apple-macos' + c['minos'], '-O2', '-nostdinc', '-I' + os.path.dirname(src), '-w']
+            cmd = [LLVM + '/clang', '--target=x86_64-apple-macos' + c['minos'], '-O2', '-nostdinc', '-iquote', os.path.dirname(src), '-w']
             if s.endswith('.m'): cmd += ['-x', 'objective-c']
             if s.endswith('.cpp'): cmd += ['-x', 'c++']
             # the flags come first: libc++'s headers must be found before the C headers they wrap

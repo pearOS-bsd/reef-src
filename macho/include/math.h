@@ -31,7 +31,7 @@ typedef float float_t; typedef double double_t;
 double acos(double); double asin(double); double atan(double); double atan2(double, double); double ceil(double); double cos(double); double cosh(double);
 double exp(double); double fabs(double); double floor(double); double fmod(double, double); double frexp(double, int *); double ldexp(double, int);
 double log(double); double log10(double); double modf(double, double *); double pow(double, double); double sin(double); double sinh(double); double sqrt(double);
-double tan(double); double tanh(double); double round(double); double trunc(double); double fmax(double, double); double fmin(double, double);
+double tan(double); double hypot(double, double); double expm1(double); double log1p(double); double cbrt(double); double acosh(double); double asinh(double); double atanh(double); double copysign(double, double); double nearbyint(double); double rint(double); double erf(double); double erfc(double); double lgamma(double); double tgamma(double); double exp2(double); double log2(double); double scalbn(double, int); double nan(const char *); double fdim(double, double); double fma(double, double, double); double remainder(double, double); long lround(double); long long llround(double); long lrint(double); double tanh(double); double round(double); double trunc(double); double fmax(double, double); double fmin(double, double);
 float fabsf(float); float floorf(float); float ceilf(float); float sqrtf(float); float powf(float, float); long double fabsl(long double); long double ldexpl(long double, int);
 long double frexpl(long double, int *); long double powl(long double, long double); long double floorl(long double);
 #ifdef __cplusplus

@@ -36,3 +36,4 @@ System/Library/Frameworks/GameController.framework
 System/Library/Frameworks/CryptoTokenKit.framework
 usr/lib/libc++abi
 usr/lib/libc++.1
+System/Library/Frameworks/Tcl.framework

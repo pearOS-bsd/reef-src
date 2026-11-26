@@ -14,6 +14,7 @@ extern FILE *__stdinp, *__stdoutp, *__stderrp;
 #define stdout __stdoutp
 #define stderr __stderrp
 #define EOF (-1)
+#define P_tmpdir "/var/tmp/"
 int printf(const char *, ...);
 int fprintf(FILE *, const char *, ...);
 int sprintf(char *, const char *, ...);

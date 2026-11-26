@@ -15,6 +15,10 @@ extern "C" {
 #define O_CREAT 0x200
 #define O_TRUNC 0x400
 #define O_EXCL 0x800
+#define O_NOCTTY 0x20000
+#define O_SYNC 0x80
+#define O_NDELAY O_NONBLOCK
+#define O_DSYNC 0x400000
 #define O_CLOEXEC 0x1000000
 #define O_DIRECTORY 0x100000
 #define O_NOFOLLOW 0x100

@@ -31,6 +31,12 @@ int pthread_mutex_trylock(pthread_mutex_t *); int pthread_mutex_unlock(pthread_m
 int pthread_mutexattr_init(pthread_mutexattr_t *); int pthread_mutexattr_settype(pthread_mutexattr_t *, int); int pthread_mutexattr_destroy(pthread_mutexattr_t *);
 int pthread_cond_init(pthread_cond_t *, const pthread_condattr_t *); int pthread_cond_destroy(pthread_cond_t *); int pthread_cond_wait(pthread_cond_t *, pthread_mutex_t *);
 int pthread_cond_timedwait(pthread_cond_t *, pthread_mutex_t *, const struct timespec *); int pthread_cond_signal(pthread_cond_t *); int pthread_cond_broadcast(pthread_cond_t *);
+int pthread_attr_init(pthread_attr_t *); int pthread_attr_destroy(pthread_attr_t *); int pthread_attr_setdetachstate(pthread_attr_t *, int); int pthread_attr_setscope(pthread_attr_t *, int);
+int pthread_attr_setstacksize(pthread_attr_t *, size_t); void pthread_exit(void *) __attribute__((noreturn));
+#define PTHREAD_CREATE_JOINABLE 1
+#define PTHREAD_CREATE_DETACHED 2
+#define PTHREAD_SCOPE_SYSTEM 1
+#define PTHREAD_SCOPE_PROCESS 2
 int pthread_key_create(pthread_key_t *, void (*)(void *)); int pthread_key_delete(pthread_key_t); void *pthread_getspecific(pthread_key_t); int pthread_setspecific(pthread_key_t, const void *);
 int pthread_rwlock_init(pthread_rwlock_t *, const pthread_rwlockattr_t *); int pthread_rwlock_destroy(pthread_rwlock_t *);
 int pthread_rwlock_rdlock(pthread_rwlock_t *); int pthread_rwlock_wrlock(pthread_rwlock_t *); int pthread_rwlock_unlock(pthread_rwlock_t *);

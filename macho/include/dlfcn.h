@@ -8,6 +8,8 @@ extern "C" {
 #endif
 #define RTLD_LAZY 1
 #define RTLD_NOW 2
+#define RTLD_GLOBAL 8
+#define RTLD_LOCAL 4
 #define RTLD_NOLOAD 0x10
 #define RTLD_DEFAULT ((void *)-2)
 typedef struct dl_info { const char *dli_fname; void *dli_fbase; const char *dli_sname; void *dli_saddr; } Dl_info;
