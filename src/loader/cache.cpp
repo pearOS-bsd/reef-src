@@ -16,6 +16,10 @@
 
 namespace cutefish::reef {
 
+// The first bytes of the files: the binds of a program, and the state an application saves.
+static constexpr char BindsMagic[8] = {'R', 'E', 'E', 'F', 'B', 'N', 'D', '1'};
+static constexpr char StateMagic[8] = {'R', 'E', 'E', 'F', 'S', 'T', 'A', '1'};
+
 static bool readAll(int fd, void* buffer, size_t size)
 {
     char* at = static_cast<char*>(buffer);
@@ -80,7 +84,7 @@ bool readBinds(const std::string& path, const std::string& key, std::vector<uint
     char magic[8];
     uint64_t length = 0;
     uint64_t count = 0;
-    if (readAll(fd, magic, sizeof magic) && memcmp(magic, "REEFBND1", 8) == 0 && readAll(fd, &length, sizeof length) && length == key.size()) {
+    if (readAll(fd, magic, sizeof magic) && memcmp(magic, BindsMagic, 8) == 0 && readAll(fd, &length, sizeof length) && length == key.size()) {
         bool good = false;
         {
             std::string stored(length, '\0');
@@ -142,15 +146,12 @@ void writeBinds(const std::string& path, const std::string& key, const std::vect
         return;
     const uint64_t length = key.size();
     const uint64_t count = addresses.size();
-    if (fwrite("REEFBND1", 8, 1, file) == 1 && fwrite(&length, 8, 1, file) == 1 && fwrite(key.data(), 1, key.size(), file) == key.size() &&
+    bool good = fwrite(BindsMagic, 8, 1, file) == 1 && fwrite(&length, 8, 1, file) == 1 && fwrite(key.data(), 1, key.size(), file) == key.size() &&
         fwrite(&count, 8, 1, file) == 1 && fwrite(addresses.data(), 8, addresses.size(), file) == addresses.size() &&
-        fwrite(flags.data(), 4, flags.size(), file) == flags.size()) {
-        if (fclose(file) == 0 && rename(temporary.c_str(), path.c_str()) == 0)
-            return;
-    } else {
-        fclose(file);
-    }
-    unlink(temporary.c_str());
+        fwrite(flags.data(), 4, flags.size(), file) == flags.size();
+    good = fclose(file) == 0 && good;
+    if (!good || rename(temporary.c_str(), path.c_str()) != 0)
+        unlink(temporary.c_str());
 }
 
 bool readState(const std::string& path, const std::string& key, std::string& data)
@@ -161,7 +162,7 @@ bool readState(const std::string& path, const std::string& key, std::string& dat
     char magic[8];
     uint64_t length = 0;
     uint64_t size = 0;
-    if (readAll(fd, magic, sizeof magic) && memcmp(magic, "REEFSTA1", 8) == 0 && readAll(fd, &length, sizeof length) && length == key.size()) {
+    if (readAll(fd, magic, sizeof magic) && memcmp(magic, StateMagic, 8) == 0 && readAll(fd, &length, sizeof length) && length == key.size()) {
         bool good = false;
         {
             std::string stored(length, '\0');
@@ -188,14 +189,11 @@ void writeState(const std::string& path, const std::string& key, const void* dat
         return;
     const uint64_t length = key.size();
     const uint64_t count = size;
-    if (fwrite("REEFSTA1", 8, 1, file) == 1 && fwrite(&length, 8, 1, file) == 1 && fwrite(key.data(), 1, key.size(), file) == key.size() &&
-        fwrite(&count, 8, 1, file) == 1 && fwrite(data, 1, size, file) == size) {
-        if (fclose(file) == 0 && rename(temporary.c_str(), path.c_str()) == 0)
-            return;
-    } else {
-        fclose(file);
-    }
-    unlink(temporary.c_str());
+    bool good = fwrite(StateMagic, 8, 1, file) == 1 && fwrite(&length, 8, 1, file) == 1 && fwrite(key.data(), 1, key.size(), file) == key.size() &&
+        fwrite(&count, 8, 1, file) == 1 && fwrite(data, 1, size, file) == size;
+    good = fclose(file) == 0 && good;
+    if (!good || rename(temporary.c_str(), path.c_str()) != 0)
+        unlink(temporary.c_str());
 }
 
 } // namespace cutefish::reef

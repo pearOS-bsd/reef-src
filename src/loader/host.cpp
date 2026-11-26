@@ -338,10 +338,10 @@ static std::string existingPath(const char* path, bool follow)
     std::string found;
     const char* at = path;
     while (*at) {
-        if (*at == '/') {
+        while (*at == '/')
             ++at;
-            continue;
-        }
+        if (!*at)
+            break;
         const char* end = strchrnul(at, '/');
         const std::string name(at, size_t(end - at));
         const bool last = *end == '\0' || end[strspn(end, "/")] == '\0';
