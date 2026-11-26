@@ -1,0 +1,228 @@
+// Matrices: columns of vectors, column-major, with the arithmetic of
+// linear algebra.
+#ifndef __REEF_METAL_MATRIX
+#define __REEF_METAL_MATRIX
+
+#include <metal_types>
+
+namespace metal {
+
+template <class T, int C, int R, class = void> struct matrix {
+    typedef T column_type __attribute__((ext_vector_type(R)));
+    typedef T row_type __attribute__((ext_vector_type(C)));
+
+    column_type columns[C];
+
+    matrix() = default;
+
+    // A diagonal of `value` (the identity for one).
+    explicit matrix(T value)
+        : columns {}
+    {
+        for (int c = 0; c < C; ++c)
+            for (int r = 0; r < R; ++r)
+                columns[c][r] = c == r ? value : T(0);
+    }
+
+    template <class... A, class = __msl::enable_if_t<sizeof...(A) == C && (true && ... && __msl::traits<A>::vector)>,
+        int = 0>
+    matrix(A... values)
+        : columns {__msl::convert<column_type>(values)...}
+    {
+    }
+
+    template <class... A,
+        class = __msl::enable_if_t<sizeof...(A) == C * R && C * R != C && (true && ... && !__msl::traits<A>::vector)>>
+    matrix(A... values)
+        : columns {}
+    {
+        const T elements[C * R] = {T(values)...};
+        for (int c = 0; c < C; ++c)
+            for (int r = 0; r < R; ++r)
+                columns[c][r] = elements[c * R + r];
+    }
+
+    template <class U, class = __msl::enable_if_t<!__msl::is_same<U, T>::value>>
+    explicit matrix(const matrix<U, C, R> &other)
+        : columns {}
+    {
+        for (int c = 0; c < C; ++c)
+            columns[c] = __builtin_convertvector(other.columns[c], column_type);
+    }
+
+    column_type &operator[](int c)
+    {
+        return columns[c];
+    }
+
+    const column_type &operator[](int c) const
+    {
+        return columns[c];
+    }
+};
+
+template <class T, int C, int R>
+inline typename matrix<T, C, R>::column_type operator*(const matrix<T, C, R> &m,
+    typename matrix<T, C, R>::row_type v)
+{
+    typename matrix<T, C, R>::column_type result = m.columns[0] * v[0];
+    for (int c = 1; c < C; ++c)
+        result += m.columns[c] * v[c];
+    return result;
+}
+
+template <class T, int C, int R>
+inline typename matrix<T, C, R>::row_type operator*(typename matrix<T, C, R>::column_type v,
+    const matrix<T, C, R> &m)
+{
+    typename matrix<T, C, R>::row_type result {};
+    for (int c = 0; c < C; ++c) {
+        T sum = T(0);
+        for (int r = 0; r < R; ++r)
+            sum += v[r] * m.columns[c][r];
+        result[c] = sum;
+    }
+    return result;
+}
+
+template <class T, int K, int R, int C>
+inline matrix<T, C, R> operator*(const matrix<T, K, R> &a, const matrix<T, C, K> &b)
+{
+    matrix<T, C, R> result;
+    for (int c = 0; c < C; ++c)
+        result.columns[c] = a * b.columns[c];
+    return result;
+}
+
+template <class T, int C, int R> inline matrix<T, C, R> operator*(const matrix<T, C, R> &m, T s)
+{
+    matrix<T, C, R> result;
+    for (int c = 0; c < C; ++c)
+        result.columns[c] = m.columns[c] * s;
+    return result;
+}
+
+template <class T, int C, int R> inline matrix<T, C, R> operator*(T s, const matrix<T, C, R> &m)
+{
+    return m * s;
+}
+
+template <class T, int C, int R> inline matrix<T, C, R> operator/(const matrix<T, C, R> &m, T s)
+{
+    matrix<T, C, R> result;
+    for (int c = 0; c < C; ++c)
+        result.columns[c] = m.columns[c] / s;
+    return result;
+}
+
+template <class T, int C, int R>
+inline matrix<T, C, R> operator+(const matrix<T, C, R> &a, const matrix<T, C, R> &b)
+{
+    matrix<T, C, R> result;
+    for (int c = 0; c < C; ++c)
+        result.columns[c] = a.columns[c] + b.columns[c];
+    return result;
+}
+
+template <class T, int C, int R>
+inline matrix<T, C, R> operator-(const matrix<T, C, R> &a, const matrix<T, C, R> &b)
+{
+    matrix<T, C, R> result;
+    for (int c = 0; c < C; ++c)
+        result.columns[c] = a.columns[c] - b.columns[c];
+    return result;
+}
+
+template <class T, int C, int R> inline matrix<T, C, R> operator-(const matrix<T, C, R> &m)
+{
+    matrix<T, C, R> result;
+    for (int c = 0; c < C; ++c)
+        result.columns[c] = -m.columns[c];
+    return result;
+}
+
+template <class T, int C, int R> inline matrix<T, C, R> &operator*=(matrix<T, C, R> &m, T s)
+{
+    return m = m * s;
+}
+
+template <class T, int C> inline matrix<T, C, C> &operator*=(matrix<T, C, C> &a, const matrix<T, C, C> &b)
+{
+    return a = a * b;
+}
+
+template <class T, int C, int R> inline matrix<T, C, R> &operator+=(matrix<T, C, R> &a, const matrix<T, C, R> &b)
+{
+    return a = a + b;
+}
+
+template <class T, int C, int R> inline matrix<T, C, R> &operator-=(matrix<T, C, R> &a, const matrix<T, C, R> &b)
+{
+    return a = a - b;
+}
+
+template <class T, int C, int R> inline matrix<T, R, C> transpose(const matrix<T, C, R> &m)
+{
+    matrix<T, R, C> result;
+    for (int c = 0; c < C; ++c)
+        for (int r = 0; r < R; ++r)
+            result.columns[r][c] = m.columns[c][r];
+    return result;
+}
+
+template <class T> inline T determinant(const matrix<T, 2, 2> &m)
+{
+    return m[0][0] * m[1][1] - m[1][0] * m[0][1];
+}
+
+template <class T> inline T determinant(const matrix<T, 3, 3> &m)
+{
+    return m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2]) - m[1][0] * (m[0][1] * m[2][2] - m[2][1] * m[0][2])
+        + m[2][0] * (m[0][1] * m[1][2] - m[1][1] * m[0][2]);
+}
+
+template <class T> inline T determinant(const matrix<T, 4, 4> &m)
+{
+    T s0 = m[0][0] * m[1][1] - m[1][0] * m[0][1];
+    T s1 = m[0][0] * m[1][2] - m[1][0] * m[0][2];
+    T s2 = m[0][0] * m[1][3] - m[1][0] * m[0][3];
+    T s3 = m[0][1] * m[1][2] - m[1][1] * m[0][2];
+    T s4 = m[0][1] * m[1][3] - m[1][1] * m[0][3];
+    T s5 = m[0][2] * m[1][3] - m[1][2] * m[0][3];
+    T c5 = m[2][2] * m[3][3] - m[3][2] * m[2][3];
+    T c4 = m[2][1] * m[3][3] - m[3][1] * m[2][3];
+    T c3 = m[2][1] * m[3][2] - m[3][1] * m[2][2];
+    T c2 = m[2][0] * m[3][3] - m[3][0] * m[2][3];
+    T c1 = m[2][0] * m[3][2] - m[3][0] * m[2][2];
+    T c0 = m[2][0] * m[3][1] - m[3][0] * m[2][1];
+    return s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0;
+}
+
+} // namespace metal
+
+#define __MSL_MATRIX_TYPES(T)                                                                                        \
+    typedef metal::matrix<T, 2, 2> T##2x2;                                                                           \
+    typedef metal::matrix<T, 2, 3> T##2x3;                                                                           \
+    typedef metal::matrix<T, 2, 4> T##2x4;                                                                           \
+    typedef metal::matrix<T, 3, 2> T##3x2;                                                                           \
+    typedef metal::matrix<T, 3, 3> T##3x3;                                                                           \
+    typedef metal::matrix<T, 3, 4> T##3x4;                                                                           \
+    typedef metal::matrix<T, 4, 2> T##4x2;                                                                           \
+    typedef metal::matrix<T, 4, 3> T##4x3;                                                                           \
+    typedef metal::matrix<T, 4, 4> T##4x4;                                                                           \
+    namespace metal {                                                                                                \
+    using ::T##2x2;                                                                                                  \
+    using ::T##2x3;                                                                                                  \
+    using ::T##2x4;                                                                                                  \
+    using ::T##3x2;                                                                                                  \
+    using ::T##3x3;                                                                                                  \
+    using ::T##3x4;                                                                                                  \
+    using ::T##4x2;                                                                                                  \
+    using ::T##4x3;                                                                                                  \
+    using ::T##4x4;                                                                                                  \
+    }
+
+__MSL_MATRIX_TYPES(float)
+__MSL_MATRIX_TYPES(half)
+
+#endif

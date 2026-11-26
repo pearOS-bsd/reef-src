@@ -1,0 +1,134 @@
+// The Metal standard library's type traits: scalars and vectors alike.
+#ifndef __REEF_METAL_TYPE_TRAITS
+#define __REEF_METAL_TYPE_TRAITS
+
+#include <metal_types>
+
+namespace metal {
+
+template <class T, T V> struct integral_constant {
+    static constexpr T value = V;
+    typedef T value_type;
+    typedef integral_constant type;
+    constexpr operator value_type() const
+    {
+        return value;
+    }
+};
+template <bool B> using bool_constant = integral_constant<bool, B>;
+typedef bool_constant<true> true_type;
+typedef bool_constant<false> false_type;
+
+using __msl::enable_if;
+using __msl::enable_if_t;
+using __msl::conditional;
+template <bool B, class T, class F> using conditional_t = typename conditional<B, T, F>::type;
+
+template <class T, class U> struct is_same : bool_constant<__msl::is_same<T, U>::value> {
+};
+template <class T, class U> constexpr bool is_same_v = is_same<T, U>::value;
+
+using __msl::remove_cv;
+template <class T> using remove_cv_t = typename remove_cv<T>::type;
+template <class T> struct remove_const {
+    typedef T type;
+};
+template <class T> struct remove_const<const T> {
+    typedef T type;
+};
+template <class T> using remove_const_t = typename remove_const<T>::type;
+template <class T> struct remove_volatile {
+    typedef T type;
+};
+template <class T> struct remove_volatile<volatile T> {
+    typedef T type;
+};
+template <class T> using remove_volatile_t = typename remove_volatile<T>::type;
+
+template <class T> struct is_scalar : bool_constant<__msl::is_scalar<remove_cv_t<T>>::value> {
+};
+template <class T> constexpr bool is_scalar_v = is_scalar<T>::value;
+
+template <class T>
+struct is_vector : bool_constant<__msl::traits<remove_cv_t<T>>::vector> {
+};
+template <class T> constexpr bool is_vector_v = is_vector<T>::value;
+
+template <class T> struct vec_elements : integral_constant<int, __msl::traits<remove_cv_t<T>>::size> {
+};
+template <class T> constexpr int vec_elements_v = vec_elements<T>::value;
+
+// Integral and floating point: a scalar of that kind or a vector of one.
+template <class T>
+struct is_integral
+    : bool_constant<__msl::is_integer<typename __msl::traits<remove_cv_t<T>>::element>::value> {
+};
+template <class T> constexpr bool is_integral_v = is_integral<T>::value;
+
+template <class T>
+struct is_floating_point
+    : bool_constant<__msl::is_floating<typename __msl::traits<remove_cv_t<T>>::element>::value> {
+};
+template <class T> constexpr bool is_floating_point_v = is_floating_point<T>::value;
+
+template <class T> struct is_arithmetic : bool_constant<is_integral<T>::value || is_floating_point<T>::value> {
+};
+template <class T> constexpr bool is_arithmetic_v = is_arithmetic<T>::value;
+
+template <class T>
+struct is_signed : bool_constant<is_arithmetic<T>::value
+                       && typename __msl::traits<remove_cv_t<T>>::element(-1)
+                           < typename __msl::traits<remove_cv_t<T>>::element(0)> {
+};
+template <class T> constexpr bool is_signed_v = is_signed<T>::value;
+
+template <class T> struct is_unsigned : bool_constant<is_integral<T>::value && !is_signed<T>::value> {
+};
+template <class T> constexpr bool is_unsigned_v = is_unsigned<T>::value;
+
+// The signed or unsigned integer of the same size, element by element.
+template <class T> struct __make_signed_element;
+template <class T> struct __make_unsigned_element;
+#define __MSL_SIGN_PAIR(S, U)                                                                                      \
+    template <> struct __make_signed_element<S> {                                                                  \
+        typedef S type;                                                                                            \
+    };                                                                                                             \
+    template <> struct __make_signed_element<U> {                                                                  \
+        typedef S type;                                                                                            \
+    };                                                                                                             \
+    template <> struct __make_unsigned_element<S> {                                                                \
+        typedef U type;                                                                                            \
+    };                                                                                                             \
+    template <> struct __make_unsigned_element<U> {                                                                \
+        typedef U type;                                                                                            \
+    };
+__MSL_SIGN_PAIR(signed char, unsigned char)
+__MSL_SIGN_PAIR(short, unsigned short)
+__MSL_SIGN_PAIR(int, unsigned int)
+__MSL_SIGN_PAIR(long, unsigned long)
+__MSL_SIGN_PAIR(long long, unsigned long long)
+#undef __MSL_SIGN_PAIR
+template <> struct __make_signed_element<char> {
+    typedef signed char type;
+};
+template <> struct __make_unsigned_element<char> {
+    typedef unsigned char type;
+};
+
+template <class T> struct make_signed {
+    typedef typename __msl::swizzle_type<
+        typename __make_signed_element<typename __msl::traits<remove_cv_t<T>>::element>::type,
+        __msl::traits<remove_cv_t<T>>::size>::type type;
+};
+template <class T> using make_signed_t = typename make_signed<T>::type;
+
+template <class T> struct make_unsigned {
+    typedef typename __msl::swizzle_type<
+        typename __make_unsigned_element<typename __msl::traits<remove_cv_t<T>>::element>::type,
+        __msl::traits<remove_cv_t<T>>::size>::type type;
+};
+template <class T> using make_unsigned_t = typename make_unsigned<T>::type;
+
+} // namespace metal
+
+#endif

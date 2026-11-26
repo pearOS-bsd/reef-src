@@ -1,0 +1,126 @@
+// Integer functions. The AIR names carry the signedness before the type,
+// as conversions do: air.min.s.v2i32, air.popcount.u.i8.
+#ifndef __REEF_METAL_INTEGER
+#define __REEF_METAL_INTEGER
+
+#include <metal_types>
+
+#define __MSL_EACH_INTEGER(M, ...)                                                                                   \
+    M(char, s, i8, __VA_ARGS__)                                                                                      \
+    M(char2, s, v2i8, __VA_ARGS__)                                                                                   \
+    M(char3, s, v3i8, __VA_ARGS__)                                                                                   \
+    M(char4, s, v4i8, __VA_ARGS__)                                                                                   \
+    M(uchar, u, i8, __VA_ARGS__)                                                                                     \
+    M(uchar2, u, v2i8, __VA_ARGS__)                                                                                  \
+    M(uchar3, u, v3i8, __VA_ARGS__)                                                                                  \
+    M(uchar4, u, v4i8, __VA_ARGS__)                                                                                  \
+    M(short, s, i16, __VA_ARGS__)                                                                                    \
+    M(short2, s, v2i16, __VA_ARGS__)                                                                                 \
+    M(short3, s, v3i16, __VA_ARGS__)                                                                                 \
+    M(short4, s, v4i16, __VA_ARGS__)                                                                                 \
+    M(ushort, u, i16, __VA_ARGS__)                                                                                   \
+    M(ushort2, u, v2i16, __VA_ARGS__)                                                                                \
+    M(ushort3, u, v3i16, __VA_ARGS__)                                                                                \
+    M(ushort4, u, v4i16, __VA_ARGS__)                                                                                \
+    M(int, s, i32, __VA_ARGS__)                                                                                      \
+    M(int2, s, v2i32, __VA_ARGS__)                                                                                   \
+    M(int3, s, v3i32, __VA_ARGS__)                                                                                   \
+    M(int4, s, v4i32, __VA_ARGS__)                                                                                   \
+    M(uint, u, i32, __VA_ARGS__)                                                                                     \
+    M(uint2, u, v2i32, __VA_ARGS__)                                                                                  \
+    M(uint3, u, v3i32, __VA_ARGS__)                                                                                  \
+    M(uint4, u, v4i32, __VA_ARGS__)                                                                                  \
+    M(long, s, i64, __VA_ARGS__)                                                                                     \
+    M(long2, s, v2i64, __VA_ARGS__)                                                                                  \
+    M(long3, s, v3i64, __VA_ARGS__)                                                                                  \
+    M(long4, s, v4i64, __VA_ARGS__)                                                                                  \
+    M(ulong, u, i64, __VA_ARGS__)                                                                                    \
+    M(ulong2, u, v2i64, __VA_ARGS__)                                                                                 \
+    M(ulong3, u, v3i64, __VA_ARGS__)                                                                                 \
+    M(ulong4, u, v4i64, __VA_ARGS__)
+
+namespace metal {
+
+namespace __integer {
+
+template <class T> struct unsigned_of;
+template <> struct unsigned_of<char> {
+    typedef uchar type;
+};
+template <> struct unsigned_of<uchar> {
+    typedef uchar type;
+};
+template <> struct unsigned_of<short> {
+    typedef ushort type;
+};
+template <> struct unsigned_of<ushort> {
+    typedef ushort type;
+};
+template <> struct unsigned_of<int> {
+    typedef uint type;
+};
+template <> struct unsigned_of<uint> {
+    typedef uint type;
+};
+template <> struct unsigned_of<long> {
+    typedef ulong type;
+};
+template <> struct unsigned_of<ulong> {
+    typedef ulong type;
+};
+
+template <class T> using unsigned_type = typename __msl::conditional<__msl::traits<T>::vector,
+    vec<typename unsigned_of<typename __msl::traits<T>::element>::type, __msl::traits<T>::size>,
+    typename unsigned_of<typename __msl::traits<T>::element>::type>::type;
+
+} // namespace __integer
+
+#define __MSL_INTEGER(T, SIGN, S, ...)                                                                               \
+    __integer::unsigned_type<T> abs(T x) __asm__("air.abs." #SIGN "." #S);                                          \
+    __integer::unsigned_type<T> absdiff(T x, T y) __asm__("air.absdiff." #SIGN "." #S);                             \
+    T addsat(T x, T y) __asm__("air.add_sat." #SIGN "." #S);                                                        \
+    T subsat(T x, T y) __asm__("air.sub_sat." #SIGN "." #S);                                                        \
+    T clamp(T x, T minval, T maxval) __asm__("air.clamp." #SIGN "." #S);                                            \
+    T clz(T x) __asm__("air.clz." #SIGN "." #S);                                                                    \
+    T ctz(T x) __asm__("air.ctz." #SIGN "." #S);                                                                    \
+    T popcount(T x) __asm__("air.popcount." #SIGN "." #S);                                                          \
+    T reverse_bits(T x) __asm__("air.reverse_bits." #SIGN "." #S);                                                  \
+    T extract_bits(T x, uint offset, uint bits) __asm__("air.extract_bits." #SIGN "." #S);                          \
+    T insert_bits(T base, T insert, uint offset, uint bits) __asm__("air.insert_bits." #SIGN "." #S);               \
+    T hadd(T x, T y) __asm__("air.hadd." #SIGN "." #S);                                                             \
+    T rhadd(T x, T y) __asm__("air.rhadd." #SIGN "." #S);                                                           \
+    T madhi(T a, T b, T c) __asm__("air.mad_hi." #SIGN "." #S);                                                     \
+    T madsat(T a, T b, T c) __asm__("air.mad_sat." #SIGN "." #S);                                                   \
+    T mulhi(T x, T y) __asm__("air.mul_hi." #SIGN "." #S);                                                          \
+    T max(T x, T y) __asm__("air.max." #SIGN "." #S);                                                               \
+    T min(T x, T y) __asm__("air.min." #SIGN "." #S);                                                               \
+    T max3(T x, T y, T z) __asm__("air.max3." #SIGN "." #S);                                                        \
+    T min3(T x, T y, T z) __asm__("air.min3." #SIGN "." #S);                                                        \
+    T median3(T x, T y, T z) __asm__("air.median3." #SIGN "." #S);                                                  \
+    T rotate(T v, T i) __asm__("air.rotate." #SIGN "." #S);
+
+__MSL_EACH_INTEGER(__MSL_INTEGER)
+
+inline int mul24(int x, int y)
+{
+    return x * y;
+}
+
+inline uint mul24(uint x, uint y)
+{
+    return x * y;
+}
+
+inline int mad24(int x, int y, int z)
+{
+    return x * y + z;
+}
+
+inline uint mad24(uint x, uint y, uint z)
+{
+    return x * y + z;
+}
+
+} // namespace metal
+
+#endif

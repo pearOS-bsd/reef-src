@@ -94,4 +94,22 @@ if(LLVM_FOUND)
     target_compile_definitions(reef-metal-translator PRIVATE ${llvm_definitions})
     target_link_libraries(reef-metal-translator PRIVATE ${LLVM_LIBRARY_DIR}/libLLVM.so.19.1)
     target_link_options(reef-metal-translator PRIVATE -Wl,--no-undefined)
+
+    # The Metal Shading Language front end: source to AIR, with clang 19 (Debian's libclang-cpp.so.19.1).
+    set(metal_msl ${CMAKE_CURRENT_SOURCE_DIR}/src/metal-msl)
+    file(GLOB_RECURSE metal_msl_include CONFIGURE_DEPENDS ${metal_msl}/include/*)
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/metal-msl/headers.cpp
+        COMMAND ${CMAKE_COMMAND} -DINPUT=${metal_msl}/include -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/metal-msl/headers.cpp
+                -P ${metal_msl}/embed.cmake
+        DEPENDS ${metal_msl}/embed.cmake ${metal_msl_include} VERBATIM)
+    # In the order of the published library: the headers link between lower.cpp and source.cpp.
+    add_library(reef-metal-msl SHARED ${metal_msl}/attributes.cpp ${metal_msl}/compile.cpp ${metal_msl}/entry_points.cpp
+        ${metal_msl}/types.cpp ${metal_msl}/argument_buffers.cpp ${metal_msl}/lower.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/metal-msl/headers.cpp ${metal_msl}/source.cpp)
+    set_target_properties(reef-metal-msl PROPERTIES CXX_STANDARD 20 CXX_VISIBILITY_PRESET hidden)
+    target_include_directories(reef-metal-msl PRIVATE ${metal_msl})
+    target_include_directories(reef-metal-msl SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
+    target_compile_definitions(reef-metal-msl PRIVATE ${llvm_definitions})
+    target_link_libraries(reef-metal-msl PRIVATE ${LLVM_LIBRARY_DIR}/libclang-cpp.so.19.1 ${LLVM_LIBRARY_DIR}/libLLVM.so.19.1)
+    target_link_options(reef-metal-msl PRIVATE -Wl,--no-undefined)
 endif()

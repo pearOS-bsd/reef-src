@@ -1,0 +1,123 @@
+// Packing normalized values into integers and back.
+#ifndef __REEF_METAL_PACK
+#define __REEF_METAL_PACK
+
+#include <metal_common>
+
+namespace metal {
+
+namespace __pack {
+
+inline float srgb_to_linear(float c)
+{
+    return c <= 0.04045f ? c / 12.92f : precise::pow((c + 0.055f) / 1.055f, 2.4f);
+}
+
+inline float linear_to_srgb(float c)
+{
+    return c <= 0.0031308f ? c * 12.92f : 1.055f * precise::pow(c, 1.0f / 2.4f) - 0.055f;
+}
+
+} // namespace __pack
+
+inline float4 unpack_unorm4x8_to_float(uint x)
+{
+    return float4(as_type<uchar4>(x)) / 255.0f;
+}
+
+inline float4 unpack_snorm4x8_to_float(uint x)
+{
+    return precise::clamp(float4(as_type<char4>(x)) / 127.0f, float4(-1.0f), float4(1.0f));
+}
+
+inline float2 unpack_unorm2x16_to_float(uint x)
+{
+    return float2(as_type<ushort2>(x)) / 65535.0f;
+}
+
+inline float2 unpack_snorm2x16_to_float(uint x)
+{
+    return precise::clamp(float2(as_type<short2>(x)) / 32767.0f, float2(-1.0f), float2(1.0f));
+}
+
+inline float4 unpack_unorm4x8_srgb_to_float(uint x)
+{
+    const float4 c = unpack_unorm4x8_to_float(x);
+    return float4(__pack::srgb_to_linear(c.x), __pack::srgb_to_linear(c.y), __pack::srgb_to_linear(c.z), c.w);
+}
+
+inline half4 unpack_unorm4x8_to_half(uint x)
+{
+    return half4(unpack_unorm4x8_to_float(x));
+}
+
+inline half4 unpack_snorm4x8_to_half(uint x)
+{
+    return half4(unpack_snorm4x8_to_float(x));
+}
+
+inline half2 unpack_unorm2x16_to_half(uint x)
+{
+    return half2(unpack_unorm2x16_to_float(x));
+}
+
+inline half2 unpack_snorm2x16_to_half(uint x)
+{
+    return half2(unpack_snorm2x16_to_float(x));
+}
+
+inline half4 unpack_unorm4x8_srgb_to_half(uint x)
+{
+    return half4(unpack_unorm4x8_srgb_to_float(x));
+}
+
+inline uint pack_float_to_unorm4x8(float4 x)
+{
+    return as_type<uint>(uchar4(precise::rint(precise::clamp(x, float4(0.0f), float4(1.0f)) * 255.0f)));
+}
+
+inline uint pack_float_to_snorm4x8(float4 x)
+{
+    return as_type<uint>(char4(precise::rint(precise::clamp(x, float4(-1.0f), float4(1.0f)) * 127.0f)));
+}
+
+inline uint pack_float_to_unorm2x16(float2 x)
+{
+    return as_type<uint>(ushort2(precise::rint(precise::clamp(x, float2(0.0f), float2(1.0f)) * 65535.0f)));
+}
+
+inline uint pack_float_to_snorm2x16(float2 x)
+{
+    return as_type<uint>(short2(precise::rint(precise::clamp(x, float2(-1.0f), float2(1.0f)) * 32767.0f)));
+}
+
+inline uint pack_float_to_srgb_unorm4x8(float4 x)
+{
+    const float4 c = precise::clamp(x, float4(0.0f), float4(1.0f));
+    return pack_float_to_unorm4x8(
+        float4(__pack::linear_to_srgb(c.x), __pack::linear_to_srgb(c.y), __pack::linear_to_srgb(c.z), c.w));
+}
+
+inline uint pack_half_to_unorm4x8(half4 x)
+{
+    return pack_float_to_unorm4x8(float4(x));
+}
+
+inline uint pack_half_to_snorm4x8(half4 x)
+{
+    return pack_float_to_snorm4x8(float4(x));
+}
+
+inline uint pack_half_to_unorm2x16(half2 x)
+{
+    return pack_float_to_unorm2x16(float2(x));
+}
+
+inline uint pack_half_to_snorm2x16(half2 x)
+{
+    return pack_float_to_snorm2x16(float2(x));
+}
+
+} // namespace metal
+
+#endif

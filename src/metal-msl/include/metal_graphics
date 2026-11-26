@@ -1,0 +1,25 @@
+// Fragment functions: discarding the fragment and derivatives.
+#ifndef __REEF_METAL_GRAPHICS
+#define __REEF_METAL_GRAPHICS
+
+#include <metal_math>
+
+void discard_fragment(void) __asm__("air.discard_fragment");
+// The samples of the render target the fragment is drawn into.
+uint get_num_samples(void) __asm__("air.get_num_samples");
+
+#define __MSL_DERIVATIVES(T, S, ...)                                                                                 \
+    T dfdx(T p) __asm__("air.dfdx." #S);                                                                            \
+    T dfdy(T p) __asm__("air.dfdy." #S);                                                                            \
+    T fwidth(T p) __asm__("air.fwidth." #S);
+
+namespace metal {
+
+using ::discard_fragment;
+using ::get_num_samples;
+
+__MSL_EACH_FLOAT(__MSL_DERIVATIVES)
+
+} // namespace metal
+
+#endif

@@ -1,0 +1,923 @@
+// Samplers and textures. A texture or sampler object holds the handle its
+// entry point argument passes in; a sampler declared in the program holds
+// its state instead, packed as the translator reads constant samplers.
+#ifndef __REEF_METAL_TEXTURE
+#define __REEF_METAL_TEXTURE
+
+#include <metal_types>
+
+struct _texture_t;
+struct _sampler_t;
+
+namespace metal {
+
+enum class access {
+    sample,
+    read,
+    write,
+    read_write,
+};
+
+enum class coord {
+    normalized,
+    pixel,
+};
+
+#define __MSL_ADDRESS_MODES                                                                                          \
+    clamp_to_zero, clamp_to_edge, clamp_to_border, repeat, mirrored_repeat
+
+enum class address { __MSL_ADDRESS_MODES };
+enum class s_address { __MSL_ADDRESS_MODES };
+enum class t_address { __MSL_ADDRESS_MODES };
+enum class r_address { __MSL_ADDRESS_MODES };
+
+enum class filter {
+    nearest,
+    linear,
+    bicubic,
+};
+
+enum class mag_filter {
+    nearest,
+    linear,
+    bicubic,
+};
+
+enum class min_filter {
+    nearest,
+    linear,
+    bicubic,
+};
+
+enum class mip_filter {
+    none,
+    nearest,
+    linear,
+};
+
+enum class compare_func {
+    none,
+    less,
+    less_equal,
+    greater,
+    greater_equal,
+    equal,
+    not_equal,
+    always,
+    never,
+};
+
+enum class border_color {
+    transparent_black,
+    opaque_black,
+    opaque_white,
+};
+
+enum class component {
+    x,
+    y,
+    z,
+    w,
+};
+
+struct max_anisotropy {
+    int value;
+    constexpr max_anisotropy(int count)
+        : value(count)
+    {
+    }
+};
+
+struct lod_clamp {
+    float min;
+    float max;
+    constexpr lod_clamp(float low, float high)
+        : min(low)
+        , max(high)
+    {
+    }
+};
+
+namespace __sampler {
+
+struct state {
+    int s = 1;
+    int t = 1;
+    int r = 1;
+    int mag = 0;
+    int min = 0;
+    int mip = 0;
+    int anisotropy = 1;
+    int pixel = 0;
+    int border = 0;
+    int compare = 0;
+    float lodMin = 0.0f;
+    float lodMax = 0x1.fffffep+127f;
+};
+
+constexpr void apply(state &st, coord value)
+{
+    st.pixel = value == coord::pixel;
+}
+constexpr void apply(state &st, address value)
+{
+    st.s = st.t = st.r = int(value);
+}
+constexpr void apply(state &st, s_address value)
+{
+    st.s = int(value);
+}
+constexpr void apply(state &st, t_address value)
+{
+    st.t = int(value);
+}
+constexpr void apply(state &st, r_address value)
+{
+    st.r = int(value);
+}
+constexpr void apply(state &st, filter value)
+{
+    st.mag = st.min = int(value);
+}
+constexpr void apply(state &st, mag_filter value)
+{
+    st.mag = int(value);
+}
+constexpr void apply(state &st, min_filter value)
+{
+    st.min = int(value);
+}
+constexpr void apply(state &st, mip_filter value)
+{
+    st.mip = int(value);
+}
+constexpr void apply(state &st, compare_func value)
+{
+    st.compare = int(value);
+}
+constexpr void apply(state &st, border_color value)
+{
+    st.border = int(value);
+}
+constexpr void apply(state &st, max_anisotropy value)
+{
+    st.anisotropy = value.value;
+}
+constexpr void apply(state &st, lod_clamp value)
+{
+    st.lodMin = value.min;
+    st.lodMax = value.max;
+}
+
+// IEEE half bits of a level of detail, rounded to nearest and capped at
+// the largest finite half.
+constexpr ulong halfBits(float value)
+{
+    if (!(value > 0.0f))
+        return 0;
+    if (value >= 65504.0f)
+        return 0x7bff;
+    const uint bits = __builtin_bit_cast(uint, value);
+    const int exponent = int((bits >> 23) & 0xff) - 127 + 15;
+    uint mantissa = (bits & 0x7fffff) | 0x800000;
+    if (exponent <= 0) {
+        const int shift = 14 - exponent;
+        if (shift > 24)
+            return 0;
+        return (mantissa + (1u << (shift - 1))) >> shift;
+    }
+    uint result = (uint(exponent) << 10) | ((mantissa & 0x7fffff) >> 13);
+    if (mantissa & 0x1000)
+        ++result;
+    return result > 0x7bff ? 0x7bff : result;
+}
+
+// The packed state: address modes in bits 0-8, magnification, minification
+// and mip filters in 9-14, pixel coordinates in 15, border colour in 16-17,
+// anisotropy in 19-23, the level of detail clamp as two halves in 24-55,
+// the compare function in 56-59, bit 63 set.
+constexpr ulong encode(const state &st)
+{
+    return ulong(st.s) | ulong(st.t) << 3 | ulong(st.r) << 6 | ulong(st.mag) << 9 | ulong(st.min) << 11
+        | ulong(st.mip) << 13 | ulong(st.pixel) << 15 | ulong(st.border) << 16 | ulong(st.anisotropy & 31) << 19
+        | halfBits(st.lodMin) << 24 | halfBits(st.lodMax) << 40 | ulong(st.compare) << 56 | 1ul << 63;
+}
+
+template <class T> struct is_option {
+    static constexpr bool value = __msl::is_same<T, coord>::value || __msl::is_same<T, address>::value
+        || __msl::is_same<T, s_address>::value || __msl::is_same<T, t_address>::value
+        || __msl::is_same<T, r_address>::value || __msl::is_same<T, filter>::value
+        || __msl::is_same<T, mag_filter>::value || __msl::is_same<T, min_filter>::value
+        || __msl::is_same<T, mip_filter>::value || __msl::is_same<T, compare_func>::value
+        || __msl::is_same<T, border_color>::value || __msl::is_same<T, max_anisotropy>::value
+        || __msl::is_same<T, lod_clamp>::value;
+};
+
+template <class... A> constexpr ulong make(A... options)
+{
+    state st;
+    (apply(st, options), ...);
+    return encode(st);
+}
+
+} // namespace __sampler
+
+struct sampler;
+
+} // namespace metal
+
+constant _sampler_t *__msl_constant_sampler(ulong state) __asm__("reef.msl.constant_sampler");
+
+namespace metal {
+
+struct sampler {
+    constant _sampler_t *__h;
+    ulong __state;
+
+    constexpr sampler()
+        : __h(nullptr)
+        , __state(__sampler::make())
+    {
+    }
+
+    template <class... A, class = __msl::enable_if_t<(sizeof...(A) > 0) && (true && ... && __sampler::is_option<A>::value)>>
+    constexpr sampler(A... options)
+        : __h(nullptr)
+        , __state(__sampler::make(options...))
+    {
+    }
+
+    constant _sampler_t *__handle() const
+    {
+        return __h ? __h : __msl_constant_sampler(__state);
+    }
+};
+
+struct bias {
+    float value;
+    constexpr bias(float b)
+        : value(b)
+    {
+    }
+};
+
+struct level {
+    float lod;
+    constexpr level(float l)
+        : lod(l)
+    {
+    }
+};
+
+struct min_lod_clamp {
+    float value;
+    constexpr min_lod_clamp(float l)
+        : value(l)
+    {
+    }
+};
+
+struct gradient2d {
+    float2 dPdx;
+    float2 dPdy;
+    gradient2d(float2 x, float2 y)
+        : dPdx(x)
+        , dPdy(y)
+    {
+    }
+};
+
+struct gradient3d {
+    float3 dPdx;
+    float3 dPdy;
+    gradient3d(float3 x, float3 y)
+        : dPdx(x)
+        , dPdy(y)
+    {
+    }
+};
+
+struct gradientcube {
+    float3 dPdx;
+    float3 dPdy;
+    gradientcube(float3 x, float3 y)
+        : dPdx(x)
+        , dPdy(y)
+    {
+    }
+};
+
+namespace __texture {
+
+typedef device _texture_t *handle;
+typedef constant _sampler_t *sampler_handle;
+
+template <class T> struct ops;
+
+// Fetches return their value with a residency byte, which the compiler
+// adds when it turns these names into AIR's.
+#define __MSL_TEXTURE_OPS(T, S)                                                                                      \
+    template <> struct ops<T> {                                                                                      \
+        typedef vec<T, 4> V;                                                                                         \
+        static V sample_1d(handle, sampler_handle, float) __asm__("reef.msl.sample_texture_1d." S);                 \
+        static V sample_1d_array(handle, sampler_handle, float, uint) __asm__("reef.msl.sample_texture_1d_array." S); \
+        static V sample_2d(handle, sampler_handle, float2, bool, int2, bool, float, float, int)                      \
+            __asm__("reef.msl.sample_texture_2d." S);                                                                \
+        static V sample_2d_grad(handle, sampler_handle, float2, float2, float2, float, bool, int2)                   \
+            __asm__("reef.msl.sample_texture_2d_grad." S);                                                           \
+        static V sample_2d_array(handle, sampler_handle, float2, uint, bool, int2, bool, float, float, int)          \
+            __asm__("reef.msl.sample_texture_2d_array." S);                                                          \
+        static V sample_2d_array_grad(handle, sampler_handle, float2, uint, float2, float2, float, bool, int2)       \
+            __asm__("reef.msl.sample_texture_2d_array_grad." S);                                                     \
+        static V sample_3d(handle, sampler_handle, float3, bool, int3, bool, float, float, int)                      \
+            __asm__("reef.msl.sample_texture_3d." S);                                                                \
+        static V sample_3d_grad(handle, sampler_handle, float3, float3, float3, float, bool, int3)                   \
+            __asm__("reef.msl.sample_texture_3d_grad." S);                                                           \
+        static V sample_cube(handle, sampler_handle, float3, bool, float, float, int)                                \
+            __asm__("reef.msl.sample_texture_cube." S);                                                              \
+        static V sample_cube_grad(handle, sampler_handle, float3, float3, float3, float)                             \
+            __asm__("reef.msl.sample_texture_cube_grad." S);                                                         \
+        static V sample_cube_array(handle, sampler_handle, float3, uint, bool, float, float, int)                    \
+            __asm__("reef.msl.sample_texture_cube_array." S);                                                        \
+        static V sample_cube_array_grad(handle, sampler_handle, float3, uint, float3, float3, float)                 \
+            __asm__("reef.msl.sample_texture_cube_array_grad." S);                                                   \
+        static V gather_2d(handle, sampler_handle, float2, bool, int2, int) __asm__("reef.msl.gather_texture_2d." S); \
+        static V gather_2d_array(handle, sampler_handle, float2, uint, bool, int2, int)                              \
+            __asm__("reef.msl.gather_texture_2d_array." S);                                                          \
+        static V gather_cube(handle, sampler_handle, float3, int) __asm__("reef.msl.gather_texture_cube." S);        \
+        static V gather_cube_array(handle, sampler_handle, float3, uint, int)                                        \
+            __asm__("reef.msl.gather_texture_cube_array." S);                                                        \
+        static V read_1d(handle, uint, uint) __asm__("reef.msl.read_texture_1d." S);                                 \
+        static V read_1d_array(handle, uint, uint, uint) __asm__("reef.msl.read_texture_1d_array." S);               \
+        static V read_2d(handle, uint2, uint) __asm__("reef.msl.read_texture_2d." S);                                \
+        static V read_2d_array(handle, uint2, uint, uint) __asm__("reef.msl.read_texture_2d_array." S);              \
+        static V read_3d(handle, uint3, uint) __asm__("reef.msl.read_texture_3d." S);                                \
+        static V read_cube(handle, uint2, uint, uint) __asm__("reef.msl.read_texture_cube." S);                      \
+        static V read_cube_array(handle, uint2, uint, uint, uint) __asm__("reef.msl.read_texture_cube_array." S);    \
+        static V read_2d_ms(handle, uint2, uint) __asm__("reef.msl.read_texture_2d_ms." S);                          \
+        static V read_2d_ms_array(handle, uint2, uint, uint) __asm__("reef.msl.read_texture_2d_ms_array." S);        \
+        static V read_buffer(handle, uint) __asm__("reef.msl.read_texture_buffer_1d." S);                            \
+        static void write_1d(handle, uint, V, uint) __asm__("air.write_texture_1d." S);                              \
+        static void write_1d_array(handle, uint, uint, V, uint) __asm__("air.write_texture_1d_array." S);            \
+        static void write_2d(handle, uint2, V, uint) __asm__("air.write_texture_2d." S);                             \
+        static void write_2d_array(handle, uint2, uint, V, uint) __asm__("air.write_texture_2d_array." S);           \
+        static void write_3d(handle, uint3, V, uint) __asm__("air.write_texture_3d." S);                             \
+        static void write_cube(handle, uint2, uint, V, uint) __asm__("air.write_texture_cube." S);                   \
+        static void write_cube_array(handle, uint2, uint, uint, V, uint) __asm__("air.write_texture_cube_array." S); \
+        static void write_buffer(handle, uint, V) __asm__("air.write_texture_buffer_1d." S);                         \
+    };
+
+__MSL_TEXTURE_OPS(float, "v4f32")
+__MSL_TEXTURE_OPS(half, "v4f16")
+__MSL_TEXTURE_OPS(int, "s.v4i32")
+__MSL_TEXTURE_OPS(uint, "u.v4i32")
+__MSL_TEXTURE_OPS(short, "s.v4i16")
+__MSL_TEXTURE_OPS(ushort, "u.v4i16")
+
+struct depth_ops {
+    static float sample_2d(handle, sampler_handle, float2, bool, int2, bool, float, float, int)
+        __asm__("reef.msl.sample_depth_2d.f32");
+    static float sample_2d_grad(handle, sampler_handle, float2, float2, float2, float, bool, int2)
+        __asm__("reef.msl.sample_depth_2d_grad.f32");
+    static float sample_2d_array(handle, sampler_handle, float2, uint, bool, int2, bool, float, float, int)
+        __asm__("reef.msl.sample_depth_2d_array.f32");
+    static float sample_cube(handle, sampler_handle, float3, bool, float, float, int)
+        __asm__("reef.msl.sample_depth_cube.f32");
+    static float sample_cube_array(handle, sampler_handle, float3, uint, bool, float, float, int)
+        __asm__("reef.msl.sample_depth_cube_array.f32");
+    static float sample_compare_2d(handle, sampler_handle, float2, float, bool, int2, bool, float, float, int)
+        __asm__("reef.msl.sample_compare_depth_2d.f32");
+    static float sample_compare_2d_array(handle, sampler_handle, float2, uint, float, bool, int2, bool, float, float,
+        int) __asm__("reef.msl.sample_compare_depth_2d_array.f32");
+    static float sample_compare_cube(handle, sampler_handle, float3, float, bool, float, float, int)
+        __asm__("reef.msl.sample_compare_depth_cube.f32");
+    static float sample_compare_cube_array(handle, sampler_handle, float3, uint, float, bool, float, float, int)
+        __asm__("reef.msl.sample_compare_depth_cube_array.f32");
+    static float4 gather_2d(handle, sampler_handle, float2, bool, int2) __asm__("reef.msl.gather_depth_2d.f32");
+    static float4 gather_2d_array(handle, sampler_handle, float2, uint, bool, int2)
+        __asm__("reef.msl.gather_depth_2d_array.f32");
+    static float4 gather_cube(handle, sampler_handle, float3) __asm__("reef.msl.gather_depth_cube.f32");
+    static float4 gather_compare_2d(handle, sampler_handle, float2, float, bool, int2)
+        __asm__("reef.msl.gather_compare_depth_2d.f32");
+    static float4 gather_compare_2d_array(handle, sampler_handle, float2, uint, float, bool, int2)
+        __asm__("reef.msl.gather_compare_depth_2d_array.f32");
+    static float4 gather_compare_cube(handle, sampler_handle, float3, float)
+        __asm__("reef.msl.gather_compare_depth_cube.f32");
+    static float read_2d(handle, uint2, uint) __asm__("reef.msl.read_depth_2d.f32");
+    static float read_2d_array(handle, uint2, uint, uint) __asm__("reef.msl.read_depth_2d_array.f32");
+    static float read_cube(handle, uint2, uint, uint) __asm__("reef.msl.read_depth_cube.f32");
+    static float read_2d_ms(handle, uint2, uint) __asm__("reef.msl.read_depth_2d_ms.f32");
+    static float read_2d_ms_array(handle, uint2, uint, uint) __asm__("reef.msl.read_depth_2d_ms_array.f32");
+};
+
+#define __MSL_TEXTURE_QUERIES(KIND)                                                                                  \
+    uint get_width_##KIND(handle, uint) __asm__("air.get_width_" #KIND);                                             \
+    uint get_height_##KIND(handle, uint) __asm__("air.get_height_" #KIND);                                           \
+    uint get_num_mip_levels_##KIND(handle) __asm__("air.get_num_mip_levels_" #KIND);
+
+__MSL_TEXTURE_QUERIES(texture_1d)
+__MSL_TEXTURE_QUERIES(texture_1d_array)
+__MSL_TEXTURE_QUERIES(texture_2d)
+__MSL_TEXTURE_QUERIES(texture_2d_array)
+__MSL_TEXTURE_QUERIES(texture_3d)
+__MSL_TEXTURE_QUERIES(texture_cube)
+__MSL_TEXTURE_QUERIES(texture_cube_array)
+__MSL_TEXTURE_QUERIES(texture_2d_ms)
+__MSL_TEXTURE_QUERIES(texture_2d_ms_array)
+__MSL_TEXTURE_QUERIES(depth_2d)
+__MSL_TEXTURE_QUERIES(depth_2d_array)
+__MSL_TEXTURE_QUERIES(depth_cube)
+__MSL_TEXTURE_QUERIES(depth_cube_array)
+__MSL_TEXTURE_QUERIES(depth_2d_ms)
+__MSL_TEXTURE_QUERIES(depth_2d_ms_array)
+
+uint get_width_texture_buffer_1d(handle) __asm__("air.get_width_texture_buffer_1d");
+uint get_depth_texture_3d(handle, uint) __asm__("air.get_depth_texture_3d");
+uint get_array_size_texture_1d_array(handle) __asm__("air.get_array_size_texture_1d_array");
+uint get_array_size_texture_2d_array(handle) __asm__("air.get_array_size_texture_2d_array");
+uint get_array_size_texture_cube_array(handle) __asm__("air.get_array_size_texture_cube_array");
+uint get_array_size_texture_2d_ms_array(handle) __asm__("air.get_array_size_texture_2d_ms_array");
+uint get_array_size_depth_2d_array(handle) __asm__("air.get_array_size_depth_2d_array");
+uint get_array_size_depth_cube_array(handle) __asm__("air.get_array_size_depth_cube_array");
+uint get_array_size_depth_2d_ms_array(handle) __asm__("air.get_array_size_depth_2d_ms_array");
+uint get_num_samples_texture_2d_ms(handle) __asm__("air.get_num_samples_texture_2d_ms");
+uint get_num_samples_texture_2d_ms_array(handle) __asm__("air.get_num_samples_texture_2d_ms_array");
+uint get_num_samples_depth_2d_ms(handle) __asm__("air.get_num_samples_depth_2d_ms");
+uint get_num_samples_depth_2d_ms_array(handle) __asm__("air.get_num_samples_depth_2d_ms_array");
+
+} // namespace __texture
+
+#define __MSL_TEXTURE_COMMON(KIND)                                                                                   \
+    __texture::handle __h;                                                                                           \
+    uint get_width(uint lod = 0) const                                                                               \
+    {                                                                                                                \
+        return __texture::get_width_##KIND(__h, lod);                                                                \
+    }                                                                                                                \
+    uint get_num_mip_levels() const                                                                                  \
+    {                                                                                                                \
+        return __texture::get_num_mip_levels_##KIND(__h);                                                            \
+    }                                                                                                                \
+    void fence() const                                                                                               \
+    {                                                                                                                \
+    }
+
+#define __MSL_TEXTURE_HEIGHT(KIND)                                                                                   \
+    uint get_height(uint lod = 0) const                                                                              \
+    {                                                                                                                \
+        return __texture::get_height_##KIND(__h, lod);                                                               \
+    }
+
+template <class T, access A = access::sample> struct texture1d {
+    __MSL_TEXTURE_COMMON(texture_1d)
+    vec<T, 4> sample(sampler s, float x) const
+    {
+        return __texture::ops<T>::sample_1d(__h, s.__handle(), x);
+    }
+    vec<T, 4> read(uint x, uint lod = 0) const
+    {
+        return __texture::ops<T>::read_1d(__h, x, lod);
+    }
+    vec<T, 4> read(ushort x, ushort lod = 0) const
+    {
+        return read(uint(x), uint(lod));
+    }
+    void write(vec<T, 4> color, uint x, uint lod = 0) const
+    {
+        __texture::ops<T>::write_1d(__h, x, color, lod);
+    }
+};
+
+template <class T, access A = access::sample> struct texture1d_array {
+    __MSL_TEXTURE_COMMON(texture_1d_array)
+    uint get_array_size() const
+    {
+        return __texture::get_array_size_texture_1d_array(__h);
+    }
+    vec<T, 4> sample(sampler s, float x, uint array) const
+    {
+        return __texture::ops<T>::sample_1d_array(__h, s.__handle(), x, array);
+    }
+    vec<T, 4> read(uint x, uint array, uint lod = 0) const
+    {
+        return __texture::ops<T>::read_1d_array(__h, x, array, lod);
+    }
+    void write(vec<T, 4> color, uint x, uint array, uint lod = 0) const
+    {
+        __texture::ops<T>::write_1d_array(__h, x, array, color, lod);
+    }
+};
+
+template <class T, access A = access::sample> struct texture2d {
+    __MSL_TEXTURE_COMMON(texture_2d)
+    __MSL_TEXTURE_HEIGHT(texture_2d)
+    vec<T, 4> sample(sampler s, float2 coord, int2 offset = int2(0)) const
+    {
+        return __texture::ops<T>::sample_2d(__h, s.__handle(), coord, true, offset, false, 0.0f, 0.0f, 0);
+    }
+    vec<T, 4> sample(sampler s, float2 coord, bias options, int2 offset = int2(0)) const
+    {
+        return __texture::ops<T>::sample_2d(__h, s.__handle(), coord, true, offset, true, options.value, 0.0f, 0);
+    }
+    vec<T, 4> sample(sampler s, float2 coord, level options, int2 offset = int2(0)) const
+    {
+        return __texture::ops<T>::sample_2d(__h, s.__handle(), coord, true, offset, true, options.lod, 0.0f, 1);
+    }
+    vec<T, 4> sample(sampler s, float2 coord, min_lod_clamp options, int2 offset = int2(0)) const
+    {
+        return __texture::ops<T>::sample_2d(__h, s.__handle(), coord, true, offset, false, 0.0f, options.value, 0);
+    }
+    vec<T, 4> sample(sampler s, float2 coord, bias b, min_lod_clamp c, int2 offset = int2(0)) const
+    {
+        return __texture::ops<T>::sample_2d(__h, s.__handle(), coord, true, offset, true, b.value, c.value, 0);
+    }
+    vec<T, 4> sample(sampler s, float2 coord, gradient2d options, int2 offset = int2(0)) const
+    {
+        return __texture::ops<T>::sample_2d_grad(__h, s.__handle(), coord, options.dPdx, options.dPdy, 0.0f, true,
+            offset);
+    }
+    vec<T, 4> sample(sampler s, float2 coord, gradient2d options, min_lod_clamp c, int2 offset = int2(0)) const
+    {
+        return __texture::ops<T>::sample_2d_grad(__h, s.__handle(), coord, options.dPdx, options.dPdy, c.value,
+            true, offset);
+    }
+    vec<T, 4> gather(sampler s, float2 coord, int2 offset = int2(0), component c = component::x) const
+    {
+        return __texture::ops<T>::gather_2d(__h, s.__handle(), coord, true, offset, int(c));
+    }
+    vec<T, 4> read(uint2 coord, uint lod = 0) const
+    {
+        return __texture::ops<T>::read_2d(__h, coord, lod);
+    }
+    vec<T, 4> read(ushort2 coord, ushort lod = 0) const
+    {
+        return read(uint2(coord), uint(lod));
+    }
+    void write(vec<T, 4> color, uint2 coord, uint lod = 0) const
+    {
+        __texture::ops<T>::write_2d(__h, coord, color, lod);
+    }
+    void write(vec<T, 4> color, ushort2 coord, ushort lod = 0) const
+    {
+        write(color, uint2(coord), uint(lod));
+    }
+};
+
+template <class T, access A = access::sample> struct texture2d_array {
+    __MSL_TEXTURE_COMMON(texture_2d_array)
+    __MSL_TEXTURE_HEIGHT(texture_2d_array)
+    uint get_array_size() const
+    {
+        return __texture::get_array_size_texture_2d_array(__h);
+    }
+    vec<T, 4> sample(sampler s, float2 coord, uint array, int2 offset = int2(0)) const
+    {
+        return __texture::ops<T>::sample_2d_array(__h, s.__handle(), coord, array, true, offset, false, 0.0f, 0.0f,
+            0);
+    }
+    vec<T, 4> sample(sampler s, float2 coord, uint array, bias options, int2 offset = int2(0)) const
+    {
+        return __texture::ops<T>::sample_2d_array(__h, s.__handle(), coord, array, true, offset, true,
+            options.value, 0.0f, 0);
+    }
+    vec<T, 4> sample(sampler s, float2 coord, uint array, level options, int2 offset = int2(0)) const
+    {
+        return __texture::ops<T>::sample_2d_array(__h, s.__handle(), coord, array, true, offset, true, options.lod,
+            0.0f, 1);
+    }
+    vec<T, 4> sample(sampler s, float2 coord, uint array, gradient2d options, int2 offset = int2(0)) const
+    {
+        return __texture::ops<T>::sample_2d_array_grad(__h, s.__handle(), coord, array, options.dPdx, options.dPdy,
+            0.0f, true, offset);
+    }
+    vec<T, 4> gather(sampler s, float2 coord, uint array, int2 offset = int2(0), component c = component::x) const
+    {
+        return __texture::ops<T>::gather_2d_array(__h, s.__handle(), coord, array, true, offset, int(c));
+    }
+    vec<T, 4> read(uint2 coord, uint array, uint lod = 0) const
+    {
+        return __texture::ops<T>::read_2d_array(__h, coord, array, lod);
+    }
+    void write(vec<T, 4> color, uint2 coord, uint array, uint lod = 0) const
+    {
+        __texture::ops<T>::write_2d_array(__h, coord, array, color, lod);
+    }
+};
+
+template <class T, access A = access::sample> struct texture3d {
+    __MSL_TEXTURE_COMMON(texture_3d)
+    __MSL_TEXTURE_HEIGHT(texture_3d)
+    uint get_depth(uint lod = 0) const
+    {
+        return __texture::get_depth_texture_3d(__h, lod);
+    }
+    vec<T, 4> sample(sampler s, float3 coord, int3 offset = int3(0)) const
+    {
+        return __texture::ops<T>::sample_3d(__h, s.__handle(), coord, true, offset, false, 0.0f, 0.0f, 0);
+    }
+    vec<T, 4> sample(sampler s, float3 coord, bias options, int3 offset = int3(0)) const
+    {
+        return __texture::ops<T>::sample_3d(__h, s.__handle(), coord, true, offset, true, options.value, 0.0f, 0);
+    }
+    vec<T, 4> sample(sampler s, float3 coord, level options, int3 offset = int3(0)) const
+    {
+        return __texture::ops<T>::sample_3d(__h, s.__handle(), coord, true, offset, true, options.lod, 0.0f, 1);
+    }
+    vec<T, 4> sample(sampler s, float3 coord, gradient3d options, int3 offset = int3(0)) const
+    {
+        return __texture::ops<T>::sample_3d_grad(__h, s.__handle(), coord, options.dPdx, options.dPdy, 0.0f, true,
+            offset);
+    }
+    vec<T, 4> read(uint3 coord, uint lod = 0) const
+    {
+        return __texture::ops<T>::read_3d(__h, coord, lod);
+    }
+    void write(vec<T, 4> color, uint3 coord, uint lod = 0) const
+    {
+        __texture::ops<T>::write_3d(__h, coord, color, lod);
+    }
+};
+
+template <class T, access A = access::sample> struct texturecube {
+    __MSL_TEXTURE_COMMON(texture_cube)
+    __MSL_TEXTURE_HEIGHT(texture_cube)
+    vec<T, 4> sample(sampler s, float3 coord) const
+    {
+        return __texture::ops<T>::sample_cube(__h, s.__handle(), coord, false, 0.0f, 0.0f, 0);
+    }
+    vec<T, 4> sample(sampler s, float3 coord, bias options) const
+    {
+        return __texture::ops<T>::sample_cube(__h, s.__handle(), coord, true, options.value, 0.0f, 0);
+    }
+    vec<T, 4> sample(sampler s, float3 coord, level options) const
+    {
+        return __texture::ops<T>::sample_cube(__h, s.__handle(), coord, true, options.lod, 0.0f, 1);
+    }
+    vec<T, 4> sample(sampler s, float3 coord, gradientcube options) const
+    {
+        return __texture::ops<T>::sample_cube_grad(__h, s.__handle(), coord, options.dPdx, options.dPdy, 0.0f);
+    }
+    vec<T, 4> gather(sampler s, float3 coord, component c = component::x) const
+    {
+        return __texture::ops<T>::gather_cube(__h, s.__handle(), coord, int(c));
+    }
+    vec<T, 4> read(uint2 coord, uint face, uint lod = 0) const
+    {
+        return __texture::ops<T>::read_cube(__h, coord, face, lod);
+    }
+    void write(vec<T, 4> color, uint2 coord, uint face, uint lod = 0) const
+    {
+        __texture::ops<T>::write_cube(__h, coord, face, color, lod);
+    }
+};
+
+template <class T, access A = access::sample> struct texturecube_array {
+    __MSL_TEXTURE_COMMON(texture_cube_array)
+    __MSL_TEXTURE_HEIGHT(texture_cube_array)
+    uint get_array_size() const
+    {
+        return __texture::get_array_size_texture_cube_array(__h);
+    }
+    vec<T, 4> sample(sampler s, float3 coord, uint array) const
+    {
+        return __texture::ops<T>::sample_cube_array(__h, s.__handle(), coord, array, false, 0.0f, 0.0f, 0);
+    }
+    vec<T, 4> sample(sampler s, float3 coord, uint array, level options) const
+    {
+        return __texture::ops<T>::sample_cube_array(__h, s.__handle(), coord, array, true, options.lod, 0.0f, 1);
+    }
+    vec<T, 4> sample(sampler s, float3 coord, uint array, gradientcube options) const
+    {
+        return __texture::ops<T>::sample_cube_array_grad(__h, s.__handle(), coord, array, options.dPdx,
+            options.dPdy, 0.0f);
+    }
+    vec<T, 4> gather(sampler s, float3 coord, uint array, component c = component::x) const
+    {
+        return __texture::ops<T>::gather_cube_array(__h, s.__handle(), coord, array, int(c));
+    }
+    vec<T, 4> read(uint2 coord, uint face, uint array, uint lod = 0) const
+    {
+        return __texture::ops<T>::read_cube_array(__h, coord, face, array, lod);
+    }
+    void write(vec<T, 4> color, uint2 coord, uint face, uint array, uint lod = 0) const
+    {
+        __texture::ops<T>::write_cube_array(__h, coord, face, array, color, lod);
+    }
+};
+
+template <class T, access A = access::read> struct texture2d_ms {
+    __MSL_TEXTURE_COMMON(texture_2d_ms)
+    __MSL_TEXTURE_HEIGHT(texture_2d_ms)
+    uint get_num_samples() const
+    {
+        return __texture::get_num_samples_texture_2d_ms(__h);
+    }
+    vec<T, 4> read(uint2 coord, uint sample) const
+    {
+        return __texture::ops<T>::read_2d_ms(__h, coord, sample);
+    }
+};
+
+template <class T, access A = access::read> struct texture2d_ms_array {
+    __MSL_TEXTURE_COMMON(texture_2d_ms_array)
+    __MSL_TEXTURE_HEIGHT(texture_2d_ms_array)
+    uint get_num_samples() const
+    {
+        return __texture::get_num_samples_texture_2d_ms_array(__h);
+    }
+    uint get_array_size() const
+    {
+        return __texture::get_array_size_texture_2d_ms_array(__h);
+    }
+    vec<T, 4> read(uint2 coord, uint array, uint sample) const
+    {
+        return __texture::ops<T>::read_2d_ms_array(__h, coord, array, sample);
+    }
+};
+
+template <class T, access A = access::read> struct texture_buffer {
+    __texture::handle __h;
+    uint get_width() const
+    {
+        return __texture::get_width_texture_buffer_1d(__h);
+    }
+    vec<T, 4> read(uint x) const
+    {
+        return __texture::ops<T>::read_buffer(__h, x);
+    }
+    void write(vec<T, 4> color, uint x) const
+    {
+        __texture::ops<T>::write_buffer(__h, x, color);
+    }
+};
+
+template <class T, access A = access::sample> struct depth2d {
+    __MSL_TEXTURE_COMMON(depth_2d)
+    __MSL_TEXTURE_HEIGHT(depth_2d)
+    T sample(sampler s, float2 coord, int2 offset = int2(0)) const
+    {
+        return __texture::depth_ops::sample_2d(__h, s.__handle(), coord, true, offset, false, 0.0f, 0.0f, 0);
+    }
+    T sample(sampler s, float2 coord, level options, int2 offset = int2(0)) const
+    {
+        return __texture::depth_ops::sample_2d(__h, s.__handle(), coord, true, offset, true, options.lod, 0.0f, 1);
+    }
+    T sample(sampler s, float2 coord, bias options, int2 offset = int2(0)) const
+    {
+        return __texture::depth_ops::sample_2d(__h, s.__handle(), coord, true, offset, true, options.value, 0.0f,
+            0);
+    }
+    T sample(sampler s, float2 coord, gradient2d options, int2 offset = int2(0)) const
+    {
+        return __texture::depth_ops::sample_2d_grad(__h, s.__handle(), coord, options.dPdx, options.dPdy, 0.0f, true,
+            offset);
+    }
+    T sample_compare(sampler s, float2 coord, float compare, int2 offset = int2(0)) const
+    {
+        return __texture::depth_ops::sample_compare_2d(__h, s.__handle(), coord, compare, true, offset, false, 0.0f,
+            0.0f, 0);
+    }
+    T sample_compare(sampler s, float2 coord, float compare, level options, int2 offset = int2(0)) const
+    {
+        return __texture::depth_ops::sample_compare_2d(__h, s.__handle(), coord, compare, true, offset, true,
+            options.lod, 0.0f, 1);
+    }
+    vec<T, 4> gather(sampler s, float2 coord, int2 offset = int2(0)) const
+    {
+        return __texture::depth_ops::gather_2d(__h, s.__handle(), coord, true, offset);
+    }
+    vec<T, 4> gather_compare(sampler s, float2 coord, float compare, int2 offset = int2(0)) const
+    {
+        return __texture::depth_ops::gather_compare_2d(__h, s.__handle(), coord, compare, true, offset);
+    }
+    T read(uint2 coord, uint lod = 0) const
+    {
+        return __texture::depth_ops::read_2d(__h, coord, lod);
+    }
+};
+
+template <class T, access A = access::sample> struct depth2d_array {
+    __MSL_TEXTURE_COMMON(depth_2d_array)
+    __MSL_TEXTURE_HEIGHT(depth_2d_array)
+    uint get_array_size() const
+    {
+        return __texture::get_array_size_depth_2d_array(__h);
+    }
+    T sample(sampler s, float2 coord, uint array, int2 offset = int2(0)) const
+    {
+        return __texture::depth_ops::sample_2d_array(__h, s.__handle(), coord, array, true, offset, false, 0.0f,
+            0.0f, 0);
+    }
+    T sample(sampler s, float2 coord, uint array, level options, int2 offset = int2(0)) const
+    {
+        return __texture::depth_ops::sample_2d_array(__h, s.__handle(), coord, array, true, offset, true,
+            options.lod, 0.0f, 1);
+    }
+    T sample_compare(sampler s, float2 coord, uint array, float compare, int2 offset = int2(0)) const
+    {
+        return __texture::depth_ops::sample_compare_2d_array(__h, s.__handle(), coord, array, compare, true, offset,
+            false, 0.0f, 0.0f, 0);
+    }
+    T sample_compare(sampler s, float2 coord, uint array, float compare, level options, int2 offset = int2(0)) const
+    {
+        return __texture::depth_ops::sample_compare_2d_array(__h, s.__handle(), coord, array, compare, true, offset,
+            true, options.lod, 0.0f, 1);
+    }
+    vec<T, 4> gather(sampler s, float2 coord, uint array, int2 offset = int2(0)) const
+    {
+        return __texture::depth_ops::gather_2d_array(__h, s.__handle(), coord, array, true, offset);
+    }
+    vec<T, 4> gather_compare(sampler s, float2 coord, uint array, float compare, int2 offset = int2(0)) const
+    {
+        return __texture::depth_ops::gather_compare_2d_array(__h, s.__handle(), coord, array, compare, true, offset);
+    }
+    T read(uint2 coord, uint array, uint lod = 0) const
+    {
+        return __texture::depth_ops::read_2d_array(__h, coord, array, lod);
+    }
+};
+
+template <class T, access A = access::sample> struct depthcube {
+    __MSL_TEXTURE_COMMON(depth_cube)
+    __MSL_TEXTURE_HEIGHT(depth_cube)
+    T sample(sampler s, float3 coord) const
+    {
+        return __texture::depth_ops::sample_cube(__h, s.__handle(), coord, false, 0.0f, 0.0f, 0);
+    }
+    T sample(sampler s, float3 coord, level options) const
+    {
+        return __texture::depth_ops::sample_cube(__h, s.__handle(), coord, true, options.lod, 0.0f, 1);
+    }
+    T sample_compare(sampler s, float3 coord, float compare) const
+    {
+        return __texture::depth_ops::sample_compare_cube(__h, s.__handle(), coord, compare, false, 0.0f, 0.0f, 0);
+    }
+    T sample_compare(sampler s, float3 coord, float compare, level options) const
+    {
+        return __texture::depth_ops::sample_compare_cube(__h, s.__handle(), coord, compare, true, options.lod, 0.0f,
+            1);
+    }
+    vec<T, 4> gather(sampler s, float3 coord) const
+    {
+        return __texture::depth_ops::gather_cube(__h, s.__handle(), coord);
+    }
+    vec<T, 4> gather_compare(sampler s, float3 coord, float compare) const
+    {
+        return __texture::depth_ops::gather_compare_cube(__h, s.__handle(), coord, compare);
+    }
+    T read(uint2 coord, uint face, uint lod = 0) const
+    {
+        return __texture::depth_ops::read_cube(__h, coord, face, lod);
+    }
+};
+
+template <class T, access A = access::sample> struct depthcube_array {
+    __MSL_TEXTURE_COMMON(depth_cube_array)
+    __MSL_TEXTURE_HEIGHT(depth_cube_array)
+    uint get_array_size() const
+    {
+        return __texture::get_array_size_depth_cube_array(__h);
+    }
+    T sample(sampler s, float3 coord, uint array) const
+    {
+        return __texture::depth_ops::sample_cube_array(__h, s.__handle(), coord, array, false, 0.0f, 0.0f, 0);
+    }
+    T sample_compare(sampler s, float3 coord, uint array, float compare) const
+    {
+        return __texture::depth_ops::sample_compare_cube_array(__h, s.__handle(), coord, array, compare, false, 0.0f,
+            0.0f, 0);
+    }
+};
+
+template <class T, access A = access::read> struct depth2d_ms {
+    __MSL_TEXTURE_COMMON(depth_2d_ms)
+    __MSL_TEXTURE_HEIGHT(depth_2d_ms)
+    uint get_num_samples() const
+    {
+        return __texture::get_num_samples_depth_2d_ms(__h);
+    }
+    T read(uint2 coord, uint sample) const
+    {
+        return __texture::depth_ops::read_2d_ms(__h, coord, sample);
+    }
+};
+
+template <class T, access A = access::read> struct depth2d_ms_array {
+    __MSL_TEXTURE_COMMON(depth_2d_ms_array)
+    __MSL_TEXTURE_HEIGHT(depth_2d_ms_array)
+    uint get_num_samples() const
+    {
+        return __texture::get_num_samples_depth_2d_ms_array(__h);
+    }
+    uint get_array_size() const
+    {
+        return __texture::get_array_size_depth_2d_ms_array(__h);
+    }
+    T read(uint2 coord, uint array, uint sample) const
+    {
+        return __texture::depth_ops::read_2d_ms_array(__h, coord, array, sample);
+    }
+};
+
+} // namespace metal
+
+#endif

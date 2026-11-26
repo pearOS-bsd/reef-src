@@ -1,0 +1,102 @@
+// Geometric functions. length, distance and normalize have fast and
+// precise variants, as the math functions do.
+#ifndef __REEF_METAL_GEOMETRIC
+#define __REEF_METAL_GEOMETRIC
+
+#include <metal_math>
+
+#define __MSL_EACH_FLOAT_VECTOR(M, ...)                                                                              \
+    M(float2, float, v2f32, __VA_ARGS__)                                                                             \
+    M(float3, float, v3f32, __VA_ARGS__)                                                                             \
+    M(float4, float, v4f32, __VA_ARGS__)                                                                             \
+    M(half2, half, v2f16, __VA_ARGS__)                                                                               \
+    M(half3, half, v3f16, __VA_ARGS__)                                                                               \
+    M(half4, half, v4f16, __VA_ARGS__)
+
+#define __MSL_GEOMETRIC(T, E, S, ...)                                                                                \
+    E dot(T x, T y) __asm__("air.dot." #S);                                                                         \
+    E length_squared(T x) __asm__("air.length_squared." #S);                                                        \
+    E distance_squared(T x, T y) __asm__("air.distance_squared." #S);                                               \
+    T faceforward(T n, T i, T nref) __asm__("air.faceforward." #S);                                                 \
+    T reflect(T i, T n) __asm__("air.reflect." #S);                                                                 \
+    T refract(T i, T n, E eta) __asm__("air.refract." #S);
+
+#define __MSL_GEOMETRIC_FAST(T, E, S, ...)                                                                           \
+    E length(T x) __asm__("air." __MSL_FAST "length." #S);                                                          \
+    E distance(T x, T y) __asm__("air." __MSL_FAST "distance." #S);                                                 \
+    T normalize(T x) __asm__("air." __MSL_FAST "normalize." #S);
+
+namespace metal {
+
+__MSL_EACH_FLOAT_VECTOR(__MSL_GEOMETRIC)
+
+float3 cross(float3 x, float3 y) __asm__("air.cross.v3f32");
+half3 cross(half3 x, half3 y) __asm__("air.cross.v3f16");
+
+inline float length(float x)
+{
+    return fabs(x);
+}
+
+inline half length(half x)
+{
+    return fabs(x);
+}
+
+inline float distance(float x, float y)
+{
+    return fabs(x - y);
+}
+
+inline half distance(half x, half y)
+{
+    return fabs(x - y);
+}
+
+inline float normalize(float x)
+{
+    return sign(x);
+}
+
+inline half normalize(half x)
+{
+    return sign(x);
+}
+
+inline float dot(float x, float y)
+{
+    return x * y;
+}
+
+inline half dot(half x, half y)
+{
+    return x * y;
+}
+
+#ifdef __FAST_MATH__
+#define __MSL_FAST "fast_"
+inline namespace fast {
+__MSL_EACH_FLOAT_VECTOR(__MSL_GEOMETRIC_FAST)
+}
+#undef __MSL_FAST
+#define __MSL_FAST ""
+namespace precise {
+__MSL_EACH_FLOAT_VECTOR(__MSL_GEOMETRIC_FAST)
+}
+#undef __MSL_FAST
+#else
+#define __MSL_FAST "fast_"
+namespace fast {
+__MSL_EACH_FLOAT_VECTOR(__MSL_GEOMETRIC_FAST)
+}
+#undef __MSL_FAST
+#define __MSL_FAST ""
+inline namespace precise {
+__MSL_EACH_FLOAT_VECTOR(__MSL_GEOMETRIC_FAST)
+}
+#undef __MSL_FAST
+#endif
+
+} // namespace metal
+
+#endif

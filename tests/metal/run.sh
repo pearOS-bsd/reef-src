@@ -1,15 +1,16 @@
 #!/bin/sh
 # The Metal translator: every shader of shaders/ through the C interface of the original and of ours (each next to the same MSL
 # compiler library, with an empty home, so that nothing comes from the cache), then once more on the cache each wrote; the
-# output must be the same.  usage: run.sh ORIGINAL_TRANSLATOR OURS [MSL_LIBRARY]
+# output must be the same.  usage: run.sh ORIGINAL_TRANSLATOR OURS [MSL_LIBRARY [OUR_MSL_LIBRARY]]
 here=$(cd "$(dirname "$0")" && pwd)
 original=$1 ours=$2 msl=${3:-$(dirname "$1")/libreef-metal-msl.so}
+ourMsl=${4:-$msl}
 work=$(mktemp -d)
 g++ -O1 -std=c++20 -o "$work/drive" "$here/drive.cpp" -ldl || exit 1
 for side in original ours; do
     mkdir -p "$work/$side/lib" "$work/$side/home"
     eval "cp \"\$$side\" \"$work/$side/lib/libreef-metal-translator.so\""
-    ln -s "$msl" "$work/$side/lib/libreef-metal-msl.so"
+    if [ $side = original ]; then ln -s "$msl" "$work/$side/lib/libreef-metal-msl.so"; else ln -s "$ourMsl" "$work/$side/lib/libreef-metal-msl.so"; fi
 done
 failed=0
 for run in 1 2; do

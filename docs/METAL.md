@@ -30,4 +30,24 @@ LLVM's reader.
 
 ## libreef-metal-msl.so
 
-In progress.
+`lib/cutefish-reef/lib/libreef-metal-msl.so`: `cutefish::reef::metal::compileMsl(llvm::LLVMContext&, const std::string& source,
+const MslOptions&, std::string& errors)` (`msl.h`): Metal Shading Language to an LLVM module in AIR form, with clang 19.1
+(`libclang-cpp.so.19.1`). The translator loads it from its own folder.
+
+| file | what |
+|---|---|
+| `attributes.cpp` | Metal's attributes (`[[position]]`, `[[buffer(n)]]` ...) on clang's AST |
+| `compile.cpp` | the compiler invocation, options (language version, fast math, macros), diagnostics (at most 20) |
+| `entry_points.cpp` | vertex, fragment and kernel functions: arguments, roles, the AIR metadata |
+| `types.cpp`, `argument_buffers.cpp` | AIR type names, argument buffers |
+| `lower.cpp` | the IR rewritten into AIR: address spaces, intrinsic names, program-scope constructors, clean-up passes |
+| `source.cpp` | the source rewritten before clang sees it |
+| `include/` | the Metal standard library headers clang is given (163321 bytes, the same as in the binary's read-only data; no
+  licence line in them, which would change their bytes: they are part of the BSD-3-Clause binary) |
+| `embed.cmake` | makes `headers.cpp` of `include/` at build time |
+
+Checked: `tests/metal/msl.sh` (CI): 93 sources (the standard library, stages, atomics, every language version from 1.0 to 4.0,
+fast math off, macros, error limits, warnings, `#error`, missing headers, program-scope constructors, the source rewriting)
+compiled by both: the same LLVM text, bitcode and errors; 1530 sources by hand, the same (19 crash both: `function_constant` on a
+parameter or a struct member, AIR functions declared again by the program with another type). `tests/metal/run.sh` also runs
+with both of ours against both originals: the same 77680 lines.

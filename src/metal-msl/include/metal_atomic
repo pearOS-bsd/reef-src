@@ -1,0 +1,115 @@
+// Atomic objects in device and threadgroup memory.
+#ifndef __REEF_METAL_ATOMIC
+#define __REEF_METAL_ATOMIC
+
+#include <metal_types>
+
+namespace metal {
+
+enum memory_order {
+    memory_order_relaxed = __ATOMIC_RELAXED,
+    memory_order_acquire = __ATOMIC_ACQUIRE,
+    memory_order_release = __ATOMIC_RELEASE,
+    memory_order_acq_rel = __ATOMIC_ACQ_REL,
+    memory_order_seq_cst = __ATOMIC_SEQ_CST,
+};
+
+enum class thread_scope {
+    thread_scope_thread,
+    thread_scope_simdgroup,
+    thread_scope_threadgroup,
+    thread_scope_device,
+};
+
+template <class T> struct atomic {
+    T __value;
+};
+
+typedef atomic<int> atomic_int;
+typedef atomic<uint> atomic_uint;
+typedef atomic<float> atomic_float;
+
+namespace __atomic {
+
+// The operand types follow the object, so a plain literal converts.
+template <class T> struct operand {
+    typedef T type;
+};
+
+// AIR's atomics: air.atomic.<space>.<operation>.<s|u|f>.<type>(pointer,
+// value or expected, [desired], order, [order], scope); the scope is 2 for
+// the device, 1 for the threadgroup.
+#define __MSL_ATOMIC_CALLS(SPACE, NAME, T, S)                                                                        \
+    T load(const volatile SPACE T *, int, int) __asm__("air.atomic." NAME ".load." S);                              \
+    void store(volatile SPACE T *, T, int, int) __asm__("air.atomic." NAME ".store." S);                            \
+    T exchange(volatile SPACE T *, T, int, int) __asm__("air.atomic." NAME ".xchg." S);                             \
+    bool compare_exchange(volatile SPACE T *, thread T *, T, int, int, int)                                         \
+        __asm__("air.atomic." NAME ".cmpxchg.weak." S);                                                              \
+    T fetch_add(volatile SPACE T *, T, int, int) __asm__("air.atomic." NAME ".add." S);                             \
+    T fetch_sub(volatile SPACE T *, T, int, int) __asm__("air.atomic." NAME ".sub." S);                             \
+    T fetch_min(volatile SPACE T *, T, int, int) __asm__("air.atomic." NAME ".min." S);                             \
+    T fetch_max(volatile SPACE T *, T, int, int) __asm__("air.atomic." NAME ".max." S);
+
+#define __MSL_ATOMIC_BITS(SPACE, NAME, T, S)                                                                         \
+    T fetch_and(volatile SPACE T *, T, int, int) __asm__("air.atomic." NAME ".and." S);                             \
+    T fetch_or(volatile SPACE T *, T, int, int) __asm__("air.atomic." NAME ".or." S);                               \
+    T fetch_xor(volatile SPACE T *, T, int, int) __asm__("air.atomic." NAME ".xor." S);
+
+__MSL_ATOMIC_CALLS(device, "global", int, "s.i32")
+__MSL_ATOMIC_CALLS(device, "global", uint, "u.i32")
+__MSL_ATOMIC_CALLS(device, "global", float, "f.f32")
+__MSL_ATOMIC_CALLS(threadgroup, "local", int, "s.i32")
+__MSL_ATOMIC_CALLS(threadgroup, "local", uint, "u.i32")
+__MSL_ATOMIC_CALLS(threadgroup, "local", float, "f.f32")
+__MSL_ATOMIC_BITS(device, "global", int, "s.i32")
+__MSL_ATOMIC_BITS(device, "global", uint, "u.i32")
+__MSL_ATOMIC_BITS(threadgroup, "local", int, "s.i32")
+__MSL_ATOMIC_BITS(threadgroup, "local", uint, "u.i32")
+
+} // namespace __atomic
+
+#define __MSL_ATOMIC_FUNCTIONS(SPACE, SCOPE)                                                                         \
+    template <class T> inline T atomic_load_explicit(const volatile SPACE atomic<T> *object, memory_order order)     \
+    {                                                                                                                \
+        return __atomic::load(&object->__value, order, SCOPE);                                                       \
+    }                                                                                                                \
+    template <class T>                                                                                               \
+    inline void atomic_store_explicit(volatile SPACE atomic<T> *object, typename __atomic::operand<T>::type value,   \
+        memory_order order)                                                                                          \
+    {                                                                                                                \
+        __atomic::store(&object->__value, value, order, SCOPE);                                                      \
+    }                                                                                                                \
+    template <class T>                                                                                               \
+    inline T atomic_exchange_explicit(volatile SPACE atomic<T> *object, typename __atomic::operand<T>::type value,   \
+        memory_order order)                                                                                          \
+    {                                                                                                                \
+        return __atomic::exchange(&object->__value, value, order, SCOPE);                                            \
+    }                                                                                                                \
+    template <class T>                                                                                               \
+    inline bool atomic_compare_exchange_weak_explicit(volatile SPACE atomic<T> *object, thread T *expected,          \
+        typename __atomic::operand<T>::type desired, memory_order success, memory_order failure)                     \
+    {                                                                                                                \
+        return __atomic::compare_exchange(&object->__value, expected, desired, success, failure, SCOPE);             \
+    }                                                                                                                \
+    __MSL_ATOMIC_RMW(SPACE, SCOPE, add)                                                                              \
+    __MSL_ATOMIC_RMW(SPACE, SCOPE, sub)                                                                              \
+    __MSL_ATOMIC_RMW(SPACE, SCOPE, and)                                                                              \
+    __MSL_ATOMIC_RMW(SPACE, SCOPE, or)                                                                               \
+    __MSL_ATOMIC_RMW(SPACE, SCOPE, xor)                                                                              \
+    __MSL_ATOMIC_RMW(SPACE, SCOPE, min)                                                                              \
+    __MSL_ATOMIC_RMW(SPACE, SCOPE, max)
+
+#define __MSL_ATOMIC_RMW(SPACE, SCOPE, OP)                                                                           \
+    template <class T>                                                                                               \
+    inline T atomic_fetch_##OP##_explicit(volatile SPACE atomic<T> *object,                                          \
+        typename __atomic::operand<T>::type value, memory_order order)                                               \
+    {                                                                                                                \
+        return __atomic::fetch_##OP(&object->__value, value, order, SCOPE);                                          \
+    }
+
+__MSL_ATOMIC_FUNCTIONS(device, 2)
+__MSL_ATOMIC_FUNCTIONS(threadgroup, 1)
+
+} // namespace metal
+
+#endif

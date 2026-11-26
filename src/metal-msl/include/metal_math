@@ -1,0 +1,277 @@
+// Math functions: metal::fast and metal::precise, one of them inline after
+// the program's fast math option.
+#ifndef __REEF_METAL_MATH
+#define __REEF_METAL_MATH
+
+#include <metal_types>
+
+#define __MSL_EACH_FLOAT(M, ...)                                                                                     \
+    M(float, f32, __VA_ARGS__)                                                                                       \
+    M(float2, v2f32, __VA_ARGS__)                                                                                    \
+    M(float3, v3f32, __VA_ARGS__)                                                                                    \
+    M(float4, v4f32, __VA_ARGS__)                                                                                    \
+    M(half, f16, __VA_ARGS__)                                                                                        \
+    M(half2, v2f16, __VA_ARGS__)                                                                                     \
+    M(half3, v3f16, __VA_ARGS__)                                                                                     \
+    M(half4, v4f16, __VA_ARGS__)
+
+#define __MSL_MATH1(T, S, NAME, AIR) T NAME(T x) __asm__("air." __MSL_FAST AIR "." #S);
+#define __MSL_MATH2(T, S, NAME, AIR) T NAME(T x, T y) __asm__("air." __MSL_FAST AIR "." #S);
+#define __MSL_MATH3(T, S, NAME, AIR) T NAME(T x, T y, T z) __asm__("air." __MSL_FAST AIR "." #S);
+
+#define __MSL_MATH_FUNCTIONS                                                                                         \
+    __MSL_EACH_FLOAT(__MSL_MATH1, acos, "acos")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH1, acosh, "acosh")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH1, asin, "asin")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH1, asinh, "asinh")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH1, atan, "atan")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH1, atanh, "atanh")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH1, ceil, "ceil")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH1, cos, "cos")                                                                        \
+    __MSL_EACH_FLOAT(__MSL_MATH1, cosh, "cosh")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH1, cospi, "cospi")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH1, exp, "exp")                                                                        \
+    __MSL_EACH_FLOAT(__MSL_MATH1, exp2, "exp2")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH1, exp10, "exp10")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH1, fabs, "fabs")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH1, abs, "fabs")                                                                       \
+    __MSL_EACH_FLOAT(__MSL_MATH1, floor, "floor")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH1, fract, "fract")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH1, log, "log")                                                                        \
+    __MSL_EACH_FLOAT(__MSL_MATH1, log2, "log2")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH1, log10, "log10")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH1, rint, "rint")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH1, round, "round")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH1, rsqrt, "rsqrt")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH1, sin, "sin")                                                                        \
+    __MSL_EACH_FLOAT(__MSL_MATH1, sinh, "sinh")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH1, sinpi, "sinpi")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH1, sqrt, "sqrt")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH1, tan, "tan")                                                                        \
+    __MSL_EACH_FLOAT(__MSL_MATH1, tanh, "tanh")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH1, tanpi, "tanpi")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH1, trunc, "trunc")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH1, saturate, "saturate")                                                              \
+    __MSL_EACH_FLOAT(__MSL_MATH2, atan2, "atan2")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH2, copysign, "copysign")                                                              \
+    __MSL_EACH_FLOAT(__MSL_MATH2, divide, "divide")                                                                  \
+    __MSL_EACH_FLOAT(__MSL_MATH2, fdim, "fdim")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH2, fmax, "fmax")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH2, max, "fmax")                                                                       \
+    __MSL_EACH_FLOAT(__MSL_MATH2, fmin, "fmin")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH2, min, "fmin")                                                                       \
+    __MSL_EACH_FLOAT(__MSL_MATH2, fmod, "fmod")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH2, nextafter, "nextafter")                                                            \
+    __MSL_EACH_FLOAT(__MSL_MATH2, pow, "pow")                                                                        \
+    __MSL_EACH_FLOAT(__MSL_MATH2, powr, "powr")                                                                      \
+    __MSL_EACH_FLOAT(__MSL_MATH3, clamp, "clamp")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH3, fma, "fma")                                                                        \
+    __MSL_EACH_FLOAT(__MSL_MATH3, fmax3, "fmax3")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH3, max3, "fmax3")                                                                     \
+    __MSL_EACH_FLOAT(__MSL_MATH3, fmin3, "fmin3")                                                                    \
+    __MSL_EACH_FLOAT(__MSL_MATH3, min3, "fmin3")                                                                     \
+    __MSL_EACH_FLOAT(__MSL_MATH3, fmedian3, "fmedian3")                                                              \
+    __MSL_EACH_FLOAT(__MSL_MATH3, median3, "fmedian3")
+
+namespace metal {
+
+#ifdef __FAST_MATH__
+#define __MSL_FAST "fast_"
+inline namespace fast {
+__MSL_MATH_FUNCTIONS
+}
+#undef __MSL_FAST
+#define __MSL_FAST ""
+namespace precise {
+__MSL_MATH_FUNCTIONS
+}
+#undef __MSL_FAST
+#else
+#define __MSL_FAST "fast_"
+namespace fast {
+__MSL_MATH_FUNCTIONS
+}
+#undef __MSL_FAST
+#define __MSL_FAST ""
+inline namespace precise {
+__MSL_MATH_FUNCTIONS
+}
+#undef __MSL_FAST
+#endif
+
+namespace __math {
+
+template <class T> struct bits_of;
+template <> struct bits_of<float> {
+    typedef uint type;
+    typedef int signed_type;
+    static constexpr int mantissa = 23;
+    static constexpr int bias = 127;
+    static constexpr uint exponent_mask = 0x7f800000u;
+    static constexpr uint mantissa_mask = 0x007fffffu;
+};
+template <> struct bits_of<half> {
+    typedef ushort type;
+    typedef short signed_type;
+    static constexpr int mantissa = 10;
+    static constexpr int bias = 15;
+    static constexpr ushort exponent_mask = 0x7c00;
+    static constexpr ushort mantissa_mask = 0x03ff;
+};
+
+template <class T> using element = typename __msl::traits<T>::element;
+template <class T> using unsigned_bits = typename __msl::conditional<__msl::traits<T>::vector,
+    vec<typename bits_of<element<T>>::type, __msl::traits<T>::size>, typename bits_of<element<T>>::type>::type;
+template <class T> using int_result = typename __msl::conditional<__msl::traits<T>::vector,
+    vec<int, __msl::traits<T>::size>, int>::type;
+template <class T> using bool_result = typename __msl::conditional<__msl::traits<T>::vector,
+    __msl_bool_vector<__msl::traits<T>::size>, bool>::type;
+
+template <class T> inline unsigned_bits<T> bits(T x)
+{
+    return as_type<unsigned_bits<T>>(x);
+}
+
+// mask ? a : b, elementwise for vectors.
+template <class M, class T> inline T pick(M mask, T a, T b)
+{
+    if constexpr (__msl::traits<T>::vector) {
+        T result {};
+        for (int k = 0; k < __msl::traits<T>::size; ++k)
+            result[k] = mask[k] ? a[k] : b[k];
+        return result;
+    } else {
+        return mask ? a : b;
+    }
+}
+
+template <class R, class M> inline R to_bool(M mask)
+{
+    if constexpr (__msl::traits<M>::vector)
+        return R(mask);
+    else
+        return mask;
+}
+
+} // namespace __math
+
+// Classification works on the bits, so fast math's no-NaN and no-infinity
+// assumptions leave it intact.
+#define __MSL_CLASSIFY(T, S, ...)                                                                                    \
+    inline __math::bool_result<T> isnan(T x)                                                                         \
+    {                                                                                                                \
+        typedef __math::bits_of<__math::element<T>> B;                                                               \
+        auto magnitude = __math::bits(x) & (B::exponent_mask | B::mantissa_mask);                                    \
+        return __math::to_bool<__math::bool_result<T>>(magnitude > B::exponent_mask);                                \
+    }                                                                                                                \
+    inline __math::bool_result<T> isinf(T x)                                                                         \
+    {                                                                                                                \
+        typedef __math::bits_of<__math::element<T>> B;                                                               \
+        auto magnitude = __math::bits(x) & (B::exponent_mask | B::mantissa_mask);                                    \
+        return __math::to_bool<__math::bool_result<T>>(magnitude == B::exponent_mask);                               \
+    }                                                                                                                \
+    inline __math::bool_result<T> isfinite(T x)                                                                      \
+    {                                                                                                                \
+        typedef __math::bits_of<__math::element<T>> B;                                                               \
+        return __math::to_bool<__math::bool_result<T>>((__math::bits(x) & B::exponent_mask) != B::exponent_mask);   \
+    }                                                                                                                \
+    inline __math::bool_result<T> isnormal(T x)                                                                      \
+    {                                                                                                                \
+        typedef __math::bits_of<__math::element<T>> B;                                                               \
+        auto exponent = __math::bits(x) & B::exponent_mask;                                                          \
+        return __math::to_bool<__math::bool_result<T>>(exponent != 0 && exponent != B::exponent_mask);               \
+    }                                                                                                                \
+    inline __math::bool_result<T> signbit(T x)                                                                       \
+    {                                                                                                                \
+        return __math::to_bool<__math::bool_result<T>>((__math::bits(x) >> (8 * sizeof(__math::element<T>) - 1)) != 0); \
+    }                                                                                                                \
+    inline __math::bool_result<T> isordered(T x, T y)                                                                \
+    {                                                                                                                \
+        return !(isnan(x) || isnan(y));                                                                              \
+    }                                                                                                                \
+    inline __math::bool_result<T> isunordered(T x, T y)                                                              \
+    {                                                                                                                \
+        return isnan(x) || isnan(y);                                                                                 \
+    }                                                                                                                \
+    inline T modf(T x, thread T &integral)                                                                           \
+    {                                                                                                                \
+        integral = trunc(x);                                                                                         \
+        return copysign(__math::pick(isinf(x), T(0), x - integral), x);                                             \
+    }                                                                                                                \
+    inline T sincos(T x, thread T &cosine)                                                                           \
+    {                                                                                                                \
+        cosine = cos(x);                                                                                             \
+        return sin(x);                                                                                               \
+    }                                                                                                                \
+    inline __math::int_result<T> ilogb(T x)                                                                          \
+    {                                                                                                                \
+        typedef __math::bits_of<__math::element<T>> B;                                                               \
+        auto exponent = (__math::bits(x) & B::exponent_mask) >> B::mantissa;                                         \
+        return __msl::convert<__math::int_result<T>>(exponent) - B::bias;                                            \
+    }                                                                                                                \
+    inline T ldexp(T x, __math::int_result<T> k)                                                                     \
+    {                                                                                                                \
+        return x * exp2(__msl::convert<T>(k));                                                                       \
+    }                                                                                                                \
+    inline T frexp(T x, thread __math::int_result<T> &exponent)                                                      \
+    {                                                                                                                \
+        typedef __math::bits_of<__math::element<T>> B;                                                               \
+        auto raw = __math::bits(x);                                                                                  \
+        auto biased = (raw & B::exponent_mask) >> B::mantissa;                                                       \
+        auto zero = (raw & (B::exponent_mask | B::mantissa_mask)) == 0;                                              \
+        exponent = __math::pick(zero, __math::int_result<T>(0),                                                      \
+            __msl::convert<__math::int_result<T>>(biased) - (B::bias - 1));                                          \
+        __math::unsigned_bits<T> fraction = (raw & __math::unsigned_bits<T>(~B::exponent_mask))                     \
+            | (__math::unsigned_bits<T>(B::bias - 1) << B::mantissa);                                                \
+        return __math::pick(zero, x, as_type<T>(fraction));                                                          \
+    }
+
+__MSL_EACH_FLOAT(__MSL_CLASSIFY)
+
+} // namespace metal
+
+#define M_E_F 2.71828182845904523536028747135266250f
+#define M_LOG2E_F 1.44269504088896340735992468100189214f
+#define M_LOG10E_F 0.434294481903251827651128918916605082f
+#define M_LN2_F 0.693147180559945309417232121458176568f
+#define M_LN10_F 2.30258509299404568401799145468436421f
+#define M_PI_F 3.14159265358979323846264338327950288f
+#define M_PI_2_F 1.57079632679489661923132169163975144f
+#define M_PI_4_F 0.785398163397448309615660845819875721f
+#define M_1_PI_F 0.318309886183790671537767526745028724f
+#define M_2_PI_F 0.636619772367581343075535053490057448f
+#define M_2_SQRTPI_F 1.12837916709551257389615890312154517f
+#define M_SQRT2_F 1.41421356237309504880168872420969808f
+#define M_SQRT1_2_F 0.707106781186547524400844362104849039f
+#define M_E_H half(M_E_F)
+#define M_LOG2E_H half(M_LOG2E_F)
+#define M_LOG10E_H half(M_LOG10E_F)
+#define M_LN2_H half(M_LN2_F)
+#define M_LN10_H half(M_LN10_F)
+#define M_PI_H half(M_PI_F)
+#define M_PI_2_H half(M_PI_2_F)
+#define M_PI_4_H half(M_PI_4_F)
+#define M_1_PI_H half(M_1_PI_F)
+#define M_2_PI_H half(M_2_PI_F)
+#define M_2_SQRTPI_H half(M_2_SQRTPI_F)
+#define M_SQRT2_H half(M_SQRT2_F)
+#define M_SQRT1_2_H half(M_SQRT1_2_F)
+#define MAXFLOAT 0x1.fffffep+127f
+#define HUGE_VALF __builtin_huge_valf()
+#define INFINITY __builtin_inff()
+#define NAN __builtin_nanf("")
+#define FLT_MAX 0x1.fffffep+127f
+#define FLT_MIN 0x1p-126f
+#define FLT_EPSILON 0x1p-23f
+#define FLT_DIG 6
+#define FLT_MANT_DIG 24
+#define FLT_MAX_EXP 128
+#define FLT_MIN_EXP (-125)
+#define FLT_RADIX 2
+#define HALF_MAX half(65504.0f)
+#define HALF_MIN half(6.10351562e-05f)
+#define HALF_EPSILON half(0.0009765625f)
+#define MAXHALF HALF_MAX
+#define HUGE_VALH half(__builtin_inff())
+
+#endif

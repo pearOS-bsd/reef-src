@@ -1,0 +1,82 @@
+// Relational functions over bool vectors and the masks vector comparisons
+// give.
+#ifndef __REEF_METAL_RELATIONAL
+#define __REEF_METAL_RELATIONAL
+
+#include <metal_math>
+
+namespace metal {
+
+inline bool all(bool x)
+{
+    return x;
+}
+
+inline bool any(bool x)
+{
+    return x;
+}
+
+template <int N> inline bool all(__msl_bool_vector<N> x)
+{
+    bool result = true;
+    for (int k = 0; k < N; ++k)
+        result = result && x[k];
+    return result;
+}
+
+template <int N> inline bool any(__msl_bool_vector<N> x)
+{
+    bool result = false;
+    for (int k = 0; k < N; ++k)
+        result = result || x[k];
+    return result;
+}
+
+template <class T, int N> inline bool all(vec<T, N> mask)
+{
+    bool result = true;
+    for (int k = 0; k < N; ++k)
+        result = result && mask[k] != 0;
+    return result;
+}
+
+template <class T, int N> inline bool any(vec<T, N> mask)
+{
+    bool result = false;
+    for (int k = 0; k < N; ++k)
+        result = result || mask[k] != 0;
+    return result;
+}
+
+template <class T, class = __msl::enable_if_t<__msl::is_scalar<T>::value>> inline T select(T a, T b, bool c)
+{
+    return c ? b : a;
+}
+
+template <class T, int N> inline vec<T, N> select(vec<T, N> a, vec<T, N> b, __msl_bool_vector<N> c)
+{
+    vec<T, N> result = a;
+    for (int k = 0; k < N; ++k)
+        if (c[k])
+            result[k] = b[k];
+    return result;
+}
+
+template <class T, class M, int N> inline vec<T, N> select(vec<T, N> a, vec<T, N> b, vec<M, N> mask)
+{
+    vec<T, N> result = a;
+    for (int k = 0; k < N; ++k)
+        if (mask[k] != 0)
+            result[k] = b[k];
+    return result;
+}
+
+template <class T, int N> inline vec<T, N> select(vec<T, N> a, vec<T, N> b, bool c)
+{
+    return c ? b : a;
+}
+
+} // namespace metal
+
+#endif

@@ -1,0 +1,20 @@
+// Common functions: mix, step, smoothstep and sign (clamp and saturate are
+// with the math functions, which have fast variants).
+#ifndef __REEF_METAL_COMMON
+#define __REEF_METAL_COMMON
+
+#include <metal_math>
+
+#define __MSL_COMMON(T, S, ...)                                                                                      \
+    T mix(T x, T y, T a) __asm__("air.mix." #S);                                                                    \
+    T step(T edge, T x) __asm__("air.step." #S);                                                                    \
+    T smoothstep(T edge0, T edge1, T x) __asm__("air.smoothstep." #S);                                              \
+    T sign(T x) __asm__("air.sign." #S);
+
+namespace metal {
+
+__MSL_EACH_FLOAT(__MSL_COMMON)
+
+} // namespace metal
+
+#endif

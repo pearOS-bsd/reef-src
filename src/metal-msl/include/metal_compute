@@ -1,0 +1,50 @@
+// Barriers for kernels.
+#ifndef __REEF_METAL_COMPUTE
+#define __REEF_METAL_COMPUTE
+
+#include <metal_types>
+
+namespace metal {
+
+enum class mem_flags {
+    mem_none = 0,
+    mem_device = 1,
+    mem_threadgroup = 2,
+    mem_texture = 4,
+    mem_threadgroup_imageblock = 8,
+    mem_object_data = 16,
+};
+
+constexpr mem_flags operator|(mem_flags a, mem_flags b)
+{
+    return mem_flags(int(a) | int(b));
+}
+
+constexpr mem_flags mem_none = mem_flags::mem_none;
+constexpr mem_flags mem_device = mem_flags::mem_device;
+constexpr mem_flags mem_threadgroup = mem_flags::mem_threadgroup;
+constexpr mem_flags mem_texture = mem_flags::mem_texture;
+constexpr mem_flags mem_threadgroup_imageblock = mem_flags::mem_threadgroup_imageblock;
+constexpr mem_flags mem_object_data = mem_flags::mem_object_data;
+
+namespace __barrier {
+
+// The memory flags, then the scope: 1 the threadgroup, 4 the SIMD group.
+void wait(uint flags, uint scope) __asm__("air.wg.barrier");
+void wait_simd(uint flags, uint scope) __asm__("air.simdgroup.barrier");
+
+} // namespace __barrier
+
+inline void threadgroup_barrier(mem_flags flags)
+{
+    __barrier::wait(uint(flags), 1);
+}
+
+inline void simdgroup_barrier(mem_flags flags)
+{
+    __barrier::wait_simd(uint(flags), 4);
+}
+
+} // namespace metal
+
+#endif

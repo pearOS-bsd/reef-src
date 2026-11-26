@@ -1,0 +1,126 @@
+// The Metal standard library.
+#ifndef __REEF_METAL_STDLIB
+#define __REEF_METAL_STDLIB
+
+#include <metal_types>
+#include <metal_type_traits>
+#include <metal_matrix>
+#include <metal_math>
+#include <metal_common>
+#include <metal_integer>
+#include <metal_geometric>
+#include <metal_relational>
+#include <metal_texture>
+#include <metal_graphics>
+#include <metal_compute>
+#include <metal_atomic>
+#include <metal_pack>
+
+namespace metal {
+
+template <class T, size_t N> struct array {
+    T __elements[N ? N : 1];
+
+    T &operator[](size_t i)
+    {
+        return __elements[i];
+    }
+
+    const T &operator[](size_t i) const
+    {
+        return __elements[i];
+    }
+
+    constexpr size_t size() const
+    {
+        return N;
+    }
+};
+
+template <class T> struct numeric_limits;
+
+template <> struct numeric_limits<float> {
+    static constexpr bool is_specialized = true;
+    static constexpr float min()
+    {
+        return 0x1p-126f;
+    }
+    static constexpr float max()
+    {
+        return 0x1.fffffep+127f;
+    }
+    static constexpr float lowest()
+    {
+        return -0x1.fffffep+127f;
+    }
+    static constexpr float epsilon()
+    {
+        return 0x1p-23f;
+    }
+    static constexpr float infinity()
+    {
+        return __builtin_inff();
+    }
+    static constexpr float quiet_NaN()
+    {
+        return __builtin_nanf("");
+    }
+};
+
+template <> struct numeric_limits<half> {
+    static constexpr bool is_specialized = true;
+    static constexpr half min()
+    {
+        return half(6.10351562e-05f);
+    }
+    static constexpr half max()
+    {
+        return half(65504.0f);
+    }
+    static constexpr half lowest()
+    {
+        return half(-65504.0f);
+    }
+    static constexpr half epsilon()
+    {
+        return half(0.0009765625f);
+    }
+    static constexpr half infinity()
+    {
+        return half(__builtin_inff());
+    }
+    static constexpr half quiet_NaN()
+    {
+        return half(__builtin_nanf(""));
+    }
+};
+
+#define __MSL_INTEGER_LIMITS(T, LOW, HIGH)                                                                           \
+    template <> struct numeric_limits<T> {                                                                           \
+        static constexpr bool is_specialized = true;                                                                 \
+        static constexpr T min()                                                                                     \
+        {                                                                                                            \
+            return LOW;                                                                                              \
+        }                                                                                                            \
+        static constexpr T max()                                                                                     \
+        {                                                                                                            \
+            return HIGH;                                                                                             \
+        }                                                                                                            \
+        static constexpr T lowest()                                                                                  \
+        {                                                                                                            \
+            return LOW;                                                                                              \
+        }                                                                                                            \
+    };
+
+__MSL_INTEGER_LIMITS(char, -128, 127)
+__MSL_INTEGER_LIMITS(uchar, 0, 255)
+__MSL_INTEGER_LIMITS(short, -32768, 32767)
+__MSL_INTEGER_LIMITS(ushort, 0, 65535)
+__MSL_INTEGER_LIMITS(int, -2147483647 - 1, 2147483647)
+__MSL_INTEGER_LIMITS(uint, 0u, 4294967295u)
+__MSL_INTEGER_LIMITS(long, -9223372036854775807l - 1, 9223372036854775807l)
+__MSL_INTEGER_LIMITS(ulong, 0ul, 18446744073709551615ul)
+
+} // namespace metal
+
+#endif

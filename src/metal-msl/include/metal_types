@@ -1,0 +1,618 @@
+// The language part of the Metal Shading Language that is not C++:
+// address spaces, function kinds, scalar, vector and packed types and
+// their constructors. Every program sees this header first.
+#ifndef __REEF_METAL_TYPES
+#define __REEF_METAL_TYPES
+
+#include <metal_swizzle>
+
+// device memory is the generic global space; constant memory is read-only.
+// Both, and threadgroup memory, convert to plain pointers and references,
+// as MSL's copies and member calls across address spaces need.
+#define device __attribute__((opencl_global))
+#define constant const __attribute__((opencl_global_device))
+#define threadgroup __attribute__((opencl_local))
+#define thread
+#define threadgroup_imageblock __attribute__((opencl_local))
+#define ray_data
+#define object_data
+
+// What the compiler's source pass writes for address spaces that qualify a
+// member function: overloads that differ from the unqualified one and lose
+// to it on every object.
+#define __mqd_ volatile
+#define __mqc___ volatile __attribute__((enable_if(1, "")))
+#define __mqtg_____ volatile __attribute__((enable_if(1, ""))) __attribute__((enable_if(1, "")))
+#define __mqt_
+// ... and for threadgroup variables declared in a function body.
+#define __msl_tgl__ static __attribute__((opencl_local))
+
+#define vertex __attribute__((annotate("msl:vertex")))
+#define fragment __attribute__((annotate("msl:fragment")))
+#define kernel __attribute__((annotate("msl:kernel")))
+
+typedef __SIZE_TYPE__ size_t;
+typedef __PTRDIFF_TYPE__ ptrdiff_t;
+typedef __INTPTR_TYPE__ intptr_t;
+typedef __UINTPTR_TYPE__ uintptr_t;
+typedef signed char int8_t;
+typedef unsigned char uint8_t;
+typedef short int16_t;
+typedef unsigned short uint16_t;
+typedef int int32_t;
+typedef unsigned int uint32_t;
+typedef long int64_t;
+typedef unsigned long uint64_t;
+typedef unsigned char uchar;
+typedef unsigned short ushort;
+typedef unsigned int uint;
+typedef unsigned long ulong;
+typedef _Float16 half;
+
+constexpr half operator""h(long double value)
+{
+    return half(value);
+}
+
+constexpr half operator""h(unsigned long long value)
+{
+    return half(value);
+}
+
+namespace __msl {
+
+template <bool B, class T = void> struct enable_if {
+};
+template <class T> struct enable_if<true, T> {
+    typedef T type;
+};
+template <bool B, class T = void> using enable_if_t = typename enable_if<B, T>::type;
+
+template <bool B, class T, class F> struct conditional {
+    typedef T type;
+};
+template <class T, class F> struct conditional<false, T, F> {
+    typedef F type;
+};
+
+template <class T, class U> struct is_same {
+    static constexpr bool value = false;
+};
+template <class T> struct is_same<T, T> {
+    static constexpr bool value = true;
+};
+
+template <class T> struct remove_cv {
+    typedef T type;
+};
+template <class T> struct remove_cv<const T> {
+    typedef T type;
+};
+template <class T> struct remove_cv<volatile T> {
+    typedef T type;
+};
+template <class T> struct remove_cv<const volatile T> {
+    typedef T type;
+};
+
+template <class T> struct is_floating {
+    static constexpr bool value = false;
+};
+template <> struct is_floating<float> {
+    static constexpr bool value = true;
+};
+template <> struct is_floating<half> {
+    static constexpr bool value = true;
+};
+template <> struct is_floating<double> {
+    static constexpr bool value = true;
+};
+
+template <class T> struct is_integer {
+    static constexpr bool value = false;
+};
+template <> struct is_integer<bool> {
+    static constexpr bool value = true;
+};
+template <> struct is_integer<char> {
+    static constexpr bool value = true;
+};
+template <> struct is_integer<signed char> {
+    static constexpr bool value = true;
+};
+template <> struct is_integer<unsigned char> {
+    static constexpr bool value = true;
+};
+template <> struct is_integer<short> {
+    static constexpr bool value = true;
+};
+template <> struct is_integer<unsigned short> {
+    static constexpr bool value = true;
+};
+template <> struct is_integer<int> {
+    static constexpr bool value = true;
+};
+template <> struct is_integer<unsigned int> {
+    static constexpr bool value = true;
+};
+template <> struct is_integer<long> {
+    static constexpr bool value = true;
+};
+template <> struct is_integer<unsigned long> {
+    static constexpr bool value = true;
+};
+template <> struct is_integer<long long> {
+    static constexpr bool value = true;
+};
+template <> struct is_integer<unsigned long long> {
+    static constexpr bool value = true;
+};
+
+template <class T> struct is_scalar {
+    static constexpr bool value = is_floating<T>::value || is_integer<T>::value || __is_enum(T);
+};
+
+template <class E, int N> struct swizzle_type;
+template <class T> struct traits;
+
+} // namespace __msl
+
+template <int N> struct __msl_bool_vector;
+template <class T> struct __msl_packed3;
+
+// A vector with each element stored on its own: bool vectors and packed
+// three-component vectors. Swizzles are properties of a base that reaches
+// the elements of the derived vector.
+#define __MSL_SWIZZLE_MEMBER(name, length, writable, i0, i1, i2, i3)                                                 \
+    template <int __L = length> typename __msl::swizzle_type<E, __L>::type __g_##name() const                        \
+    {                                                                                                                \
+        return static_cast<const D *>(this)->template __msl_pick<__L>(i0, i1, i2, i3);                               \
+    }                                                                                                                \
+    template <class V> void __p_##name(V value)                                                                      \
+    {                                                                                                                \
+        static_assert(writable || sizeof(V) == 0, "a swizzle that repeats a component cannot be assigned");        \
+        static_cast<D *>(this)->template __msl_place<length>(value, i0, i1, i2, i3);                                 \
+    }                                                                                                                \
+    __declspec(property(get = __g_##name, put = __p_##name)) typename __msl::swizzle_type<E, length>::type name;
+
+template <class D, class E, int N> struct __msl_swizzles;
+template <class D, class E> struct __msl_swizzles<D, E, 2> {
+    __MSL_SWIZZLES_2(__MSL_SWIZZLE_MEMBER)
+};
+template <class D, class E> struct __msl_swizzles<D, E, 3> {
+    __MSL_SWIZZLES_3(__MSL_SWIZZLE_MEMBER)
+};
+template <class D, class E> struct __msl_swizzles<D, E, 4> {
+    __MSL_SWIZZLES_4(__MSL_SWIZZLE_MEMBER)
+};
+
+#define __MSL_ELEMENTWISE_ACCESS                                                                                     \
+    __element &operator[](int i)                                                                                     \
+    {                                                                                                                \
+        return __e[i];                                                                                               \
+    }                                                                                                                \
+    const __element &operator[](int i) const                                                                         \
+    {                                                                                                                \
+        return __e[i];                                                                                               \
+    }                                                                                                                \
+    template <int L> typename __msl::swizzle_type<__element, L>::type __msl_pick(int i0, int i1, int i2, int i3) const \
+    {                                                                                                                \
+        if constexpr (L == 1) {                                                                                      \
+            return __e[i0];                                                                                          \
+        } else {                                                                                                     \
+            typename __msl::swizzle_type<__element, L>::type result {};                                              \
+            const int indices[4] = {i0, i1, i2, i3};                                                                 \
+            for (int k = 0; k < L; ++k)                                                                              \
+                result[k] = __e[indices[k]];                                                                         \
+            return result;                                                                                           \
+        }                                                                                                            \
+    }                                                                                                                \
+    template <int L, class V> void __msl_place(V value, int i0, int i1, int i2, int i3)                             \
+    {                                                                                                                \
+        if constexpr (L == 1) {                                                                                      \
+            __e[i0] = value;                                                                                         \
+        } else {                                                                                                     \
+            const int indices[4] = {i0, i1, i2, i3};                                                                 \
+            for (int k = 0; k < L; ++k)                                                                              \
+                __e[indices[k]] = value[k];                                                                          \
+        }                                                                                                            \
+    }
+
+template <int N> struct __msl_bool_vector : __msl_swizzles<__msl_bool_vector<N>, bool, N> {
+    typedef bool __element;
+    alignas(N == 3 ? 4 : N) bool __e[N == 3 ? 4 : N];
+
+    __msl_bool_vector() = default;
+    constexpr __msl_bool_vector(bool value)
+        : __e {}
+    {
+        for (int k = 0; k < N; ++k)
+            __e[k] = value;
+    }
+    template <class V, class = __msl::enable_if_t<!__msl::is_scalar<V>::value>> __msl_bool_vector(V value)
+    {
+        static_assert(__msl::traits<V>::size == N, "a vector converts only to a vector with as many components");
+        for (int k = 0; k < N; ++k)
+            __e[k] = value[k] != 0;
+    }
+    template <class A, class B, class... R> __msl_bool_vector(A a, B b, R... rest);
+
+    __msl_bool_vector operator!() const
+    {
+        __msl_bool_vector result;
+        for (int k = 0; k < N; ++k)
+            result.__e[k] = !__e[k];
+        return result;
+    }
+
+    __MSL_ELEMENTWISE_ACCESS
+};
+
+typedef __msl_bool_vector<2> bool2;
+typedef __msl_bool_vector<3> bool3;
+typedef __msl_bool_vector<4> bool4;
+
+#define __MSL_VECTOR_TYPES(T)                                                                                        \
+    typedef T T##2 __attribute__((ext_vector_type(2)));                                                              \
+    typedef T T##3 __attribute__((ext_vector_type(3)));                                                              \
+    typedef T T##4 __attribute__((ext_vector_type(4)));                                                              \
+    typedef T packed_##T##2 __attribute__((ext_vector_type(2))) __attribute__((aligned(sizeof(T))));                 \
+    typedef T packed_##T##4 __attribute__((ext_vector_type(4))) __attribute__((aligned(sizeof(T))));                 \
+    typedef __msl_packed3<T> packed_##T##3;
+
+__MSL_VECTOR_TYPES(char)
+__MSL_VECTOR_TYPES(uchar)
+__MSL_VECTOR_TYPES(short)
+__MSL_VECTOR_TYPES(ushort)
+__MSL_VECTOR_TYPES(int)
+__MSL_VECTOR_TYPES(uint)
+__MSL_VECTOR_TYPES(long)
+__MSL_VECTOR_TYPES(ulong)
+__MSL_VECTOR_TYPES(half)
+__MSL_VECTOR_TYPES(float)
+
+template <class T, int N> using vec = T __attribute__((ext_vector_type(N)));
+
+namespace __msl {
+
+template <class E, int N> struct swizzle_type {
+    typedef E type __attribute__((ext_vector_type(N)));
+};
+template <class E> struct swizzle_type<E, 1> {
+    typedef E type;
+};
+template <int N> struct swizzle_type<bool, N> {
+    typedef __msl_bool_vector<N> type;
+};
+template <> struct swizzle_type<bool, 1> {
+    typedef bool type;
+};
+
+// Scalars, vectors and the elementwise vectors alike: a size, an element
+// type and element access.
+template <class T> struct traits {
+    static constexpr int size = 1;
+    static constexpr bool vector = false;
+    typedef T element;
+};
+template <class T, int N> struct traits<T __attribute__((ext_vector_type(N)))> {
+    static constexpr int size = N;
+    static constexpr bool vector = true;
+    typedef T element;
+};
+template <int N> struct traits<__msl_bool_vector<N>> {
+    static constexpr int size = N;
+    static constexpr bool vector = true;
+    typedef bool element;
+};
+template <class T> struct traits<__msl_packed3<T>> {
+    static constexpr int size = 3;
+    static constexpr bool vector = true;
+    typedef T element;
+};
+
+template <class T> struct is_ext_vector {
+    static constexpr bool value = false;
+};
+template <class T, int N> struct is_ext_vector<T __attribute__((ext_vector_type(N)))> {
+    static constexpr bool value = true;
+};
+
+template <class T> inline typename traits<T>::element element(T value, int i)
+{
+    if constexpr (traits<T>::vector)
+        return value[i];
+    else
+        return value;
+}
+
+template <class V, class A> inline void fill(V &result, int &next, A value)
+{
+    typedef typename traits<V>::element E;
+    if constexpr (traits<A>::vector) {
+        for (int k = 0; k < traits<A>::size; ++k)
+            result[next++] = E(value[k]);
+    } else {
+        result[next++] = E(value);
+    }
+}
+
+template <class V, class A> inline V convert(A value)
+{
+    if constexpr (!traits<V>::vector) {
+        return V(value);
+    } else if constexpr (is_ext_vector<V>::value && is_ext_vector<A>::value) {
+        return __builtin_convertvector(value, V);
+    } else if constexpr (is_ext_vector<V>::value && is_same<typename traits<A>::element, bool>::value) {
+        typedef bool B __attribute__((ext_vector_type(traits<V>::size)));
+        B bits {};
+        for (int k = 0; k < traits<V>::size; ++k)
+            bits[k] = value[k];
+        return __builtin_convertvector(bits, V);
+    } else {
+        typedef typename traits<V>::element E;
+        V result {};
+        for (int k = 0; k < traits<V>::size; ++k)
+            result[k] = E(value[k]);
+        return result;
+    }
+}
+
+} // namespace __msl
+
+// Vector constructors: float4(x), float4(xy, z, w) and the rest.
+template <class V> constexpr V __msl_make()
+{
+    return V {};
+}
+
+template <class V, class A> constexpr V __msl_make(A value)
+{
+    typedef typename __msl::traits<V>::element E;
+    if constexpr (__msl::traits<A>::vector) {
+        static_assert(__msl::traits<A>::size == __msl::traits<V>::size,
+            "a vector converts only to a vector with as many components");
+        return __msl::convert<V>(value);
+    } else {
+        return V(E(value));
+    }
+}
+
+template <class V, class A, class B, class... R> constexpr V __msl_make(A a, B b, R... rest)
+{
+    typedef typename __msl::traits<V>::element E;
+    static_assert(__msl::traits<A>::size + __msl::traits<B>::size + (0 + ... + __msl::traits<R>::size)
+            == __msl::traits<V>::size,
+        "a vector constructor needs as many components as the vector has");
+    if constexpr (!__msl::traits<A>::vector && !__msl::traits<B>::vector && (true && ... && !__msl::traits<R>::vector)) {
+        return V {E(a), E(b), E(rest)...};
+    } else {
+        V result {};
+        int next = 0;
+        __msl::fill(result, next, a);
+        __msl::fill(result, next, b);
+        (__msl::fill(result, next, rest), ...);
+        return result;
+    }
+}
+
+template <int N>
+template <class A, class B, class... R>
+inline __msl_bool_vector<N>::__msl_bool_vector(A a, B b, R... rest)
+{
+    static_assert(__msl::traits<A>::size + __msl::traits<B>::size + (0 + ... + __msl::traits<R>::size) == N,
+        "a vector constructor needs as many components as the vector has");
+    int next = 0;
+    __msl::fill(*this, next, a);
+    __msl::fill(*this, next, b);
+    (__msl::fill(*this, next, rest), ...);
+}
+
+template <int N> inline __msl_bool_vector<N> operator&&(__msl_bool_vector<N> a, __msl_bool_vector<N> b)
+{
+    __msl_bool_vector<N> result;
+    for (int k = 0; k < N; ++k)
+        result[k] = a[k] && b[k];
+    return result;
+}
+
+template <int N> inline __msl_bool_vector<N> operator||(__msl_bool_vector<N> a, __msl_bool_vector<N> b)
+{
+    __msl_bool_vector<N> result;
+    for (int k = 0; k < N; ++k)
+        result[k] = a[k] || b[k];
+    return result;
+}
+
+template <int N> inline __msl_bool_vector<N> operator==(__msl_bool_vector<N> a, __msl_bool_vector<N> b)
+{
+    __msl_bool_vector<N> result;
+    for (int k = 0; k < N; ++k)
+        result[k] = a[k] == b[k];
+    return result;
+}
+
+template <int N> inline __msl_bool_vector<N> operator!=(__msl_bool_vector<N> a, __msl_bool_vector<N> b)
+{
+    __msl_bool_vector<N> result;
+    for (int k = 0; k < N; ++k)
+        result[k] = a[k] != b[k];
+    return result;
+}
+
+template <int N> inline __msl_bool_vector<N> operator&(__msl_bool_vector<N> a, __msl_bool_vector<N> b)
+{
+    return a && b;
+}
+
+template <int N> inline __msl_bool_vector<N> operator|(__msl_bool_vector<N> a, __msl_bool_vector<N> b)
+{
+    return a || b;
+}
+
+template <int N> inline __msl_bool_vector<N> operator^(__msl_bool_vector<N> a, __msl_bool_vector<N> b)
+{
+    return a != b;
+}
+
+// Three-component vectors in three elements' space, for buffers laid out
+// without padding.
+template <class T> struct __msl_packed3 : __msl_swizzles<__msl_packed3<T>, T, 3> {
+    typedef T __element;
+    T __e[3];
+
+    __msl_packed3() = default;
+    constexpr __msl_packed3(T value)
+        : __e {value, value, value}
+    {
+    }
+    constexpr __msl_packed3(T a, T b, T c)
+        : __e {a, b, c}
+    {
+    }
+    __msl_packed3(vec<T, 3> value)
+        : __e {value.x, value.y, value.z}
+    {
+    }
+    template <class U, class = __msl::enable_if_t<!__msl::is_same<U, T>::value>>
+    explicit __msl_packed3(vec<U, 3> value)
+        : __e {T(value.x), T(value.y), T(value.z)}
+    {
+    }
+    operator vec<T, 3>() const
+    {
+        return vec<T, 3> {__e[0], __e[1], __e[2]};
+    }
+
+    __MSL_ELEMENTWISE_ACCESS
+};
+
+#define __MSL_PACKED3_OPERATOR(OP)                                                                                   \
+    template <class T> inline vec<T, 3> operator OP(__msl_packed3<T> a, vec<T, 3> b)                                 \
+    {                                                                                                                \
+        return vec<T, 3>(a) OP b;                                                                                    \
+    }                                                                                                                \
+    template <class T> inline vec<T, 3> operator OP(vec<T, 3> a, __msl_packed3<T> b)                                 \
+    {                                                                                                                \
+        return a OP vec<T, 3>(b);                                                                                    \
+    }                                                                                                                \
+    template <class T> inline vec<T, 3> operator OP(__msl_packed3<T> a, __msl_packed3<T> b)                          \
+    {                                                                                                                \
+        return vec<T, 3>(a) OP vec<T, 3>(b);                                                                         \
+    }                                                                                                                \
+    template <class T> inline vec<T, 3> operator OP(__msl_packed3<T> a, T b)                                         \
+    {                                                                                                                \
+        return vec<T, 3>(a) OP b;                                                                                    \
+    }                                                                                                                \
+    template <class T> inline vec<T, 3> operator OP(T a, __msl_packed3<T> b)                                         \
+    {                                                                                                                \
+        return a OP vec<T, 3>(b);                                                                                    \
+    }
+
+__MSL_PACKED3_OPERATOR(+)
+__MSL_PACKED3_OPERATOR(-)
+__MSL_PACKED3_OPERATOR(*)
+__MSL_PACKED3_OPERATOR(/)
+
+#define __MSL_VECTOR_MAKER(NAME) __msl_make<::NAME>
+
+#define char2(...) __MSL_VECTOR_MAKER(char2)(__VA_ARGS__)
+#define char3(...) __MSL_VECTOR_MAKER(char3)(__VA_ARGS__)
+#define char4(...) __MSL_VECTOR_MAKER(char4)(__VA_ARGS__)
+#define uchar2(...) __MSL_VECTOR_MAKER(uchar2)(__VA_ARGS__)
+#define uchar3(...) __MSL_VECTOR_MAKER(uchar3)(__VA_ARGS__)
+#define uchar4(...) __MSL_VECTOR_MAKER(uchar4)(__VA_ARGS__)
+#define short2(...) __MSL_VECTOR_MAKER(short2)(__VA_ARGS__)
+#define short3(...) __MSL_VECTOR_MAKER(short3)(__VA_ARGS__)
+#define short4(...) __MSL_VECTOR_MAKER(short4)(__VA_ARGS__)
+#define ushort2(...) __MSL_VECTOR_MAKER(ushort2)(__VA_ARGS__)
+#define ushort3(...) __MSL_VECTOR_MAKER(ushort3)(__VA_ARGS__)
+#define ushort4(...) __MSL_VECTOR_MAKER(ushort4)(__VA_ARGS__)
+#define int2(...) __MSL_VECTOR_MAKER(int2)(__VA_ARGS__)
+#define int3(...) __MSL_VECTOR_MAKER(int3)(__VA_ARGS__)
+#define int4(...) __MSL_VECTOR_MAKER(int4)(__VA_ARGS__)
+#define uint2(...) __MSL_VECTOR_MAKER(uint2)(__VA_ARGS__)
+#define uint3(...) __MSL_VECTOR_MAKER(uint3)(__VA_ARGS__)
+#define uint4(...) __MSL_VECTOR_MAKER(uint4)(__VA_ARGS__)
+#define long2(...) __MSL_VECTOR_MAKER(long2)(__VA_ARGS__)
+#define long3(...) __MSL_VECTOR_MAKER(long3)(__VA_ARGS__)
+#define long4(...) __MSL_VECTOR_MAKER(long4)(__VA_ARGS__)
+#define ulong2(...) __MSL_VECTOR_MAKER(ulong2)(__VA_ARGS__)
+#define ulong3(...) __MSL_VECTOR_MAKER(ulong3)(__VA_ARGS__)
+#define ulong4(...) __MSL_VECTOR_MAKER(ulong4)(__VA_ARGS__)
+#define half2(...) __MSL_VECTOR_MAKER(half2)(__VA_ARGS__)
+#define half3(...) __MSL_VECTOR_MAKER(half3)(__VA_ARGS__)
+#define half4(...) __MSL_VECTOR_MAKER(half4)(__VA_ARGS__)
+#define float2(...) __MSL_VECTOR_MAKER(float2)(__VA_ARGS__)
+#define float3(...) __MSL_VECTOR_MAKER(float3)(__VA_ARGS__)
+#define float4(...) __MSL_VECTOR_MAKER(float4)(__VA_ARGS__)
+#define packed_char2(...) __MSL_VECTOR_MAKER(packed_char2)(__VA_ARGS__)
+#define packed_char4(...) __MSL_VECTOR_MAKER(packed_char4)(__VA_ARGS__)
+#define packed_uchar2(...) __MSL_VECTOR_MAKER(packed_uchar2)(__VA_ARGS__)
+#define packed_uchar4(...) __MSL_VECTOR_MAKER(packed_uchar4)(__VA_ARGS__)
+#define packed_short2(...) __MSL_VECTOR_MAKER(packed_short2)(__VA_ARGS__)
+#define packed_short4(...) __MSL_VECTOR_MAKER(packed_short4)(__VA_ARGS__)
+#define packed_ushort2(...) __MSL_VECTOR_MAKER(packed_ushort2)(__VA_ARGS__)
+#define packed_ushort4(...) __MSL_VECTOR_MAKER(packed_ushort4)(__VA_ARGS__)
+#define packed_int2(...) __MSL_VECTOR_MAKER(packed_int2)(__VA_ARGS__)
+#define packed_int4(...) __MSL_VECTOR_MAKER(packed_int4)(__VA_ARGS__)
+#define packed_uint2(...) __MSL_VECTOR_MAKER(packed_uint2)(__VA_ARGS__)
+#define packed_uint4(...) __MSL_VECTOR_MAKER(packed_uint4)(__VA_ARGS__)
+#define packed_half2(...) __MSL_VECTOR_MAKER(packed_half2)(__VA_ARGS__)
+#define packed_half4(...) __MSL_VECTOR_MAKER(packed_half4)(__VA_ARGS__)
+#define packed_float2(...) __MSL_VECTOR_MAKER(packed_float2)(__VA_ARGS__)
+#define packed_float4(...) __MSL_VECTOR_MAKER(packed_float4)(__VA_ARGS__)
+
+// Whether the pipeline gave the function constant `name` a value.
+bool __msl_function_constant_defined(const void *value) __asm__("reef.msl.function_constant_defined");
+#define is_function_constant_defined(name) __msl_function_constant_defined(&(name))
+
+// Reinterprets the bits of a value as another type of the same size.
+template <class T, class U> inline T as_type(U value)
+{
+    static_assert(sizeof(T) == sizeof(U), "as_type needs types of the same size");
+    return __builtin_bit_cast(T, value);
+}
+
+namespace metal {
+
+using ::bool2;
+using ::bool3;
+using ::bool4;
+using ::char2;
+using ::char3;
+using ::char4;
+using ::uchar2;
+using ::uchar3;
+using ::uchar4;
+using ::short2;
+using ::short3;
+using ::short4;
+using ::ushort2;
+using ::ushort3;
+using ::ushort4;
+using ::int2;
+using ::int3;
+using ::int4;
+using ::uint2;
+using ::uint3;
+using ::uint4;
+using ::long2;
+using ::long3;
+using ::long4;
+using ::ulong2;
+using ::ulong3;
+using ::ulong4;
+using ::half2;
+using ::half3;
+using ::half4;
+using ::float2;
+using ::float3;
+using ::float4;
+using ::as_type;
+using ::vec;
+using ::__msl_make;
+
+} // namespace metal
+
+#endif
