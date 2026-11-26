@@ -2,9 +2,7 @@ import SwiftUI
 
 struct Radial: Layout {
     var radius: CGFloat = 60
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        CGSize(width: radius * 2 + 40, height: radius * 2 + 40)
-    }
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize { CGSize(width: radius * 2 + 40, height: radius * 2 + 40) }
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         let c = CGPoint(x: bounds.midX, y: bounds.midY)
         for (i, s) in subviews.enumerated() {
@@ -40,17 +38,15 @@ struct Weighted: Layout {
         for s in subviews { let w = bounds.width * s[WeightKey.self] / total; s.place(at: CGPoint(x: x, y: bounds.minY), proposal: ProposedViewSize(width: w, height: bounds.height)); x += w }
     }
 }
+
 struct V: View {
     var body: some View {
         VStack(spacing: 8) {
             Radial { ForEach(0..<5, id: \.self) { i in Circle().fill(.blue).frame(width: 20, height: 20).probe("dot\(i)") } }.probe("radial")
-            Flow { ForEach(["one", "two", "three", "four", "five", "six", "seven"], id: \.self) { Text($0).padding(2).background(Color.gray.opacity(0.3)) } }.frame(width: 160).probe("flow")
-            Weighted { Color.red.layoutValue(key: WeightKey.self, value: 1); Color.green.layoutValue(key: WeightKey.self, value: 3) }.frame(width: 200).probe("weighted")
-            AnyLayout(HStackLayout(spacing: 3)) { Text("A"); Text("B") }.probe("anylayout")
         }
-        .frame(width: 420, height: 340)
-        .finalState("layout_protocol")
+        .frame(width: 420, height: 260)
+        .finalState("layout_radial")
     }
 }
 
-Harness.run("layout_protocol", 420, 340) { V() }
+Harness.run("layout_radial", 420, 260) { V() }

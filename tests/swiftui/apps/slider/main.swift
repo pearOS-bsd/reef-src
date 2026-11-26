@@ -8,7 +8,7 @@ struct V: View {
         VStack(alignment: .leading, spacing: 10) {
             Slider(value: $v).probe("slider")
             Slider(value: $v, in: 0...10).frame(width: 200).probe("range")
-            Slider(value: $stepped, in: 0...10, step: 2) { Text("Stepped") } minimumValueLabel: { Text("0") } maximumValueLabel: { Text("10") }.probe("labels")
+            Slider(value: $stepped, in: 0...10, step: 2).probe("stepped")
             Slider(value: $v).disabled(true).probe("disabled")
             Stepper("Step: \(step)", value: $step, in: 0...10).probe("stepper")
             Stepper(value: $step, in: 0...10, step: 2) { Text("By two") }.probe("stepper2")

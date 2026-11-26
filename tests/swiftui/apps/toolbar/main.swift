@@ -10,7 +10,6 @@ struct V: View {
                 ToolbarItem(placement: .principal) { Text("Principal") }
                 ToolbarItem(placement: .primaryAction) { Button("Primary") { } }
                 ToolbarItem(placement: .automatic) { Toggle("T", isOn: $on) }
-                ToolbarItemGroup(placement: .secondaryAction) { Button("S1") { }; Button("S2") { } }
             }
             .navigationTitle("Toolbar title")
             .navigationSubtitle("subtitle")

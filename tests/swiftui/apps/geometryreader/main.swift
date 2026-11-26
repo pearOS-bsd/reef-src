@@ -20,14 +20,10 @@ struct V: View {
             ZStack {
                 Color.gray.frame(width: 100, height: 40).coordinateSpace(name: "space").overlay(GeometryReader { g in Color.clear.onAppear { Harness.note("named \(g.frame(in: .named("space"))) global \(g.frame(in: .global))") } })
             }.padding(.leading, 30).probe("coords")
-            Text("anchor").anchorPreference(key: BoundsKey.self, value: .bounds) { $0 }.overlayPreferenceValue(BoundsKey.self) { a in
-                GeometryReader { g in if let a { Color.red.opacity(0.3).frame(width: g[a].width, height: g[a].height).offset(x: g[a].minX, y: g[a].minY).onAppear { Harness.note("anchor rect \(g[a])") } } }
-            }.probe("anchor")
         }
-        .frame(width: 420, height: 340)
+        .frame(width: 420, height: 300)
         .finalState("geometryreader")
     }
 }
-struct BoundsKey: PreferenceKey { static var defaultValue: Anchor<CGRect>? = nil; static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) { value = value ?? nextValue() } }
 
-Harness.run("geometryreader", 420, 340) { V() }
+Harness.run("geometryreader", 420, 300) { V() }

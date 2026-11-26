@@ -16,7 +16,7 @@ struct EnvButtonStyle: ButtonStyle {
             .padding(pad)
             .background(accent)
             .opacity(configuration.isPressed ? 0.5 : 1)
-            .onAppear { Harness.note("style accent=\(accent) pad=\(pad) controlSize=\(controlSize) enabled=\(enabled)") }
+            .onAppear { Harness.note("style accent=\(accent == .red ? "red" : accent == .green ? "green" : accent == .gray ? "gray" : "other") pad=\(pad) controlSize=\(controlSize) enabled=\(enabled)") }
     }
 }
 struct V: View {
