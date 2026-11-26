@@ -7,6 +7,6 @@ libexec/cutefish-reef/reef-install-package reef-install-package 38.9
 bin/reef reef 27.6
 lib/cutefish-reef/usr/libexec/reef-hdiutil reef-hdiutil 14
 bin/reef-diagnose reef-diagnose 38
-lib/cutefish-reef/host/libreef-appkit-host.so libreef-appkit-host.so 54
+lib/cutefish-reef/host/libreef-appkit-host.so libreef-appkit-host.so 57.4
 lib/cutefish-reef/lib/libreef-metal-msl.so libreef-metal-msl.so 23
 lib/cutefish-reef/lib/libreef-metal-translator.so libreef-metal-translator.so 21
