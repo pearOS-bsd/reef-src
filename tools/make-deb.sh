@@ -27,6 +27,17 @@ while read -r path name minimum; do
         *) strip --remove-section=.comment --remove-section=.note "$work/pkg/usr/$path" ;;
     esac
 done < "$here/match/targets.txt"
+# The rebuilt Mach-O files (tools/build-macho.py): BUILD_DIR/macho/<path under lib/cutefish-reef>; each replaces the file of the original
+# at that path and keeps its mode.
+macho=0
+if [ -d "$build/macho" ]; then
+    for file in $(cd "$build/macho" && find . -type f | sort); do
+        dest=$work/pkg/usr/lib/cutefish-reef/${file#./}
+        [ -f "$dest" ] && [ ! -L "$dest" ] || { echo "make-deb.sh: $dest is not a file of the original package" >&2; exit 1; }
+        cat "$build/macho/$file" > "$dest"
+        macho=$((macho + 1))
+    done
+fi
 # The modes of the package, whatever the umask of the checkout: folders 755, files 644 or 755.
 chmod -R u+rwX,go+rX,go-w "$work/pkg"
 mkdir "$work/pkg/DEBIAN"
@@ -45,7 +56,8 @@ Section: $(field Section)
 Priority: optional
 Description: Mac app runtime, its programs and libraries built from source
  The files of $(field Package) $(field Version), with its 12 ELF programs and
- libraries built from reef-src $commit. The Mac frameworks are unchanged.
+ libraries and $macho of its Mach-O files built from reef-src $commit.
+ The other Mac frameworks are unchanged.
 CONTROL
 mkdir -p "$out"
 dpkg-deb --root-owner-group -Zxz --build "$work/pkg" "$out/open-reef_${version}_amd64.deb" >/dev/null
