@@ -102,4 +102,4 @@ typedef struct voucher_mach_msg_state_s *voucher_mach_msg_state_t;
 #define VOUCHER_MACH_MSG_STATE_UNCHANGED ((voucher_mach_msg_state_t)~0)
 voucher_mach_msg_state_t voucher_mach_msg_adopt(mach_msg_header_t *msg);
 void voucher_mach_msg_revert(voucher_mach_msg_state_t state);
-#include <mach/mk_timer.h>
+

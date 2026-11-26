@@ -41,4 +41,3 @@ char *strnstr(const char *, const char *, unsigned long);
 #include <sys/uio.h>
 int pthread_threadid_np(void *, unsigned long long *);
 int pthread_getugid_np(unsigned int *, unsigned int *);
-int pthread_setname_np(unsigned long, const char *);

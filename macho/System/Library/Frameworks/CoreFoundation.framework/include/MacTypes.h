@@ -34,3 +34,5 @@ typedef SInt8 SignedByte;
 typedef UInt32 UTF32Char;
 typedef UInt16 UTF16Char;
 typedef UInt8 UTF8Char;
+typedef struct { UInt32 lo; UInt32 hi; } UnsignedWide;
+typedef UnsignedWide AbsoluteTime;
