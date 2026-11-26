@@ -58,7 +58,7 @@ struct Root
         Constant,               // a global constant with its value: "reef_c3"
         Texture,
         Sampler,                // also a constant sampler (__air_sampler_state)
-        ReadSampler,            // the sampler of air.get_read_sampler
+        ReadSampler,            // a handle the shader only passes on: the sampler of air.get_read_sampler, a pipeline state
     };
     int kind = Buffer;          // 0x00
     int index = 0;              // 0x04  the Metal slot of an argument: [[buffer(n)]], [[texture(n)]], [[threadgroup(n)]] ...
@@ -184,7 +184,8 @@ private:
     Address addressOf(llvm::Value *pointer);                // 0x94b70
     void copyMemory(llvm::CallInst &call, llvm::Intrinsic::ID id); // 0x95b50  memcpy, memmove, memset
     // pointers.cpp
-    bool splitResourceIndexing();                           // 0x9bce0  loads of textures, samplers and buffers at run-time indices
+    const Argument *argumentOf(llvm::Value *value);         // 0x9bc90  the metadata of a parameter of the function, or null
+    bool splitResourceIndexing();                           // 0x9bce0  loads of textures and samplers at run-time indices
     void collectArgumentBuffers();                          // 0x9eda0  textures and samplers of argument buffers
     void expandResourceArrays();                            // 0x9f7e0  arrays of textures and samplers: one global each
     Root *loadedRoot(llvm::LoadInst *load);                 // 0xa2210  the root of a pointer that an argument buffer holds
@@ -247,11 +248,11 @@ private:
     std::vector<std::unique_ptr<Root>> m_roots;             // 0x3f0
     llvm::DenseMap<const llvm::Value *, Root *> m_pointerRoots;   // 0x408
     llvm::DenseMap<const llvm::Value *, Root *> m_argumentRoots;  // 0x420
-    std::map<int, Texture> m_textures;                      // 0x438  by the index of the argument
+    std::map<int, Texture> m_textures;                      // 0x438  by the Metal slot: [[texture(n)]]
     // pointers.cpp (first version of the types: sizes and destructors as in the binary)
     std::deque<Argument> m_members;                         // 0x468  resources of argument buffers, as arguments of their own
     std::vector<std::pair<const llvm::Value *, Argument *>> m_memberValues; // 0x4b8
-    std::map<std::pair<const llvm::Value *, int64_t>, Root *> m_loadedRoots; // 0x4d0
+    std::map<std::pair<Root *, int64_t>, Root *> m_loadedRoots; // 0x4d0  by the argument buffer's root and the offset in it
     void *m_unused500 = nullptr;                            // 0x500  only the constructor touches it
     std::set<llvm::BasicBlock *> m_written;                 // 0x508  blocks that are in the body
     std::map<llvm::BasicBlock *, int> m_numbers;            // 0x538  blocks of the state machine
