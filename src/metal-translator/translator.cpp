@@ -150,7 +150,8 @@ static MslCompiler mslCompiler()
 
 static std::unique_ptr<llvm::Module> parseBitcode(llvm::StringRef bitcode, llvm::LLVMContext &context, std::string &error)
 {
-    llvm::Expected<std::unique_ptr<llvm::Module>> module = llvm::parseBitcodeFile(llvm::MemoryBufferRef(bitcode, "air"), context);
+    const llvm::MemoryBufferRef buffer(bitcode, "air");
+    llvm::Expected<std::unique_ptr<llvm::Module>> module = llvm::parseBitcodeFile(buffer, context);
     if (!module) {
         error = "unreadable bitcode: " + llvm::toString(module.takeError());
         return nullptr;
