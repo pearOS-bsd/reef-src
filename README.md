@@ -1,12 +1,12 @@
 # reef-src (private)
 Source of the ELF programs and libraries of Reef, reconstructed function by function. Linux only. BSD-3-Clause (see NOTICE).
 
-**Total of the 12 ELF files: 33.4 % of the code bytes (1277736 of 3828323) and 68.8 % of the functions (3482 of 5060) are the
+**Total of the 12 ELF files: 34.9 % of the code bytes (1337833 of 3828323) and 74.2 % of the functions (3757 of 5060) are the
 same as in the published binaries** (2026-11-26). `tools/total.py` computes it; every CI run prints it at the end of the match
 list (there without `libreef-webkit-host.so`, which needs headers CI does not have). Functions that are written but not the
 same yet do not count.
-**Written: 93.2 % of the functions (4714 of 5060)**: every file but `libreef-metal-msl.so`, which is in progress; what was
-tested against the original is in the table. The 199 Mach-O files of Reef (58.6 MB) are not part of this repository.
+**Written: 100.0 % of the functions (5060 of 5060)**: every file; what was tested against the original is in the table. Now the
+functions that are written but not the same yet are tuned. The 199 Mach-O files of Reef (58.6 MB) are not part of this repository.
 
 | target | matched |
 |---|---|
@@ -21,7 +21,7 @@ tested against the original is in the table. The 199 Mach-O files of Reef (58.6 
 | `reef-diagnose` | 308/401 functions, 38.8 % of bytes; all written; the same reports as the original in `tests/diagnose.py` (20 cases on made up machines), see `docs/DIAGNOSE.md` |
 | `libreef-appkit-host.so` | 1458/1768 functions, 54.7 % of bytes; all 317 table entries written; the same behaviour as the original in `tests/appkit` (drawing, windows, planes, input, menus, OpenGL without a display) and in the tests of the units (fonts, text, PDF, video, sound, cameras, D-Bus, icons, dialogs, drags; see `docs/APPKIT-HOST.md`) |
 | `libreef-metal-translator.so` | 495/712 functions, 21.6 % of bytes; all written; the same GLSL, reflection and errors as the original in `tests/metal/run.sh` (323 Metal sources, also from the cache), see `docs/METAL.md` |
-| `libreef-metal-msl.so` | in progress (346 functions) |
+| `libreef-metal-msl.so` | 275/346 functions, 23.1 % of bytes; all written; the same modules and errors as the original in `tests/metal/msl.sh` (93 sources; 1530 by hand), see `docs/METAL.md` |
 
 Behaviour: `tests/small.py` 25 cases (login, authhelper), `tests/mach.py` 6 Mac programs on the loader (Mach ports through the broker included), `tests/hdiutil.py` 46 cases, `tests/diagnose.py` 20 cases, `tests/dialogs.py` 1444 cases (the two dialogs, 2026-11-25),
 `tests/package.py` 540 cases (packages made there, good and broken: what is listed and the installed tree): no difference.
