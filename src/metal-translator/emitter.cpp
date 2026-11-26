@@ -231,13 +231,14 @@ std::string Emitter::vectorPrefix(llvm::Type *element)
             require("GL_ARB_gpu_shader_int64");
             return "u64vec";
         }
-    } else if (element->isDoubleTy()) {
-        return "dvec";
-    } else if (element->isHalfTy() || element->isBFloatTy() || element->isFloatTy()) {
-        return "vec";
-    } else if (!element->isPointerTy()) {
-        throw Unsupported("vectors of this element type are not supported");
+        return "uvec";
     }
+    if (element->isDoubleTy())
+        return "dvec";
+    if (element->isHalfTy() || element->isBFloatTy() || element->isFloatTy())
+        return "vec";
+    if (!element->isPointerTy())
+        throw Unsupported("vectors of this element type are not supported");
     return "uvec";
 }
 
@@ -436,7 +437,7 @@ std::string Emitter::typeName(llvm::Type *type)
     case llvm::Type::ArrayTyID:
         if (type->getArrayNumElements() == 0)
             throw Unsupported("zero-length arrays are not supported as values");
-        return typeName(type->getArrayElementType()) + "[" + std::to_string(type->getArrayNumElements()) + "]";
+        return typeName(llvm::cast<llvm::ArrayType>(type)->getElementType()) + "[" + std::to_string(type->getArrayNumElements()) + "]";
     case llvm::Type::FixedVectorTyID: {
         auto *vector = llvm::cast<llvm::FixedVectorType>(type);
         const unsigned count = vector->getNumElements();
