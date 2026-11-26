@@ -59,7 +59,7 @@ static std::vector<std::string> values(const Arguments& arguments, const std::st
 
 static bool has(const Arguments& arguments, const std::string& flag)
 {
-    return arguments.flags.find(flag) != arguments.flags.end();
+    return arguments.flags.count(flag) != 0;
 }
 
 // The name of a volume: its own option, then the general ones, then the name of the folder.
@@ -89,8 +89,7 @@ static void startProgress(const Arguments& arguments)
 static void printCreated(const std::string& path)
 {
     char resolved[PATH_MAX];
-    realpath(path.c_str(), resolved);
-    printf("created: %s\n", resolved);
+    printf("created: %s\n", realpath(path.c_str(), resolved) ? resolved : path.c_str());
 }
 
 static void reportCreated(const Arguments& arguments, const std::string& path)
@@ -128,8 +127,12 @@ static std::string withExtension(const std::string& path, const char* extension)
 
 static bool mayWrite(const Arguments& arguments, const char* path, std::string* error)
 {
-    struct stat status;
-    if (lstat(path, &status) == 0 && !has(arguments, "-ov")) {
+    bool exists;
+    {
+        struct stat status;
+        exists = lstat(path, &status) == 0;
+    }
+    if (exists && !has(arguments, "-ov")) {
         *error = "File exists";
         return false;
     }

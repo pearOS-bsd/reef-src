@@ -93,7 +93,7 @@ static uint32_t hfsTime(int64_t time)
     const int64_t seconds = time + HfsEpoch;
     if (seconds < 0)
         return 0;
-    if (seconds >= 0x100000000)
+    if (seconds > 0xffffffff)
         return 0xffffffff;
     return seconds;
 }
@@ -101,7 +101,7 @@ static uint32_t hfsTime(int64_t time)
 // Created, content modified, attributes modified, accessed, backed up.
 static void putDates(uint8_t* p, const Entry& entry)
 {
-    put32(p, hfsTime(std::min(entry.changed, entry.modified)));
+    put32(p, hfsTime(std::min(entry.modified, entry.changed)));
     put32(p + 4, hfsTime(entry.modified));
     put32(p + 8, hfsTime(entry.changed));
     put32(p + 12, hfsTime(entry.accessed));

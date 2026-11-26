@@ -322,8 +322,9 @@ static void volumeDate(uint8_t* p, time_t time)
         p[16] = 0;
         return;
     }
+    time_t seconds = time;
     tm when;
-    gmtime_r(&time, &when);
+    gmtime_r(&seconds, &when);
     char text[64];
     snprintf(text, sizeof(text), "%04d%02d%02d%02d%02d%02d00", when.tm_year + 1900, when.tm_mon + 1, when.tm_mday, when.tm_hour, when.tm_min,
              when.tm_sec);
