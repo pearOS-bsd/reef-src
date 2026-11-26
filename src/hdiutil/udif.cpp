@@ -64,8 +64,6 @@ struct Partition
     std::vector<Run> runs;
 };
 
-namespace {
-
 struct SourceImage
 {
     int fd = -1;
@@ -87,6 +85,8 @@ struct SourceImage
             close(fd);
     }
 };
+
+namespace {
 
 struct Bzip2Functions
 {
@@ -318,8 +318,8 @@ static std::string propertyList(const std::vector<Partition>& partitions, const 
     return xml;
 }
 
-static bool readSectors(SourceImage& source, uint64_t sector, uint64_t count, uint8_t* buffer, std::string* error);
-static bool openImage(const std::string& path, SourceImage* source, std::string* error);
+bool readSectors(SourceImage& source, uint64_t sector, uint64_t count, uint8_t* buffer, std::string* error);
+bool openImage(const std::string& path, SourceImage* source, std::string* error);
 
 bool verify(const std::string& image, const Progress& progress, std::string* report, std::string* error)
 {
@@ -526,7 +526,7 @@ bool convert(const std::string& input, const std::string& output, const ConvertO
 }
 
 // `count` sectors from `sector` on: zero where the image has nothing.
-static bool readSectors(SourceImage& source, uint64_t sector, uint64_t count, uint8_t* buffer, std::string* error)
+bool readSectors(SourceImage& source, uint64_t sector, uint64_t count, uint8_t* buffer, std::string* error)
 {
     const uint64_t size = count * 512;
     memset(buffer, 0, size);
@@ -716,7 +716,7 @@ static bool parseUdif(SourceImage* source, const uint8_t* koly, std::string* err
 }
 
 // A raw image is one partition, named after the file system that it starts with.
-static bool openImage(const std::string& path, SourceImage* source, std::string* error)
+bool openImage(const std::string& path, SourceImage* source, std::string* error)
 {
     source->fd = open(path.c_str(), O_RDONLY | O_CLOEXEC);
     struct stat status;
