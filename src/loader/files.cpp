@@ -283,7 +283,8 @@ static long hostPathconf(const char* path, int fd, int name)
         if ((path ? statfs(host.c_str(), &fs) : fstatfs(fd, &fs)) < 0)
             return failure();
         // FAT and exFAT ignore the case of names.
-        return name == 11 ? !(fs.f_type == 0x4d44 || fs.f_type == 0x2011bab0) : 1;
+        const bool caseless = fs.f_type == 0x4d44 || fs.f_type == 0x2011bab0;
+        return name == 11 ? !caseless : 1;
     }
     case 13:
     case 14: {

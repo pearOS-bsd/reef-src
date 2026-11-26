@@ -1157,7 +1157,7 @@ long withoutSignal(const std::function<long()>& call)
     const bool wasPending = sigismember(&pending, SIGPIPE) == 1;
     const long result = call();
     const int error = errno;
-    if (!wasPending && result < 0 && error == EPIPE) {
+    if (result < 0 && !wasPending && error == EPIPE) {
         const timespec now = {};
         sigtimedwait(&pipe, nullptr, &now);
     }
