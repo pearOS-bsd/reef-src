@@ -76,12 +76,12 @@ static void forgetInstructions(Map &map)
 static std::string floatLiteral(double value, bool isDouble)
 {
     char buffer[64];
-    if (!std::isfinite(value)) {
-        if (!isDouble) {
-            snprintf(buffer, sizeof(buffer), "uintBitsToFloat(0x%xu)", std::bit_cast<uint32_t>(float(value)));
-        } else {
+    if (std::isnan(value) || std::isinf(value)) {
+        if (isDouble) {
             const uint64_t bits = std::bit_cast<uint64_t>(value);
             snprintf(buffer, sizeof(buffer), "packDouble2x32(uvec2(0x%xu, 0x%xu))", unsigned(bits), unsigned(bits >> 32));
+        } else {
+            snprintf(buffer, sizeof(buffer), "uintBitsToFloat(0x%xu)", std::bit_cast<uint32_t>(float(value)));
         }
         return buffer;
     }
@@ -307,8 +307,8 @@ std::string Emitter::scalarConstant(llvm::Constant *constant, llvm::Type *type)
     if (auto *real = llvm::dyn_cast<llvm::ConstantFP>(constant)) {
         if (type->isDoubleTy())
             return floatLiteral(real->getValueAPF().convertToDouble(), true);
-        llvm::APFloat value = real->getValueAPF();
         bool lost = false;
+        llvm::APFloat value = real->getValueAPF();
         value.convert(llvm::APFloat::IEEEsingle(), llvm::APFloat::rmNearestTiesToEven, &lost);
         return floatLiteral(value.convertToFloat(), false);
     }
