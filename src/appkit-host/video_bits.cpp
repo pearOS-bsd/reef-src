@@ -55,8 +55,8 @@ uint32_t BitReader::bits(int count)
             next = m_data[m_position / 8] >> (7 - m_position % 8) & 1;
         else
             m_failed = true;
-        m_position++;
         value = value << 1 | next;
+        m_position++;
     }
     return value;
 }
