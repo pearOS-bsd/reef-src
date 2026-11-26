@@ -1395,6 +1395,18 @@ static void clearRuns()
     runBytes = 0;
 }
 
+static void forgetMasks(const reef_ui_face* face)
+{
+    for (auto mask = masks.begin(); mask != masks.end();) {
+        if (mask->first.face == face) {
+            maskBytes -= mask->second.pixels.size();
+            mask = masks.erase(mask);
+        } else {
+            ++mask;
+        }
+    }
+}
+
 // 126
 void faceRelease(reef_ui_face* face)
 {
@@ -1406,23 +1418,16 @@ void faceRelease(reef_ui_face* face)
     const auto it = faces.find(face->key);
     if (it != faces.end() && it->second == face)
         faces.erase(it);
-    for (const auto& [character, fallback] : face->fallbacks) {
-        if (fallback)
-            faceRelease(fallback);
-    }
-    for (const auto& [character, fallback] : face->languageFallbacks) {
-        if (fallback)
-            faceRelease(fallback);
-    }
-    clearRuns();
-    for (auto mask = masks.begin(); mask != masks.end();) {
-        if (mask->first.face == face) {
-            maskBytes -= mask->second.pixels.size();
-            mask = masks.erase(mask);
-        } else {
-            ++mask;
+    const auto release = [](auto& fallbacks) {
+        for (const auto& [key, fallback] : fallbacks) {
+            if (fallback)
+                faceRelease(fallback);
         }
-    }
+    };
+    release(face->fallbacks);
+    release(face->languageFallbacks);
+    clearRuns();
+    forgetMasks(face);
     if (face->font)
         hb_font_destroy(face->font);
     if (face->hbFace)
