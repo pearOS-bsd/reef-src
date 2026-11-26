@@ -1,7 +1,7 @@
 #!/bin/sh
 # SPDX-FileCopyrightText: 2026 Alexandru Balan
 # SPDX-License-Identifier: BSD-2-Clause
-# usage: check.sh Name : symbols the app imports from Name (from missing/<Name>.txt) that out/lib/Name.dylib does not export.
+# usage: check.sh Name SYMBOLS.txt : symbols in SYMBOLS.txt (mangled, no leading underscore) that out/lib/Name.dylib does not export.
 here=$(cd "$(dirname "$0")" && pwd)
-n=$1
-nm -gU "$here/out/lib/$n.dylib" 2>/dev/null || llvm-nm -g --defined-only "$here/out/lib/$n.dylib"
+llvm-nm -g --defined-only "$here/out/lib/$1.dylib" | awk '{print $3}' | sort > /tmp/check-have.$$
+sed 's/^/_/' "$2" | sort | comm -23 - /tmp/check-have.$$; rm -f /tmp/check-have.$$
