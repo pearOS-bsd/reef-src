@@ -35,3 +35,8 @@ colours, real windows. CI has no signed applications, so it runs only the part w
 `docs/TOOLCHAIN.md` has the evidence for the compiler and flags; `tools/compare.py -v` lists what differs.
 Run `tests/small.py` in the container after `build-match.sh` (build is in /tmp/b): 25 cases, original against ours.
 `reef-authhelper` and `login` are security sensitive: run them in a container, never install them setuid.
+
+## Package
+`tools/make-deb.sh ORIGINAL.deb BUILD_DIR OUT_DIR [COMMIT]` makes `open-reef`: the original package with its 12 ELF files
+replaced by a build of this repository (CMake, as in `tools/build-match.sh`). It conflicts with, replaces and provides the
+original package, so it installs in its place.
