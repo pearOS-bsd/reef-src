@@ -34,7 +34,7 @@ static const std::set<std::string> valued = {
     "-alternatemount",
 };
 
-inline std::string value(const Arguments& arguments, const std::string& name, const std::string& fallback)
+inline std::string value(const Arguments& arguments, const std::string& name, const std::string& fallback = {})
 {
     for (const auto& [option, given] : arguments.values) {
         if (option == name)
@@ -61,16 +61,13 @@ static bool has(const Arguments& arguments, const std::string& flag)
 // The name of a volume: its own option, then the general ones, then the name of the folder.
 static std::string volumeName(const Arguments& arguments, const char* option, const Entry& root)
 {
-    std::string name = value(arguments, option, "");
+    std::string name = value(arguments, option);
     if (name.empty()) {
-        name = value(arguments, "-default-volume-name", "");
-        if (name.empty()) {
-            name = value(arguments, "-volname", "");
-            if (name.empty())
-                return root.name;
-        }
+        name = value(arguments, "-default-volume-name");
+        if (name.empty())
+            name = value(arguments, "-volname");
     }
-    return name;
+    return name.empty() ? root.name : name;
 }
 
 // -puppetstrings: the progress as Finder reads it.
@@ -165,7 +162,7 @@ static bool finish(const std::string& temporary, const std::string& path, std::s
 
 static bool convertOptions(const Arguments& arguments, diskimage::ConvertOptions* options, std::string* error)
 {
-    const std::string format = value(arguments, "-format", "");
+    const std::string format = value(arguments, "-format");
     options->format = diskimage::UDZO;
     if (!format.empty() && !diskimage::parseFormat(format, options)) {
         *error = "image format " + format + " is not supported";
@@ -196,7 +193,7 @@ static int fail(const char* command, const std::string& error)
 
 static int makehybrid(const Arguments& arguments)
 {
-    const std::string output = value(arguments, "-o", "");
+    const std::string output = value(arguments, "-o");
     if (output.empty() || arguments.positional.size() != 1)
         return fail("makehybrid", "usage: hdiutil makehybrid -o image [options] source");
     Entry root;
@@ -258,7 +255,7 @@ static int create(const Arguments& arguments)
     Entry root;
     if (!scanFolder(sources[0], root, &error))
         return fail("create", error);
-    std::string name = value(arguments, "-volname", "");
+    std::string name = value(arguments, "-volname");
     if (name.empty())
         name = root.name;
     const std::string raw = temporaryFor(path, &error);
@@ -294,7 +291,7 @@ static int create(const Arguments& arguments)
 
 static int convert(const Arguments& arguments)
 {
-    std::string output = value(arguments, "-o", "");
+    std::string output = value(arguments, "-o");
     if (output.empty() || arguments.positional.size() != 1)
         return fail("convert", "usage: hdiutil convert image -format format -o output");
     std::string error;
