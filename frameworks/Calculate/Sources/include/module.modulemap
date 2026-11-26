@@ -1,0 +1,4 @@
+module CalculateObjC {
+    header "CalculateObjC.h"
+    export *
+}

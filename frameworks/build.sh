@@ -11,4 +11,4 @@ R=fwbuild
 tar -C "$here" --exclude=out --exclude=.git -cf - . | $SSH "mkdir -p $R && cd $R && tar xf -"
 for n in "$@"; do $SSH "sh $R/mac-build.sh $n"; done
 mkdir -p "$here/out"
-$SSH "cd $R/out && tar cf - lib mods" | tar -C "$here/out" -xf -
+$SSH "cd $R/out && tar cf - lib mods inc" | tar -C "$here/out" -xf -
