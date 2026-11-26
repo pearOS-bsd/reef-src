@@ -55,7 +55,7 @@ if [ "$KIND" = wrapper ]; then
   # references to the framework itself must reach the original, not the wrapper
   install_name_tool -id $INSTALL -change $INSTALL $INSTALL.reef-orig $OUT/lib/$N.dylib
   # libraries Reef folds into the original (SwiftUICore into SwiftUI): REDIRECT="from ..."
-  for r in $REDIRECT; do install_name_tool -change $r $INSTALL.reef-orig $OUT/lib/$N.dylib; done
+  for r in $REDIRECT; do install_name_tool -change $r ${REDIRECT_TO:-$INSTALL.reef-orig} $OUT/lib/$N.dylib; done
   echo "built wrapper $N ($(wc -l < $OUT/obj/$N/flags.txt) aliases)"
   exit 0
 fi
