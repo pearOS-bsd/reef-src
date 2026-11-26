@@ -354,18 +354,20 @@ static std::string existingPath(const char* path, bool follow)
             return path;
         } else {
             std::string match;
+            bool matched = false;
             if (!last || follow) {
                 if (DIR* directory = opendir(found.empty() ? "/" : found.c_str())) {
                     while (const dirent* entry = readdir(directory)) {
                         if (strcasecmp(entry->d_name, name.c_str()) == 0) {
                             match = entry->d_name;
+                            matched = true;
                             break;
                         }
                     }
                     closedir(directory);
                 }
             }
-            if (!match.empty())
+            if (matched)
                 found += '/' + match;
             else if (last)
                 found = std::move(full);
@@ -603,8 +605,8 @@ static int hostIsatty(int fd) { return isatty(fd); }
 
 static int hostMemoryFile(const char* name)
 {
-    const long fd = syscall(SYS_memfd_create, name ? name : "reef", 1);
-    return fd < 0 ? failure() : int(fd);
+    const int fd = syscall(SYS_memfd_create, name ? name : "reef", 1);
+    return fd < 0 ? failure() : fd;
 }
 
 // Time.
