@@ -6,6 +6,10 @@ import Foundation
 import AppKit
 import Calculate
 
+func logDisplay(_ text: String) {
+    if ProcessInfo.processInfo.environment["REEF_LOG_DISPLAY"] != nil { fputs("display: \(text)\n", stderr) }
+}
+
 public struct CalculateExpressionView: View {
     let expression: CalculateExpression
     let isEditable: Bool
@@ -34,7 +38,8 @@ public struct CalculateExpressionView: View {
     }
 
     public var body: some View {
-        Text(expression.expression)
+        let _ = logDisplay(expression.displayText)
+        Text(expression.displayText)
             .font(.system(size: fontSize ?? ((height ?? 48) * 0.8)))
             .foregroundColor(textColor)
             .multilineTextAlignment(textAlignment)

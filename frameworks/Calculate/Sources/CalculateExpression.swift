@@ -128,6 +128,26 @@ public final class CalculateExpression: Hashable, CustomDebugStringConvertible {
         }
     }
 
+    /// What the display shows: the expression with evaluated numbers (123E-2) written as numbers.
+    public var displayText: String {
+        if tokens.isEmpty { return "0" }
+        let f = numberFormatter ?? {
+            let f = NumberFormatter()
+            f.numberStyle = .decimal; f.usesGroupingSeparator = true; f.maximumFractionDigits = 8; f.locale = Locale(identifier: "en_US")
+            return f
+        }()
+        return tokens.map { t -> String in
+            if case .num(let s) = t, s.contains("E") {
+                let parts = s.split(separator: "E")
+                if let m = Decimal(string: String(parts[0])), let e = Int(parts[1].replacingOccurrences(of: "+", with: "")) {
+                    let v = e >= 0 ? m * Foundation.pow(10, e) : m / Foundation.pow(10, -e)
+                    return f.string(from: v as NSDecimalNumber) ?? s
+                }
+            }
+            return text(t)
+        }.joined() + String(repeating: ")", count: openDepth)
+    }
+
     public var copyableExpression: String { expression }
     public var unicode: String { expression }
     public var ascii: String { expression.replacingOccurrences(of: "×", with: "*").replacingOccurrences(of: "÷", with: "/") }

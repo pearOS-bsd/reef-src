@@ -107,3 +107,76 @@ __attribute__((constructor)) static void ReefFixHostingWidth(void) {
         [NSTimer scheduledTimerWithTimeInterval:0.25 repeats:YES block:^(NSTimer *t) { ReefFixWindows(); }];
     });
 }
+
+// Test aid: REEF_INJECT_KEYS="1 2 + 3 =" types the characters into the key window, one every
+// REEF_INJECT_INTERVAL seconds (default 0.6), starting REEF_INJECT_DELAY seconds after launch (default 9).
+// Names: Return, Escape, Delete (backspace).
+static void ReefPostKey(NSString *chars, unsigned short code) {
+    NSWindow *w = NSApp.keyWindow ?: NSApp.mainWindow ?: NSApp.windows.firstObject;
+    if (!w) { fprintf(stderr, "inject: no window\n"); return; }
+    for (NSNumber *down in @[@YES, @NO]) {
+        NSEvent *e = [NSEvent keyEventWithType:down.boolValue ? NSEventTypeKeyDown : NSEventTypeKeyUp location:NSZeroPoint modifierFlags:0
+                                     timestamp:NSProcessInfo.processInfo.systemUptime windowNumber:w.windowNumber context:nil
+                                    characters:chars charactersIgnoringModifiers:chars isARepeat:NO keyCode:code];
+        [NSApp sendEvent:e];
+    }
+}
+
+// REEF_INJECT_CLICKS="x,y x,y ...": left clicks at points of the content area (from its top left).
+static void ReefPostClick(double x, double yFromTop) {
+    NSWindow *w = NSApp.keyWindow ?: NSApp.mainWindow ?: NSApp.windows.firstObject;
+    if (!w) return;
+    NSRect content = w.contentView.frame;
+    NSPoint p = NSMakePoint(x, content.size.height - yFromTop);
+    for (NSNumber *down in @[@YES, @NO]) {
+        NSEvent *e = [NSEvent mouseEventWithType:down.boolValue ? NSEventTypeLeftMouseDown : NSEventTypeLeftMouseUp location:p modifierFlags:0
+                                       timestamp:NSProcessInfo.processInfo.systemUptime windowNumber:w.windowNumber context:nil eventNumber:0 clickCount:1 pressure:down.boolValue ? 1.0 : 0.0];
+        [NSApp sendEvent:e];
+    }
+}
+
+__attribute__((constructor)) static void ReefInjectClicks(void) {
+    const char *pts = getenv("REEF_INJECT_CLICKS");
+    if (!pts) return;
+    double delay = getenv("REEF_INJECT_DELAY") ? atof(getenv("REEF_INJECT_DELAY")) : 9;
+    double interval = getenv("REEF_INJECT_INTERVAL") ? atof(getenv("REEF_INJECT_INTERVAL")) : 0.6;
+    NSArray *list = [[NSString stringWithUTF8String:pts] componentsSeparatedByString:@" "];
+    for (NSUInteger i = 0; i < list.count; i++) {
+        NSArray *xy = [list[i] componentsSeparatedByString:@","];
+        if (xy.count != 2) continue;
+        double x = [xy[0] doubleValue], y = [xy[1] doubleValue];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((delay + interval * i) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            fprintf(stderr, "inject: click %g,%g\n", x, y);
+            ReefPostClick(x, y);
+        });
+    }
+}
+
+__attribute__((constructor)) static void ReefInjectKeys(void) {
+    const char *keys = getenv("REEF_INJECT_KEYS");
+    if (!keys) return;
+    double delay = getenv("REEF_INJECT_DELAY") ? atof(getenv("REEF_INJECT_DELAY")) : 9;
+    double interval = getenv("REEF_INJECT_INTERVAL") ? atof(getenv("REEF_INJECT_INTERVAL")) : 0.6;
+    NSArray *list = [[NSString stringWithUTF8String:keys] componentsSeparatedByString:@" "];
+    for (NSUInteger i = 0; i < list.count; i++) {
+        NSString *k = list[i];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((delay + interval * i) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            fprintf(stderr, "inject: %s\n", k.UTF8String);
+            if ([k isEqualToString:@"Return"]) ReefPostKey(@"\r", 36);
+            else if ([k isEqualToString:@"Escape"]) ReefPostKey(@"\x1b", 53);
+            else if ([k isEqualToString:@"Delete"]) ReefPostKey(@"\x7f", 51);
+            else ReefPostKey(k, 0);
+        });
+    }
+}
+
+// Debug aid: REEF_LOG_EVENTS=1 prints the events that reach the application.
+__attribute__((constructor)) static void ReefLogEvents(void) {
+    if (!getenv("REEF_LOG_EVENTS")) return;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskAny handler:^NSEvent *(NSEvent *e) {
+            if (e.type != NSEventTypeMouseMoved || 1) fprintf(stderr, "event: type=%ld loc=%s window=%ld chars=%s\n", (long)e.type, NSStringFromPoint(e.locationInWindow).UTF8String, (long)e.windowNumber, e.type == NSEventTypeKeyDown ? e.characters.UTF8String : "");
+            return e;
+        }];
+    });
+}
