@@ -72,6 +72,14 @@ What the function match showed:
   CFNotificationCenter, CFUserNotification, CFURL bookmarks and FSRef, CFXML, CFStringTokenizer, `OSAtomic*` ones that CF does not define, `__CFBridgeInitialize`, ...) and about 1000 Objective-C
   methods (`__NSCF*`, `NSString`, `NSURL`, `NSNumber`, `NSInvocation`, `NSCache`, `NSRunLoop` ...). Reef's CF also imports `reef_host_symbol` and `reef_report_unsupported`.
 
+Reef's own CoreFoundation code (`macho/.../CoreFoundation.framework/reef/`, written from the binary and the older decompilation; sizes of the functions match the original almost everywhere):
+CFFileSecurity, CFFileDescriptor (two dispatch sources and a run loop source), CFMachPort (watcher thread, `0x52454546` terminate message), CFMessagePort (remote ports unsupported), CFNotificationCenter
+(forwards to NSNotificationCenter when Foundation is loaded, else its own table; Darwin center ignores object and user info), CFUserNotification (NSAlert on the main queue, else `org.freedesktop.Notifications`
+through `_reefDBusCall`), CFStringTokenizer (ICU break iterator), CFXML escaping, CFURL resource properties and bookmarks (messages to NSURL) with FSRef tokens, bound stream pairs, exception handler slot.
+`CFFileUtilities.c` builds with `DEPLOYMENT_RUNTIME_OBJC=0` (that is what has the XDG paths). Still missing (see the list printed by `llvm-nm` difference): the socket stream pair and its TLS glue (`_advance`,
+`_connectNext`, `_resolveSSL` ...), hyphenation (`_dictionaryFor`), the locale display names (`__reef*`), the NSInvocation forwarding (`_reefForwarding*`, `_reefFrame*`), bundle and locale odds and ends,
+and the Objective-C classes. The function match dropped a little (69.5 %) because new functions are counted.
+
 ## libdispatch: what was found
 `usr/lib/system/libdispatch.dylib` (636 functions) is built as `__APPLE__` (the Apple branch of `internal.h`: `os/availability.h`, `mach/*`, `mach_msg`, `mach_port_*`) with the epoll backend of
 `event_config.h` (`__linux__` true there: `epoll_create1`, `eventfd`, `timerfd_create`, `signalfd`) and the ObjC classes `OS_dispatch_*` (`data.m`, `object.m`); it imports `kevent` and `kqueue` too.
