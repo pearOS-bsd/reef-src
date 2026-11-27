@@ -167,3 +167,88 @@ __attribute__((constructor)) static void addCellContents(void) {
     class_addMethod([NSCell class], sel_registerName("_altContents"), (IMP)cellAltContents, "@@:");
     class_addMethod([NSCell class], sel_registerName("_setContents:"), (IMP)cellSetContents, "v@:@");
 }
+
+// Private AppKit methods that GarageBand's toolkit (MAToolKit) sends to its cells, views and windows (added only
+// where Reef's AppKit has none): defaults that draw nothing extra.
+static NSDictionary *cellTextAttributes(NSCell *self, SEL _cmd) {
+    NSMutableParagraphStyle *p = [[NSParagraphStyle defaultParagraphStyle] mutableCopy];
+    p.alignment = self.alignment;
+    p.lineBreakMode = self.lineBreakMode;
+    // a mutable dictionary, as AppKit's: callers add their own attributes to it
+    return [@{NSFontAttributeName: self.font ?: [NSFont systemFontOfSize:[NSFont systemFontSize]],
+              NSForegroundColorAttributeName: self.isEnabled ? [NSColor controlTextColor] : [NSColor disabledControlTextColor],
+              NSParagraphStyleAttributeName: p} mutableCopy];
+}
+static void noRectView(id self, SEL _cmd, NSRect r, id v) {}
+static void noArg(id self, SEL _cmd, id a) {}
+static void noInt(id self, SEL _cmd, long a) {}
+static void noBool(id self, SEL _cmd, BOOL a) {}
+static void noArgs(id self, SEL _cmd) {}
+static BOOL boolNo(id self, SEL _cmd) { return NO; }
+static BOOL boolNoArg(id self, SEL _cmd, id a) { return NO; }
+static BOOL boolNoRectView(id self, SEL _cmd, NSRect r, id v) { return NO; }
+static id nilResult(id self, SEL _cmd) { return nil; }
+static id sameArg(id self, SEL _cmd, id a) { return a; }
+static NSRect rectSame(id self, SEL _cmd, NSRect r) { return r; }
+static NSRect viewVisibleRect(NSView *self, SEL _cmd) { return self.visibleRect; }
+static long cellFocusRing(NSCell *self, SEL _cmd) { return self.focusRingType == NSFocusRingTypeDefault ? NSFocusRingTypeExterior : self.focusRingType; }
+static NSAttributedString *cellUnformatted(NSCell *self, SEL _cmd, BOOL b) { return self.attributedStringValue; }
+static id viewClipAncestor(NSView *self, SEL _cmd) {
+    for (NSView *v = self.superview; v; v = v.superview) if ([v isKindOfClass:[NSClipView class]]) return v;
+    return nil;
+}
+static BOOL viewIsAncestor(NSView *self, SEL _cmd, NSView *v) { return [v isDescendantOf:self]; }
+static id windowBorderView(NSWindow *self, SEL _cmd) { return self.contentView.superview; }
+static id windowParent(NSWindow *self, SEL _cmd) { return self.parentWindow; }
+
+static void add(Class c, const char *name, IMP imp, const char *types) { class_addMethod(c, sel_registerName(name), imp, types); }
+
+__attribute__((constructor)) static void addToolkitMethods(void) {
+    Class cell = [NSCell class], view = [NSView class], window = [NSWindow class], app = [NSApplication class];
+    add(cell, "_textAttributes", (IMP)cellTextAttributes, "@@:");
+    add(cell, "_drawKeyboardFocusRingWithFrame:inView:", (IMP)noRectView, "v@:{CGRect={CGPoint=dd}{CGSize=dd}}@");
+    add(cell, "_drawSortIndicatorIfNecessaryWithFrame:inView:", (IMP)noRectView, "v@:{CGRect={CGPoint=dd}{CGSize=dd}}@");
+    add(cell, "_usingAlternateHighlightColorWithFrame:inView:", (IMP)boolNoRectView, "c@:{CGRect={CGPoint=dd}{CGSize=dd}}@");
+    add(cell, "_effectiveFocusRingType", (IMP)cellFocusRing, "q@:");
+    add(cell, "_shouldShowFocusRingInView:", (IMP)boolNoArg, "c@:@");
+    add(cell, "_shouldShowHighlightForSort", (IMP)boolNo, "c@:");
+    add(cell, "_setMouseDownFlags:", (IMP)noInt, "v@:i");
+    add(cell, "_imageRectWithRect:", (IMP)rectSame, "{CGRect={CGPoint=dd}{CGSize=dd}}@:{CGRect={CGPoint=dd}{CGSize=dd}}");
+    add(cell, "_updateInvalidatedObjectValue:", (IMP)noArg, "v@:@");
+    add(cell, "_unformattedAttributedStringValue:", (IMP)cellUnformatted, "@@:c");
+    add(cell, "_isWhite", (IMP)boolNo, "c@:");
+    add(cell, "_setVerticallyCentered:", (IMP)noBool, "v@:c");
+    add(cell, "_setEditOnSingleClick:", (IMP)noBool, "v@:c");
+    add(cell, "_setLineBorderColor:", (IMP)noArg, "v@:@");
+    add(view, "_focusRingClipAncestor", (IMP)nilResult, "@@:");
+    add(view, "_focusRingVisibleRect", (IMP)viewVisibleRect, "{CGRect={CGPoint=dd}{CGSize=dd}}@:");
+    add(view, "_clipViewAncestor", (IMP)viewClipAncestor, "@@:");
+    add(view, "_isAncestorOfViewIdenticalTo:", (IMP)viewIsAncestor, "c@:@");
+    add(view, "_findLastViewInKeyViewLoopStartingAtView:", (IMP)sameArg, "@@:@");
+    add(view, "_setLastFocusRingView:bleedRegion:", (IMP)noArg, "v@:@{CGRect={CGPoint=dd}{CGSize=dd}}");
+    add(window, "_borderView", (IMP)windowBorderView, "@@:");
+    add(window, "_parentWindow", (IMP)windowParent, "@@:");
+    add(window, "_setDefaultKeyViewLoop", (IMP)noArgs, "v@:");
+    add(window, "_setDefaultButtonPaused:", (IMP)noBool, "v@:c");
+    add(window, "_defaultButtonPaused", (IMP)boolNo, "c@:");
+    add(window, "_setDefaultButtonIndicatorNeedsDisplay", (IMP)noArgs, "v@:");
+    add(window, "_startLiveResizeAsTopLevel", (IMP)noArgs, "v@:");
+    add(window, "_endLiveResizeAsTopLevel", (IMP)noArgs, "v@:");
+    add(window, "_getPositionFromServer", (IMP)noArgs, "v@:");
+    add(window, "_setCursorForMouseLocation:", (IMP)noArg, "v@:{CGPoint=dd}");
+    add(window, "_windowButtonMouseUp:", (IMP)noArg, "v@:@");
+    add(window, "_hasForceCapableTouchDevice", (IMP)boolNo, "c@:");
+    add(window, "_eventRelativeToWindow:", (IMP)sameArg, "@@:@");
+    add(window, "_setLastFocusRingView:bleedRegion:", (IMP)noArg, "v@:@{CGRect={CGPoint=dd}{CGSize=dd}}");
+    add(app, "_cycleWindows:", (IMP)noArg, "v@:@");
+    add(app, "_cycleWindowsBackwards:", (IMP)noArg, "v@:@");
+    add(object_getClass(app), "_isRunningInIB", (IMP)boolNo, "c@:");
+    add(app, "_isRunningInIB", (IMP)boolNo, "c@:");
+}
+
+static void textViewChangeBackground(NSTextView *self, SEL _cmd, id sender) {
+    if ([sender respondsToSelector:@selector(color)]) self.backgroundColor = [sender color];
+}
+__attribute__((constructor)) static void addTextViewMethods(void) {
+    add([NSTextView class], "changeDocumentBackgroundColor:", (IMP)textViewChangeBackground, "v@:@");
+}
