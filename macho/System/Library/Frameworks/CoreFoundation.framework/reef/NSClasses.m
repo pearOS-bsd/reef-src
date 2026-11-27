@@ -6,6 +6,75 @@
 
 #import "NSBase.h"
 
+extern long reefCall_CFArrayGetCount(long) __asm__("_CFArrayGetCount");
+extern long reefCall_CFArrayGetTypeID(void) __asm__("_CFArrayGetTypeID");
+extern long reefCall_CFAttributedStringBeginEditing(long) __asm__("_CFAttributedStringBeginEditing");
+extern long reefCall_CFAttributedStringEndEditing(long) __asm__("_CFAttributedStringEndEditing");
+extern long reefCall_CFAttributedStringGetLength(long) __asm__("_CFAttributedStringGetLength");
+extern long reefCall_CFAttributedStringGetString(long) __asm__("_CFAttributedStringGetString");
+extern long reefCall_CFCalendarGetTypeID(void) __asm__("_CFCalendarGetTypeID");
+extern long reefCall_CFCharacterSetAddCharactersInString(long, long) __asm__("_CFCharacterSetAddCharactersInString");
+extern long reefCall_CFCharacterSetGetTypeID(void) __asm__("_CFCharacterSetGetTypeID");
+extern long reefCall_CFCharacterSetIntersect(long, long) __asm__("_CFCharacterSetIntersect");
+extern long reefCall_CFCharacterSetInvert(long) __asm__("_CFCharacterSetInvert");
+extern long reefCall_CFCharacterSetRemoveCharactersInString(long, long) __asm__("_CFCharacterSetRemoveCharactersInString");
+extern long reefCall_CFCharacterSetUnion(long, long) __asm__("_CFCharacterSetUnion");
+extern long reefCall_CFDataAppendBytes(long, long, long) __asm__("_CFDataAppendBytes");
+extern long reefCall_CFDataGetBytePtr(long) __asm__("_CFDataGetBytePtr");
+extern long reefCall_CFDataGetLength(long) __asm__("_CFDataGetLength");
+extern long reefCall_CFDataGetMutableBytePtr(long) __asm__("_CFDataGetMutableBytePtr");
+extern long reefCall_CFDataGetTypeID(void) __asm__("_CFDataGetTypeID");
+extern long reefCall_CFDataIncreaseLength(long, long) __asm__("_CFDataIncreaseLength");
+extern long reefCall_CFDataSetLength(long, long) __asm__("_CFDataSetLength");
+extern long reefCall_CFDateGetTypeID(void) __asm__("_CFDateGetTypeID");
+extern long reefCall_CFDictionaryGetCount(long) __asm__("_CFDictionaryGetCount");
+extern long reefCall_CFDictionaryGetCountOfKey(long, long) __asm__("_CFDictionaryGetCountOfKey");
+extern long reefCall_CFDictionaryGetCountOfValue(long, long) __asm__("_CFDictionaryGetCountOfValue");
+extern long reefCall_CFDictionaryGetKeysAndValues(long, long, long) __asm__("_CFDictionaryGetKeysAndValues");
+extern long reefCall_CFDictionaryGetTypeID(void) __asm__("_CFDictionaryGetTypeID");
+extern long reefCall_CFErrorGetCode(long) __asm__("_CFErrorGetCode");
+extern long reefCall_CFErrorGetDomain(long) __asm__("_CFErrorGetDomain");
+extern long reefCall_CFErrorGetTypeID(void) __asm__("_CFErrorGetTypeID");
+extern long reefCall_CFGetRetainCount(long) __asm__("_CFGetRetainCount");
+extern long reefCall_CFGetTypeID(long) __asm__("_CFGetTypeID");
+extern long reefCall_CFHash(long) __asm__("_CFHash");
+extern long reefCall_CFLocaleGetIdentifier(long) __asm__("_CFLocaleGetIdentifier");
+extern long reefCall_CFLocaleGetTypeID(void) __asm__("_CFLocaleGetTypeID");
+extern long reefCall_CFLocaleGetValue(long, long) __asm__("_CFLocaleGetValue");
+extern long reefCall_CFNumberCompare(long, long, long) __asm__("_CFNumberCompare");
+extern long reefCall_CFNumberGetTypeID(void) __asm__("_CFNumberGetTypeID");
+extern long reefCall_CFReadStreamClose(long) __asm__("_CFReadStreamClose");
+extern long reefCall_CFReadStreamGetError(long) __asm__("_CFReadStreamGetError");
+extern long reefCall_CFReadStreamGetStatus(long) __asm__("_CFReadStreamGetStatus");
+extern long reefCall_CFReadStreamGetTypeID(void) __asm__("_CFReadStreamGetTypeID");
+extern long reefCall_CFReadStreamOpen(long) __asm__("_CFReadStreamOpen");
+extern long reefCall_CFReadStreamRead(long, long, long) __asm__("_CFReadStreamRead");
+extern long reefCall_CFRelease(long) __asm__("_CFRelease");
+extern long reefCall_CFRetain(long) __asm__("_CFRetain");
+extern long reefCall_CFRunLoopTimerGetTypeID(void) __asm__("_CFRunLoopTimerGetTypeID");
+extern long reefCall_CFRunLoopTimerInvalidate(long) __asm__("_CFRunLoopTimerInvalidate");
+extern long reefCall_CFSetGetCount(long) __asm__("_CFSetGetCount");
+extern long reefCall_CFSetGetCountOfValue(long, long) __asm__("_CFSetGetCountOfValue");
+extern long reefCall_CFSetGetTypeID(void) __asm__("_CFSetGetTypeID");
+extern long reefCall_CFSetGetValues(long, long) __asm__("_CFSetGetValues");
+extern long reefCall_CFStringAppend(long, long) __asm__("_CFStringAppend");
+extern long reefCall_CFStringGetCharacterAtIndex(long, long) __asm__("_CFStringGetCharacterAtIndex");
+extern long reefCall_CFStringGetLength(long) __asm__("_CFStringGetLength");
+extern long reefCall_CFStringGetTypeID(void) __asm__("_CFStringGetTypeID");
+extern long reefCall_CFStringReplaceAll(long, long) __asm__("_CFStringReplaceAll");
+extern long reefCall_CFTimeZoneGetData(long) __asm__("_CFTimeZoneGetData");
+extern long reefCall_CFTimeZoneGetName(long) __asm__("_CFTimeZoneGetName");
+extern long reefCall_CFTimeZoneGetTypeID(void) __asm__("_CFTimeZoneGetTypeID");
+extern long reefCall_CFURLGetBaseURL(long) __asm__("_CFURLGetBaseURL");
+extern long reefCall_CFURLGetString(long) __asm__("_CFURLGetString");
+extern long reefCall_CFWriteStreamClose(long) __asm__("_CFWriteStreamClose");
+extern long reefCall_CFWriteStreamGetError(long) __asm__("_CFWriteStreamGetError");
+extern long reefCall_CFWriteStreamGetStatus(long) __asm__("_CFWriteStreamGetStatus");
+extern long reefCall_CFWriteStreamGetTypeID(void) __asm__("_CFWriteStreamGetTypeID");
+extern long reefCall_CFWriteStreamOpen(long) __asm__("_CFWriteStreamOpen");
+extern long reefCall_CFWriteStreamWrite(long, long, long) __asm__("_CFWriteStreamWrite");
+extern long reefCall__CFNumberGetType2(long) __asm__("__CFNumberGetType2");
+extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenced");
 @class NSString, CacheEntry, ReefFrame, ReefSignature;
 
 
@@ -25,19 +94,17 @@
 @implementation __NSCFType
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -54,20 +121,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -165,19 +229,17 @@
 
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -194,20 +256,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -413,8 +472,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFArrayGetTypeID();
 }
 
 - (unsigned long)countByEnumeratingWithState:(NSFastEnumerationState *)a0 objects:(id *)a1 count:(unsigned long)a2
@@ -524,19 +582,17 @@
 @implementation __NSCFArray
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -553,20 +609,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -583,8 +636,7 @@
 
 - (unsigned long)count
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFArrayGetCount(self);
 }
 
 - (id)objectAtIndex:(unsigned long)a0
@@ -787,8 +839,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFDictionaryGetTypeID();
 }
 
 - (unsigned long)countByEnumeratingWithState:(NSFastEnumerationState *)a0 objects:(id *)a1 count:(unsigned long)a2
@@ -880,19 +931,17 @@
 @implementation __NSCFDictionary
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -909,20 +958,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -939,8 +985,7 @@
 
 - (unsigned long)count
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFDictionaryGetCount(self);
 }
 
 - (id)objectForKey:(id)a0
@@ -957,8 +1002,7 @@
 
 - (void)getObjects:(id *)a0 andKeys:(id *)a1
 {
-    // unresolved
-
+    reefCall_CFDictionaryGetKeysAndValues(self, a1, a0);
 }
 
 - (BOOL)containsKey:(id)a0
@@ -975,14 +1019,12 @@
 
 - (unsigned long)countForKey:(id)a0
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFDictionaryGetCountOfKey(self, a0);
 }
 
 - (unsigned long)countForObject:(id)a0
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFDictionaryGetCountOfValue(self, a0);
 }
 
 - (void)setObject:(id)a0 forKey:(id)a1
@@ -1133,8 +1175,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFSetGetTypeID();
 }
 
 - (unsigned long)countByEnumeratingWithState:(NSFastEnumerationState *)a0 objects:(id *)a1 count:(unsigned long)a2
@@ -1215,19 +1256,17 @@
 @implementation __NSCFSet
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -1244,20 +1283,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -1274,8 +1310,7 @@
 
 - (unsigned long)count
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFSetGetCount(self);
 }
 
 - (id)member:(id)a0
@@ -1292,8 +1327,7 @@
 
 - (void)getObjects:(id *)a0
 {
-    // unresolved
-
+    reefCall_CFSetGetValues(self, a0);
 }
 
 - (BOOL)containsObject:(id)a0
@@ -1304,8 +1338,7 @@
 
 - (unsigned long)countForObject:(id)a0
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFSetGetCountOfValue(self, a0);
 }
 
 - (void)addObject:(id)a0
@@ -1638,8 +1671,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFDateGetTypeID();
 }
 
 @end
@@ -1661,19 +1693,17 @@
 @implementation __NSCFDate
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -1690,20 +1720,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -1756,19 +1783,17 @@
 @implementation NSURL
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -1785,20 +1810,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -1821,8 +1843,7 @@
 
 - (id)baseURL
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFURLGetBaseURL(self);
 }
 
 - (id)absoluteURL
@@ -1833,8 +1854,7 @@
 
 - (id)relativeString
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFURLGetString(self);
 }
 
 - (id)scheme
@@ -2066,8 +2086,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFLocaleGetTypeID();
 }
 
 @end
@@ -2091,19 +2110,17 @@
 @implementation __NSCFLocale
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -2120,20 +2137,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -2150,8 +2164,7 @@
 
 - (id)objectForKey:(id)a0
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFLocaleGetValue(self, a0);
 }
 
 - (id)displayNameForKey:(id)a0 value:(id)a1
@@ -2162,8 +2175,7 @@
 
 - (id)localeIdentifier
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFLocaleGetIdentifier(self);
 }
 
 @end
@@ -2250,8 +2262,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFTimeZoneGetTypeID();
 }
 
 @end
@@ -2280,19 +2291,17 @@
 @implementation __NSCFTimeZone
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -2309,20 +2318,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -2339,14 +2345,12 @@
 
 - (id)name
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFTimeZoneGetName(self);
 }
 
 - (id)data
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFTimeZoneGetData(self);
 }
 
 - (long)secondsFromGMTForDate:(id)a0
@@ -2401,8 +2405,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFCalendarGetTypeID();
 }
 
 @end
@@ -2424,19 +2427,17 @@
 @implementation __NSCFCalendar
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -2453,20 +2454,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -2783,8 +2781,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFReadStreamGetTypeID();
 }
 
 @end
@@ -2872,8 +2869,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFWriteStreamGetTypeID();
 }
 
 @end
@@ -2991,19 +2987,17 @@
 @implementation __NSCFInputStream
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -3020,20 +3014,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -3044,14 +3035,12 @@
 
 - (void)open
 {
-    // unresolved
-
+    reefCall_CFReadStreamOpen(self);
 }
 
 - (void)close
 {
-    // unresolved
-
+    reefCall_CFReadStreamClose(self);
 }
 
 - (void)setDelegate:(id)a0
@@ -3086,8 +3075,7 @@
 
 - (unsigned long)streamStatus
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFReadStreamGetStatus(self);
 }
 
 - (id)streamError
@@ -3098,14 +3086,12 @@
 
 - (void *)_cfStreamError
 {
-    // unresolved
-    return (void *){0};
+    return (void *)reefCall_CFReadStreamGetError(self);
 }
 
 - (long)read:(char *)a0 maxLength:(unsigned long)a1
 {
-    // unresolved
-    return 0;
+    return (long)reefCall_CFReadStreamRead(self, a0, a1);
 }
 
 - (BOOL)getBuffer:(char * *)a0 length:(unsigned long *)a1
@@ -3149,19 +3135,17 @@
 @implementation __NSCFOutputStream
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -3178,20 +3162,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -3202,14 +3183,12 @@
 
 - (void)open
 {
-    // unresolved
-
+    reefCall_CFWriteStreamOpen(self);
 }
 
 - (void)close
 {
-    // unresolved
-
+    reefCall_CFWriteStreamClose(self);
 }
 
 - (void)setDelegate:(id)a0
@@ -3244,8 +3223,7 @@
 
 - (unsigned long)streamStatus
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFWriteStreamGetStatus(self);
 }
 
 - (id)streamError
@@ -3256,14 +3234,12 @@
 
 - (void *)_cfStreamError
 {
-    // unresolved
-    return (void *){0};
+    return (void *)reefCall_CFWriteStreamGetError(self);
 }
 
 - (long)write:(char *)a0 maxLength:(unsigned long)a1
 {
-    // unresolved
-    return 0;
+    return (long)reefCall_CFWriteStreamWrite(self, a0, a1);
 }
 
 - (BOOL)hasSpaceAvailable
@@ -3345,8 +3321,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFStringGetTypeID();
 }
 
 - (unsigned short *)_fastCharacterContents
@@ -3537,19 +3512,17 @@
 @implementation __NSCFString
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -3566,20 +3539,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -3596,14 +3566,12 @@
 
 - (unsigned long)length
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFStringGetLength(self);
 }
 
 - (unsigned short)characterAtIndex:(unsigned long)a0
 {
-    // unresolved
-    return 0;
+    return (unsigned short)reefCall_CFStringGetCharacterAtIndex(self, a0);
 }
 
 - (void)getCharacters:(unsigned short *)a0 range:(NSRange)a1
@@ -3620,14 +3588,12 @@
 
 - (void)appendString:(id)a0
 {
-    // unresolved
-
+    reefCall_CFStringAppend(self, a0);
 }
 
 - (void)setString:(id)a0
 {
-    // unresolved
-
+    reefCall_CFStringReplaceAll(self, a0);
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
@@ -3704,19 +3670,17 @@
 @implementation __NSCFAttributedString
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -3733,20 +3697,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -3775,14 +3736,12 @@
 
 - (id)string
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFAttributedStringGetString(self);
 }
 
 - (unsigned long)length
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFAttributedStringGetLength(self);
 }
 
 - (id)attributesAtIndex:(unsigned long)a0 effectiveRange:(NSRange *)a1
@@ -3853,14 +3812,12 @@
 
 - (void)beginEditing
 {
-    // unresolved
-
+    reefCall_CFAttributedStringBeginEditing(self);
 }
 
 - (void)endEditing
 {
-    // unresolved
-
+    reefCall_CFAttributedStringEndEditing(self);
 }
 
 - (void)_beginHoldingEdits
@@ -3950,8 +3907,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFRunLoopTimerGetTypeID();
 }
 
 @end
@@ -3981,19 +3937,17 @@
 @implementation __NSCFTimer
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -4010,20 +3964,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -4034,8 +3985,7 @@
 
 - (void)invalidate
 {
-    // unresolved
-
+    reefCall_CFRunLoopTimerInvalidate(self);
 }
 
 - (BOOL)isValid
@@ -4150,8 +4100,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFDataGetTypeID();
 }
 
 @end
@@ -4229,19 +4178,17 @@
 @implementation __NSCFData
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -4258,20 +4205,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -4288,14 +4232,12 @@
 
 - (unsigned long)length
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFDataGetLength(self);
 }
 
 - (void *)bytes
 {
-    // unresolved
-    return 0;
+    return (void *)reefCall_CFDataGetBytePtr(self);
 }
 
 - (void)getBytes:(void *)a0 range:(NSRange)a1
@@ -4306,26 +4248,22 @@
 
 - (void *)mutableBytes
 {
-    // unresolved
-    return 0;
+    return (void *)reefCall_CFDataGetMutableBytePtr(self);
 }
 
 - (void)setLength:(unsigned long)a0
 {
-    // unresolved
-
+    reefCall_CFDataSetLength(self, a0);
 }
 
 - (void)increaseLengthBy:(unsigned long)a0
 {
-    // unresolved
-
+    reefCall_CFDataIncreaseLength(self, a0);
 }
 
 - (void)appendBytes:(void *)a0 length:(unsigned long)a1
 {
-    // unresolved
-
+    reefCall_CFDataAppendBytes(self, a0, a1);
 }
 
 - (void)replaceBytesInRange:(NSRange)a0 withBytes:(void *)a1 length:(unsigned long)a2
@@ -4502,8 +4440,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFNumberGetTypeID();
 }
 
 @end
@@ -4531,19 +4468,17 @@
 @implementation __NSCFNumber
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -4560,20 +4495,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (Class)classForCoder
@@ -4608,8 +4540,7 @@
 
 - (long)_cfNumberType
 {
-    // unresolved
-    return 0;
+    return (long)reefCall__CFNumberGetType2(self);
 }
 
 - (BOOL)_getValue:(void *)a0 forType:(long)a1
@@ -4620,8 +4551,7 @@
 
 - (long)compare:(id)a0
 {
-    // unresolved
-    return 0;
+    return (long)reefCall_CFNumberCompare(self, a0, a0);
 }
 
 - (id)description
@@ -4652,19 +4582,17 @@
 @implementation __NSCFBoolean
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -4681,20 +4609,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (Class)classForCoder
@@ -4798,8 +4723,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFCharacterSetGetTypeID();
 }
 
 @end
@@ -4889,19 +4813,17 @@
 @implementation __NSCFCharacterSet
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -4918,20 +4840,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -4996,32 +4915,27 @@
 
 - (void)addCharactersInString:(id)a0
 {
-    // unresolved
-
+    reefCall_CFCharacterSetAddCharactersInString(self, a0);
 }
 
 - (void)removeCharactersInString:(id)a0
 {
-    // unresolved
-
+    reefCall_CFCharacterSetRemoveCharactersInString(self, a0);
 }
 
 - (void)formUnionWithCharacterSet:(id)a0
 {
-    // unresolved
-
+    reefCall_CFCharacterSetUnion(self, a0);
 }
 
 - (void)formIntersectionWithCharacterSet:(id)a0
 {
-    // unresolved
-
+    reefCall_CFCharacterSetIntersect(self, a0);
 }
 
 - (void)invert
 {
-    // unresolved
-
+    reefCall_CFCharacterSetInvert(self);
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
@@ -5127,8 +5041,7 @@
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFErrorGetTypeID();
 }
 
 @end
@@ -5156,19 +5069,17 @@
 @implementation __NSCFError
 - (id)retain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFRetain(self);
 }
 
 - (void)release
 {
-    // unresolved
+    reefCall_CFRelease(self);
 }
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetRetainCount(self);
 }
 
 - (BOOL)allowsWeakReference
@@ -5185,20 +5096,17 @@
 
 - (void)_setWeaklyReferenced
 {
-    // unresolved
-
+    reefCall__CFSetWeaklyReferenced(self);
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFHash(self);
 }
 
 - (unsigned long)_cfTypeID
 {
-    // unresolved
-    return 0;
+    return (unsigned long)reefCall_CFGetTypeID(self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -5221,14 +5129,12 @@
 
 - (id)domain
 {
-    // unresolved
-    return nil;
+    return (id)reefCall_CFErrorGetDomain(self);
 }
 
 - (long)code
 {
-    // unresolved
-    return 0;
+    return (long)reefCall_CFErrorGetCode(self);
 }
 
 - (id)userInfo
