@@ -129,6 +129,8 @@ extern void *pthread_get_stackaddr_np(pthread_t);
 extern void objc_exception_throw(id) __attribute__((noreturn));
 extern NSString *const NSInvalidArgumentException;
 extern const void *const kCFLocaleIdentifierKey;
+extern void *objc_autoreleasePoolPush(void);
+extern void objc_autoreleasePoolPop(void *);
 extern long _CFNumberGetType2(CFNumberRef);
 extern void *CFAttributedStringCreateCopy(CFAllocatorRef, void *);
 extern void *CFAttributedStringCreateMutableCopy(CFAllocatorRef, CFIndex, void *);
@@ -2632,98 +2634,110 @@ extern NSString *const NSRangeException;
 @implementation NSRunLoop
 + (id)runLoopFor:(struct __CFRunLoop *)a0
 {
-    // unresolved
-    return nil;
+    static pthread_mutex_t runLoopsLock = PTHREAD_MUTEX_INITIALIZER;
+    static CFMutableDictionaryRef runLoops;
+    pthread_mutex_lock(&runLoopsLock);
+    if (!runLoops) runLoops = CFDictionaryCreateMutable(kCFAllocatorSystemDefault, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    NSRunLoop *loop = (NSRunLoop *)CFDictionaryGetValue(runLoops, a0);
+    if (!loop) {
+        loop = [NSRunLoop alloc];
+        loop->_rl = (struct __CFRunLoop *)CFRetain(a0);
+        CFDictionarySetValue(runLoops, a0, loop);
+        objc_release(loop);
+    }
+    pthread_mutex_unlock(&runLoopsLock);
+    return loop;
 }
 
 + (id)currentRunLoop
 {
-    // unresolved
-    return nil;
+    return [self runLoopFor:CFRunLoopGetCurrent()];
 }
 
 + (id)mainRunLoop
 {
-    // unresolved
-    return nil;
+    return [self runLoopFor:CFRunLoopGetMain()];
 }
 
 - (id)currentMode
 {
-    // unresolved
-    return nil;
+    id mode = (id)CFRunLoopCopyCurrentMode(_rl);
+    return mode ? objc_autorelease(mode) : nil;
 }
 
 - (struct __CFRunLoop *)getCFRunLoop
 {
-    // unresolved
-    return 0;
+    return _rl;
 }
 
 - (void)addTimer:(id)a0 forMode:(id)a1
 {
-    // unresolved
-
+    CFRunLoopAddTimer(_rl, (CFRunLoopTimerRef)(void *)a0, (CFStringRef)a1);
 }
 
 - (void)addPort:(id)a0 forMode:(id)a1
 {
-    // unresolved
-
+    [a0 scheduleInRunLoop:self forMode:a1];
 }
 
 - (void)removePort:(id)a0 forMode:(id)a1
 {
-    // unresolved
-
+    [a0 removeFromRunLoop:self forMode:a1];
 }
 
 - (id)limitDateForMode:(id)a0
 {
-    // unresolved
-    return nil;
+    CFAbsoluteTime next = CFRunLoopGetNextTimerFireDate(_rl, (CFStringRef)a0);
+    if (next == 0) return nil;
+    id date = (id)CFDateCreate(kCFAllocatorSystemDefault, next);
+    return date ? objc_autorelease(date) : nil;
 }
 
 - (void)acceptInputForMode:(id)a0 beforeDate:(id)a1
 {
-    // unresolved
-
+    double timeout = 0;
+    if (a1) timeout = CFDateGetAbsoluteTime((CFDateRef)a1) - CFAbsoluteTimeGetCurrent();
+    CFRunLoopRunInMode((CFStringRef)a0, timeout > 0 ? timeout : 0, true);
 }
 
 - (void)run
 {
-    // unresolved
-
+    while ([self runMode:(id)kCFRunLoopDefaultMode beforeDate:nil]) {}
 }
 
 - (void)runUntilDate:(id)a0
 {
-    // unresolved
-
+    if (a0 == nil) return;
+    while (CFDateGetAbsoluteTime((CFDateRef)a0) > CFAbsoluteTimeGetCurrent() && [self runMode:(id)kCFRunLoopDefaultMode beforeDate:a0]) {}
 }
 
 - (BOOL)runMode:(id)a0 beforeDate:(id)a1
 {
-    // unresolved
-    return NO;
+    if (_rl != CFRunLoopGetCurrent()) return 0;
+    double timeout = 10000000000.0;
+    if (a1) timeout = CFDateGetAbsoluteTime((CFDateRef)a1) - CFAbsoluteTimeGetCurrent();
+    void *pool = objc_autoreleasePoolPush();
+    SInt32 result = CFRunLoopRunInMode((CFStringRef)a0, timeout > 0 ? timeout : 0, true);
+    objc_autoreleasePoolPop(pool);
+    return result != kCFRunLoopRunFinished;
 }
 
 - (void)performInModes:(id)a0 block:(void (^)(void))a1
 {
-    // unresolved
-
+    CFRunLoopPerformBlock(_rl, (CFTypeRef)a0, a1);
+    CFRunLoopWakeUp(_rl);
 }
 
 - (void)performBlock:(void (^)(void))a0
 {
-    // unresolved
-
+    CFRunLoopPerformBlock(_rl, kCFRunLoopDefaultMode, a0);
+    CFRunLoopWakeUp(_rl);
 }
 
 - (id)description
 {
-    // unresolved
-    return nil;
+    id text = (id)CFStringCreateWithFormat(kCFAllocatorSystemDefault, NULL, CFSTR("<%s: %p> %@"), object_getClassName(self), self, _rl);
+    return text ? objc_autorelease(text) : nil;
 }
 
 @end

@@ -130,6 +130,8 @@ int main(void) {
     CFRelease(n1); CFRelease(n2); CFRelease(n3);
     CFRelease(x); CFRelease(y); CFRelease(z);
     printf("null %d\n", MSG(void *, objc_getClass("NSNull"), "null") != 0);
+    void *loop = MSG(void *, objc_getClass("NSRunLoop"), "currentRunLoop");
+    printf("run loop same %d, main differs or same %d\n", MSG(void *, objc_getClass("NSRunLoop"), "currentRunLoop") == loop, loop != 0);
     // errors
     CFStringRef domain = CFStringCreateWithCString(a, "TestDomain", 0x08000100);
     void *error = MSG(void *, objc_getClass("NSError"), "errorWithDomain:code:userInfo:", domain, 42L, 0);

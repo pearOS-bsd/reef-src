@@ -44,7 +44,101 @@
  }
  
  
-@@ -1165,19 +1150,14 @@
+@@ -719,9 +704,31 @@
+ #endif
+ 
+ 
+-#define CFTYPE_IS_OBJC(obj) (false)
+-#define CFTYPE_OBJC_FUNCDISPATCH0(rettype, obj, sel) do {} while (0)
+-#define CFTYPE_OBJC_FUNCDISPATCH1(rettype, obj, sel, a1) do {} while (0)
++// Reef: Objective-C objects (tagged pointers and objects whose class is not the class of their Core Foundation type) given to the generic functions
++// go to their own methods, as on the Mac.
++extern void *__CFConstantStringClassReferencePtr;
++static inline Boolean __reefIsObjC(CFTypeRef cf) {
++    if ((uintptr_t)cf & 1) return true;
++    uintptr_t isa = *(uintptr_t *)cf;
++    if (isa == 0 || isa == (uintptr_t)__CFConstantStringClassReferencePtr) return false;
++    return isa != __CFRuntimeObjCClassTable[__CFGenericTypeID_inline(cf)];
++}
++@interface NSObject (ReefCoreFoundation)
++- (CFTypeID)_cfTypeID;
++- (CFIndex)retainCount;
++- (CFHashCode)hash;
++- (Boolean)isEqual:(id)object;
++- (id)description;
++- (id)descriptionWithLocale:(id)locale;
++- (id)copy;
++- (BOOL)respondsToSelector:(SEL)selector;
++@end
++extern id objc_retain(id);
++extern void objc_release(id);
++extern id objc_autorelease(id);
++#define CFTYPE_IS_OBJC(obj) __reefIsObjC((CFTypeRef)(obj))
++#define CFTYPE_OBJC_FUNCDISPATCH0(rettype, obj, sel) do { if (CFTYPE_IS_OBJC(obj)) return (rettype)[(id)(obj) sel]; } while (0)
++#define CFTYPE_OBJC_FUNCDISPATCH1(rettype, obj, sel, a1) do { if (CFTYPE_IS_OBJC(obj)) return (rettype)[(id)(obj) sel a1]; } while (0)
+ 
+ 
+ CFTypeID CFGetTypeID(CFTypeRef cf) {
+@@ -781,13 +788,14 @@
+ 
+ CFTypeRef CFRetain(CFTypeRef cf) {
+     if (NULL == cf) { CRSetCrashLogMessage("*** CFRetain() called with NULL ***"); HALT; }
++    if (CFTYPE_IS_OBJC(cf)) return (CFTypeRef)objc_retain((id)cf);
+     __CFGenericAssertIsCF(cf);
+     return _CFRetain(cf, false);
+ }
+ 
+ CFTypeRef CFAutorelease(CFTypeRef __attribute__((cf_consumed)) cf) {
+     if (NULL == cf) { CRSetCrashLogMessage("*** CFAutorelease() called with NULL ***"); HALT; }
+-    return cf;
++    return (CFTypeRef)objc_autorelease((id)cf);
+ }
+ 
+ static void _CFRelease(CFTypeRef CF_RELEASES_ARGUMENT cf);
+@@ -799,6 +807,7 @@
+ 
+ void CFRelease(CFTypeRef cf) {
+     if (NULL == cf) { CRSetCrashLogMessage("*** CFRelease() called with NULL ***"); HALT; }
++    if (CFTYPE_IS_OBJC(cf)) { objc_release((id)cf); return; }
+     __CFGenericAssertIsCF(cf);
+     _CFRelease(cf);
+ }
+@@ -883,6 +892,7 @@
+ 
+ CFIndex CFGetRetainCount(CFTypeRef cf) {
+     if (NULL == cf) { CRSetCrashLogMessage("*** CFGetRetainCount() called with NULL ***"); HALT; }
++    CFTYPE_OBJC_FUNCDISPATCH0(CFIndex, cf, retainCount);
+     __CFInfoType info = atomic_load(&(((CFRuntimeBase *)cf)->_cfinfoa));
+     if (info & RC_CUSTOM_RC_BIT) { // custom ref counting for object
+         CFTypeID typeID = __CFTypeIDFromInfo(info);
+@@ -975,6 +985,7 @@
+ // definition: produces a normally non-NULL debugging description of the object
+ CFStringRef CFCopyDescription(CFTypeRef cf) {
+     if (NULL == cf) return NULL;
++    if (CFTYPE_IS_OBJC(cf)) return (CFStringRef)[[(id)cf description] copy];
+     // CFTYPE_OBJC_FUNCDISPATCH0(CFStringRef, cf, _copyDescription);  // XXX returns 0 refcounted item under GC
+     __CFGenericAssertIsCF(cf);
+     if (NULL != __CFRuntimeClassTable[__CFGenericTypeID_inline(cf)]->copyDebugDesc) {
+@@ -987,6 +998,10 @@
+ // Definition: if type produces a formatting description, return that string, otherwise NULL
+ CF_PRIVATE CFStringRef __CFCopyFormattingDescription(CFTypeRef cf, CFDictionaryRef formatOptions) {
+     if (NULL == cf) return NULL;
++    if (CFTYPE_IS_OBJC(cf)) {
++        id text = [(id)cf respondsToSelector:@selector(descriptionWithLocale:)] ? [(id)cf descriptionWithLocale:(id)formatOptions] : [(id)cf description];
++        return (CFStringRef)[text copy];
++    }
+     __CFGenericAssertIsCF(cf);
+     if (NULL != __CFRuntimeClassTable[__CFGenericTypeID_inline(cf)]->copyFormattingDesc) {
+ 	return __CFRuntimeClassTable[__CFGenericTypeID_inline(cf)]->copyFormattingDesc(cf, formatOptions);
+@@ -998,6 +1013,7 @@
+ 
+ CFAllocatorRef CFGetAllocator(CFTypeRef cf) {
+     if (NULL == cf) return kCFAllocatorSystemDefault;
++    if (CFTYPE_IS_OBJC(cf)) return kCFAllocatorSystemDefault;
+     if (_kCFRuntimeIDCFAllocator == __CFGenericTypeID_inline(cf)) {
+ 	return __CFAllocatorGetAllocator(cf);
+     }
+@@ -1165,19 +1181,14 @@
  
  CF_PRIVATE os_unfair_recursive_lock CFPlugInGlobalDataLock;
  
