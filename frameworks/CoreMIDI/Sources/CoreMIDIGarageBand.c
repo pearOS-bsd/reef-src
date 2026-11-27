@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: BSD-2-Clause
 
 #include <CoreFoundation/CoreFoundation.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 // Property names of MIDI objects (CoreMIDI sets them at run time on Apple's side)
 __attribute__((weak)) const CFStringRef kMIDIPropertyConnectionUniqueID = CFSTR("connUniqueID");
@@ -19,17 +21,19 @@ typedef uint32_t MIDIObjectRef;
 static _Atomic uint32_t nextVirtual = 0x7f000000;
 
 int32_t MIDISourceCreateWithProtocol(MIDIObjectRef client, CFStringRef name, int32_t protocol, MIDIObjectRef *out) {
+    if (getenv("REEF_LOG_MIDI")) fprintf(stderr, "midi: MIDISourceCreateWithProtocol(%u)\n", client);
     *out = atomic_fetch_add(&nextVirtual, 1);
     return 0;
 }
 int32_t MIDIDestinationCreateWithProtocol(MIDIObjectRef client, CFStringRef name, int32_t protocol, MIDIObjectRef *out, void *block) {
+    if (getenv("REEF_LOG_MIDI")) fprintf(stderr, "midi: MIDIDestinationCreateWithProtocol(%u)\n", client);
     *out = atomic_fetch_add(&nextVirtual, 1);
     return 0;
 }
 int32_t MIDIEndpointDispose(MIDIObjectRef endpoint) { return 0; }
 int32_t MIDIReceived(MIDIObjectRef source, const void *packets) { return 0; }
 int32_t MIDIReceivedEventList(MIDIObjectRef source, const void *events) { return 0; }
-int32_t MIDIRestart(void) { return 0; }
+int32_t MIDIRestart(void) { if (getenv("REEF_LOG_MIDI")) fprintf(stderr, "midi: MIDIRestart\n"); return 0; }
 unsigned long MIDIDeviceGetNumberOfEntities(MIDIObjectRef device) { return 0; }
 MIDIObjectRef MIDIDeviceGetEntity(MIDIObjectRef device, unsigned long index) { return 0; }
 unsigned long MIDIEntityGetNumberOfSources(MIDIObjectRef entity) { return 0; }

@@ -12,6 +12,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 typedef struct OpaqueAudioQueue *AudioQueueRef;
 typedef struct AudioQueueBuffer {
@@ -95,6 +96,14 @@ static void render(void *user, AudioQueueRef q, AudioQueueBufferRef buffer) {
     }
     pthread_mutex_unlock(&lock);
     sampleTime += frames;
+    static unsigned long renders;
+    if (getenv("REEF_LOG_HAL") && (renders++ % 500) == 0) {
+        int n = 0;
+        pthread_mutex_lock(&lock);
+        for (struct proc *p = procs; p; p = p->next) n += p->started;
+        pthread_mutex_unlock(&lock);
+        fprintf(stderr, "hal: render %lu (%u frames, %d procs running)\n", renders, frames, n);
+    }
     buffer->mAudioDataByteSize = frames * 4 * queueChannels;
     OSStatus (*enqueue)(AudioQueueRef, AudioQueueBufferRef, UInt32, const void *) = toolbox("AudioQueueEnqueueBuffer");
     if (enqueue) enqueue(q, buffer, 0, NULL);
@@ -167,7 +176,9 @@ OSStatus AudioDeviceStart(AudioObjectID device, AudioDeviceIOProcID id) {
         UInt32 size = sizeof output;
         AudioObjectGetPropertyData(kAudioObjectSystemObject, &a, 0, NULL, &size, &output);
     }
-    return startQueue(output);
+    OSStatus r = startQueue(output);
+    if (getenv("REEF_LOG_HAL")) fprintf(stderr, "hal: start %u -> %d\n", device, (int)r);
+    return r;
 }
 
 OSStatus AudioDeviceStop(AudioObjectID device, AudioDeviceIOProcID id) {
