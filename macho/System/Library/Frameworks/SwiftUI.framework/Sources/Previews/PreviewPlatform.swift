@@ -23,9 +23,9 @@ public enum PreviewPlatform {
     case tvOS
     case watchOS
     case visionOS
-    public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-    public var hashValue: Swift.Int { _skeleton() }
-    public static func == (_ a0: SwiftUI.PreviewPlatform, _ a1: SwiftUI.PreviewPlatform) -> Swift.Bool { _skeleton() }
+    public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
+    public var hashValue: Swift.Int { _hashValue(for: self) }
+    public static func == (_ a0: SwiftUI.PreviewPlatform, _ a1: SwiftUI.PreviewPlatform) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }
 }
 
 extension SwiftUI.PreviewPlatform: Swift.Equatable {

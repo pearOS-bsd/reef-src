@@ -62,9 +62,9 @@ public struct Font {
         case standard
         case tight
         case loose
-        public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-        public var hashValue: Swift.Int { _skeleton() }
-        public static func == (_ a0: SwiftUI.Font.Leading, _ a1: SwiftUI.Font.Leading) -> Swift.Bool { _skeleton() }
+        public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
+        public var hashValue: Swift.Int { _hashValue(for: self) }
+        public static func == (_ a0: SwiftUI.Font.Leading, _ a1: SwiftUI.Font.Leading) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }
     }
     public struct Weight {
         public var value: CoreGraphics.CGFloat
@@ -87,9 +87,9 @@ public struct Font {
         case serif
         case rounded
         case monospaced
-        public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-        public var hashValue: Swift.Int { _skeleton() }
-        public static func == (_ a0: SwiftUI.Font.Design, _ a1: SwiftUI.Font.Design) -> Swift.Bool { _skeleton() }
+        public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
+        public var hashValue: Swift.Int { _hashValue(for: self) }
+        public static func == (_ a0: SwiftUI.Font.Design, _ a1: SwiftUI.Font.Design) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }
     }
     public enum TextStyle {
         case largeTitle
@@ -104,9 +104,9 @@ public struct Font {
         case caption
         case caption2
         public static var allCases: [SwiftUI.Font.TextStyle] { _skeleton() }
-        public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-        public var hashValue: Swift.Int { _skeleton() }
-        public static func == (_ a0: SwiftUI.Font.TextStyle, _ a1: SwiftUI.Font.TextStyle) -> Swift.Bool { _skeleton() }
+        public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
+        public var hashValue: Swift.Int { _hashValue(for: self) }
+        public static func == (_ a0: SwiftUI.Font.TextStyle, _ a1: SwiftUI.Font.TextStyle) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }
     }
     struct PlatformFontProvider {
         let font: CTFont

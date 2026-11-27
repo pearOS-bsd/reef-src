@@ -31,8 +31,8 @@ public struct TimelineView<A, B> where A: SwiftUI.TimelineSchedule {
             case minutes
             public static func < (_ a0: SwiftUI.TimelineView<A, B>.Context.Cadence, _ a1: SwiftUI.TimelineView<A, B>.Context.Cadence) -> Swift.Bool { _skeleton() }
             public static func == (_ a0: SwiftUI.TimelineView<A, B>.Context.Cadence, _ a1: SwiftUI.TimelineView<A, B>.Context.Cadence) -> Swift.Bool { _skeleton() }
-            public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-            public var hashValue: Swift.Int { _skeleton() }
+            public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
+            public var hashValue: Swift.Int { _hashValue(for: self) }
         }
     }
 }

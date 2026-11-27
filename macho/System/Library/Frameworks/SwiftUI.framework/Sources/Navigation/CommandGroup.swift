@@ -32,8 +32,8 @@ public struct CommandGroup<A> where A: SwiftUI.View {
         case after
         case replacing
         static func == (_ a0: SwiftUI.CommandGroup<A>.Position, _ a1: SwiftUI.CommandGroup<A>.Position) -> Swift.Bool { _skeleton() }
-        func hash(into a0: inout Swift.Hasher) { _skeleton() }
-        var hashValue: Swift.Int { _skeleton() }
+        func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
+        var hashValue: Swift.Int { _hashValue(for: self) }
     }
 }
 

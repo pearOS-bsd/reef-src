@@ -21,10 +21,10 @@ import os
     case automatic
     case visible
     case hidden
-    public static func == (_ a0: SwiftUI.Visibility, _ a1: SwiftUI.Visibility) -> Swift.Bool { _skeleton() }
+    public static func == (_ a0: SwiftUI.Visibility, _ a1: SwiftUI.Visibility) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }
     public static var allCases: [SwiftUI.Visibility] { _skeleton() }
-    public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-    public var hashValue: Swift.Int { _skeleton() }
+    public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
+    public var hashValue: Swift.Int { _hashValue(for: self) }
 }
 
 extension SwiftUI.Visibility: Swift.Equatable {

@@ -22,9 +22,9 @@ public enum MoveCommandDirection {
     case down
     case left
     case right
-    public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-    public var hashValue: Swift.Int { _skeleton() }
-    public static func == (_ a0: SwiftUI.MoveCommandDirection, _ a1: SwiftUI.MoveCommandDirection) -> Swift.Bool { _skeleton() }
+    public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
+    public var hashValue: Swift.Int { _hashValue(for: self) }
+    public static func == (_ a0: SwiftUI.MoveCommandDirection, _ a1: SwiftUI.MoveCommandDirection) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }
 }
 
 extension SwiftUI.MoveCommandDirection: Swift.Equatable {

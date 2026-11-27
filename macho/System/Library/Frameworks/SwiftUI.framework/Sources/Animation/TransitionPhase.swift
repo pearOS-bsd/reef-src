@@ -22,9 +22,9 @@ public enum TransitionPhase {
     case identity
     case didDisappear
     public var isIdentity: Swift.Bool { _skeleton() }
-    public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-    public var hashValue: Swift.Int { _skeleton() }
-    public static func == (_ a0: SwiftUI.TransitionPhase, _ a1: SwiftUI.TransitionPhase) -> Swift.Bool { _skeleton() }
+    public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
+    public var hashValue: Swift.Int { _hashValue(for: self) }
+    public static func == (_ a0: SwiftUI.TransitionPhase, _ a1: SwiftUI.TransitionPhase) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }
 }
 
 extension SwiftUI.TransitionPhase: Swift.Equatable {

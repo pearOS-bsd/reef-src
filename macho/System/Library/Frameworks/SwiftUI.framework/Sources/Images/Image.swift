@@ -37,24 +37,24 @@ public struct Image {
     public enum ResizingMode {
         case tile
         case stretch
-        public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-        public var hashValue: Swift.Int { _skeleton() }
-        public static func == (_ a0: SwiftUI.Image.ResizingMode, _ a1: SwiftUI.Image.ResizingMode) -> Swift.Bool { _skeleton() }
+        public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
+        public var hashValue: Swift.Int { _hashValue(for: self) }
+        public static func == (_ a0: SwiftUI.Image.ResizingMode, _ a1: SwiftUI.Image.ResizingMode) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }
     }
     public enum Scale {
         case small
         case medium
         case large
-        public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-        public var hashValue: Swift.Int { _skeleton() }
-        public static func == (_ a0: SwiftUI.Image.Scale, _ a1: SwiftUI.Image.Scale) -> Swift.Bool { _skeleton() }
+        public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
+        public var hashValue: Swift.Int { _hashValue(for: self) }
+        public static func == (_ a0: SwiftUI.Image.Scale, _ a1: SwiftUI.Image.Scale) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }
     }
     public enum TemplateRenderingMode {
         case template
         case original
-        public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-        public var hashValue: Swift.Int { _skeleton() }
-        public static func == (_ a0: SwiftUI.Image.TemplateRenderingMode, _ a1: SwiftUI.Image.TemplateRenderingMode) -> Swift.Bool { _skeleton() }
+        public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
+        public var hashValue: Swift.Int { _hashValue(for: self) }
+        public static func == (_ a0: SwiftUI.Image.TemplateRenderingMode, _ a1: SwiftUI.Image.TemplateRenderingMode) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }
     }
     public enum Orientation {
         case up
@@ -74,9 +74,9 @@ public struct Image {
         case low
         case medium
         case high
-        public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-        public var hashValue: Swift.Int { _skeleton() }
-        public static func == (_ a0: SwiftUI.Image.Interpolation, _ a1: SwiftUI.Image.Interpolation) -> Swift.Bool { _skeleton() }
+        public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
+        public var hashValue: Swift.Int { _hashValue(for: self) }
+        public static func == (_ a0: SwiftUI.Image.Interpolation, _ a1: SwiftUI.Image.Interpolation) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }
     }
 }
 
