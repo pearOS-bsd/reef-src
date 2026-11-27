@@ -78,3 +78,4 @@ System/Library/Frameworks/CoreFoundation.framework
 System/Library/Frameworks/CoreBluetooth.framework
 System/Library/Frameworks/FileProvider.framework
 System/Library/Frameworks/OSAKit.framework
+System/Library/Frameworks/QuickLookThumbnailing.framework
