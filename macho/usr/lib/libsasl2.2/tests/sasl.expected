@@ -1,0 +1,14 @@
+encode64 0 'aGVsbG8gc2FzbA==' 16
+decode64 0 'hello sasl' 10
+decode64 bad 1
+error 0: successful result
+error -1: generic failure
+error -2: no memory available
+error -3: overflowed buffer
+error -4: no mechanism available
+error -5: bad protocol / cancel
+error -6: can't request information until later in exchange
+error -7: invalid parameter supplied
+version major 2
+client_init 0
+client_new 0, context

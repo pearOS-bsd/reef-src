@@ -1,0 +1,6 @@
+write 0
+read 0
+file: first\040line
+file: second\040line
+file: third\040line
+tilde plain/path

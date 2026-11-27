@@ -1,0 +1,7 @@
+tgetent xterm: 1
+co 80, li 24, pa 64, am 1, bs 1
+cl = \033 [ H \033 [ 2 J
+cm = \033 [ % i % p 1 % d ; % p 2 % d H
+cd = \033 [ J
+nonexistent = (none)
+tgetent nonexistent-terminal-xyz: 0

@@ -51,7 +51,7 @@ Version: $version
 Architecture: $(field Architecture)
 Maintainer: $(git -C "$here" log -1 --format='%an <%ae>' "$commit")
 Installed-Size: $(du -s --apparent-size -k "$work/pkg/usr" | cut -f1)
-Depends: $(field Depends)
+Depends: $(field Depends), libedit2, libsasl2-2, libncursesw6
 Conflicts: $(field Package)
 Replaces: $(field Package)
 Provides: $(field Package) (= $(field Version))

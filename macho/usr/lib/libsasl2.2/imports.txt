@@ -1,0 +1,17 @@
+_sasl_client_init
+_sasl_client_new
+_sasl_client_start
+_sasl_client_step
+_sasl_decode
+_sasl_decode64
+_sasl_dispose
+_sasl_done
+_sasl_encode
+_sasl_encode64
+_sasl_errdetail
+_sasl_errstring
+_sasl_getprop
+_sasl_global_listmech
+_sasl_set_mutex
+_sasl_setprop
+_sasl_version

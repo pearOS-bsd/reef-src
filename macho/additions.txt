@@ -13,3 +13,6 @@ usr/lib/swift/libswiftMLCompute
 usr/lib/libxslt.1
 usr/lib/libexslt.0
 usr/lib/libtidy.A
+usr/lib/libncurses.5.4
+usr/lib/libedit.3
+usr/lib/libsasl2.2
