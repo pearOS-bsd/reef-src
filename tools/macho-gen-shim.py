@@ -69,6 +69,7 @@ __attribute__((constructor)) static void resolve(void)
     }
 }
 ''' % (slots.lstrip('_'), '"%s"' % suffix if suffix else '', slots.lstrip('_'), host, slots.lstrip('_'))).replace('#name ,', '#name,')
-open(os.path.join(out, base + '.c'), 'w').write(text)
-open(os.path.join(out, 'target.conf'), 'w').write('install = %s\nversion = %s\ncompat = %s\nsources = trampolines.S %s.c\ncflags = -fcommon\n' % (install, version, compat, base))
+# a file with wrapper code written by hand next to the table (libbz2, libcurl ...) is kept: only symbols.h and trampolines.S are rewritten
+if not os.path.exists(os.path.join(out, base + '.c')): open(os.path.join(out, base + '.c'), 'w').write(text)
+if not os.path.exists(os.path.join(out, 'target.conf')): open(os.path.join(out, 'target.conf'), 'w').write('install = %s\nversion = %s\ncompat = %s\nsources = trampolines.S %s.c\ncflags = -fcommon\n' % (install, version, compat, base))
 print(folder, len(rows), 'functions, slots', slots, 'host', host)
