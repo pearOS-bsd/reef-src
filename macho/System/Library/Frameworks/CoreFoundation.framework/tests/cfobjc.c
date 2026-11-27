@@ -132,6 +132,16 @@ int main(void) {
     printf("null %d\n", MSG(void *, objc_getClass("NSNull"), "null") != 0);
     void *loop = MSG(void *, objc_getClass("NSRunLoop"), "currentRunLoop");
     printf("run loop same %d, main differs or same %d\n", MSG(void *, objc_getClass("NSRunLoop"), "currentRunLoop") == loop, loop != 0);
+    // streams
+    void *source = 0, *sink = 0;
+    MSG(void, objc_getClass("NSStream"), "getBoundStreamsWithBufferSize:inputStream:outputStream:", 64UL, &source, &sink);
+    MSG(void, source, "open");
+    MSG(void, sink, "open");
+    printf("space %d\n", (int)MSG(char, sink, "hasSpaceAvailable"));
+    long wrote = MSG(long, sink, "write:maxLength:", "hello", 5UL);
+    char text[8] = {0};
+    long got = MSG(long, source, "read:maxLength:", text, 8UL);
+    printf("wrote %ld, read %ld %s\n", wrote, got, text);
     // errors
     CFStringRef domain = CFStringCreateWithCString(a, "TestDomain", 0x08000100);
     void *error = MSG(void *, objc_getClass("NSError"), "errorWithDomain:code:userInfo:", domain, 42L, 0);

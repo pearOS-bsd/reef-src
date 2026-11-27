@@ -131,6 +131,24 @@ extern NSString *const NSInvalidArgumentException;
 extern const void *const kCFLocaleIdentifierKey;
 extern void *objc_autoreleasePoolPush(void);
 extern void objc_autoreleasePoolPop(void *);
+#include <dispatch/dispatch.h>
+#include <objc/runtime.h>
+@class __NSPlaceholderInputStream, __NSPlaceholderOutputStream;
+extern id class_createInstance(Class, unsigned long);
+static char delegateKey;
+
+// The client callbacks of the Core Foundation streams: the events go to the delegate of the stream (the stream itself without one).
+static void readCallback(CFReadStreamRef stream, CFStreamEventType event, void *info) {
+    id delegate = objc_getAssociatedObject((id)stream, &delegateKey);
+    if (delegate == nil) delegate = (id)stream;
+    if ([delegate respondsToSelector:@selector(stream:handleEvent:)]) [delegate stream:(id)stream handleEvent:event];
+}
+
+static void writeCallback(CFWriteStreamRef stream, CFStreamEventType event, void *info) {
+    id delegate = objc_getAssociatedObject((id)stream, &delegateKey);
+    if (delegate == nil) delegate = (id)stream;
+    if ([delegate respondsToSelector:@selector(stream:handleEvent:)]) [delegate stream:(id)stream handleEvent:event];
+}
 extern long _CFNumberGetType2(CFNumberRef);
 extern void *CFAttributedStringCreateCopy(CFAllocatorRef, void *);
 extern void *CFAttributedStringCreateMutableCopy(CFAllocatorRef, CFIndex, void *);
@@ -2762,20 +2780,29 @@ extern NSString *const NSRangeException;
 @implementation NSStream
 + (void)getStreamsToHostWithName:(id)a0 port:(long)a1 inputStream:(id *)a2 outputStream:(id *)a3
 {
-    // unresolved
-
+    CFReadStreamRef readStream = NULL;
+    CFWriteStreamRef writeStream = NULL;
+    CFStreamCreatePairWithSocketToHost(kCFAllocatorDefault, (CFStringRef)a0, (UInt32)a1, a2 ? &readStream : NULL, a3 ? &writeStream : NULL);
+    if (a2) *a2 = readStream ? objc_autorelease((id)readStream) : nil;
+    if (a3) *a3 = writeStream ? objc_autorelease((id)writeStream) : nil;
 }
 
 + (void)getStreamsToHost:(id)a0 port:(long)a1 inputStream:(id *)a2 outputStream:(id *)a3
 {
-    // unresolved
-
+    id name = [a0 name];
+    if (name == nil) name = [a0 address];
+    [self getStreamsToHostWithName:name port:a1 inputStream:a2 outputStream:a3];
 }
 
 + (void)getBoundStreamsWithBufferSize:(unsigned long)a0 inputStream:(id *)a1 outputStream:(id *)a2
 {
-    // unresolved
-
+    CFReadStreamRef readStream = NULL;
+    CFWriteStreamRef writeStream = NULL;
+    CFStreamCreateBoundPair(kCFAllocatorDefault, &readStream, &writeStream, a0);
+    if (a1) *a1 = readStream ? objc_autorelease((id)readStream) : nil;
+    else if (readStream) CFRelease(readStream);
+    if (a2) *a2 = writeStream ? objc_autorelease((id)writeStream) : nil;
+    else if (writeStream) CFRelease(writeStream);
 }
 
 - (void)open
@@ -2790,14 +2817,13 @@ extern NSString *const NSRangeException;
 
 - (id)delegate
 {
-    // unresolved
-    return nil;
+    id delegate = objc_getAssociatedObject(self, &delegateKey);
+    return delegate ? delegate : self;
 }
 
 - (void)setDelegate:(id)a0
 {
-    // unresolved
-
+    objc_setAssociatedObject(self, &delegateKey, a0 == self ? nil : a0, OBJC_ASSOCIATION_ASSIGN);
 }
 
 - (id)propertyForKey:(id)a0
@@ -2855,50 +2881,47 @@ extern NSString *const NSRangeException;
 @implementation NSInputStream
 + (id)allocWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    if ([NSInputStream class] != self) return [super allocWithZone:a0];
+    static dispatch_once_t once;
+    static id placeholder;
+    dispatch_once(&once, ^{ placeholder = class_createInstance([__NSPlaceholderInputStream class], 0); });
+    return placeholder;
 }
 
 + (id)inputStreamWithData:(id)a0
 {
-    // unresolved
-    return nil;
+    return objc_autorelease([[self alloc] initWithData:a0]);
 }
 
 + (id)inputStreamWithFileAtPath:(id)a0
 {
-    // unresolved
-    return nil;
+    return objc_autorelease([[self alloc] initWithFileAtPath:a0]);
 }
 
 + (id)inputStreamWithURL:(id)a0
 {
-    // unresolved
-    return nil;
+    return objc_autorelease([[self alloc] initWithURL:a0]);
 }
 
 - (id)initWithData:(id)a0
 {
-    // unresolved
-    return nil;
+    return [super init];
 }
 
 - (id)initWithURL:(id)a0
 {
-    // unresolved
-    return nil;
+    return [super init];
 }
 
 - (id)initWithFileAtPath:(id)a0
 {
-    // unresolved
-    return nil;
+    return [self initWithURL:objc_autorelease((id)CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)a0, kCFURLPOSIXPathStyle, false))];
 }
 
 - (long)read:(char *)a0 maxLength:(unsigned long)a1
 {
-    // unresolved
-    return 0;
+    [self doesNotRecognizeSelector:_cmd];
+    return -1;
 }
 
 - (BOOL)getBuffer:(char * *)a0 length:(unsigned long *)a1
@@ -2936,62 +2959,57 @@ extern NSString *const NSRangeException;
 @implementation NSOutputStream
 + (id)allocWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    if ([NSOutputStream class] != self) return [super allocWithZone:a0];
+    static dispatch_once_t once;
+    static id placeholder;
+    dispatch_once(&once, ^{ placeholder = class_createInstance([__NSPlaceholderOutputStream class], 0); });
+    return placeholder;
 }
 
 + (id)outputStreamToMemory
 {
-    // unresolved
-    return nil;
+    return objc_autorelease([[self alloc] initToMemory]);
 }
 
 + (id)outputStreamToBuffer:(char *)a0 capacity:(unsigned long)a1
 {
-    // unresolved
-    return nil;
+    return objc_autorelease([[self alloc] initToBuffer:a0 capacity:a1]);
 }
 
 + (id)outputStreamToFileAtPath:(id)a0 append:(BOOL)a1
 {
-    // unresolved
-    return nil;
+    return objc_autorelease([[self alloc] initToFileAtPath:a0 append:a1]);
 }
 
 + (id)outputStreamWithURL:(id)a0 append:(BOOL)a1
 {
-    // unresolved
-    return nil;
+    return objc_autorelease([[self alloc] initWithURL:a0 append:a1]);
 }
 
 - (id)initToMemory
 {
-    // unresolved
-    return nil;
+    return [super init];
 }
 
 - (id)initToBuffer:(char *)a0 capacity:(unsigned long)a1
 {
-    // unresolved
-    return nil;
+    return [super init];
 }
 
 - (id)initWithURL:(id)a0 append:(BOOL)a1
 {
-    // unresolved
-    return nil;
+    return [super init];
 }
 
 - (id)initToFileAtPath:(id)a0 append:(BOOL)a1
 {
-    // unresolved
-    return nil;
+    return [self initWithURL:objc_autorelease((id)CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)a0, kCFURLPOSIXPathStyle, false)) append:a1];
 }
 
 - (long)write:(char *)a0 maxLength:(unsigned long)a1
 {
-    // unresolved
-    return 0;
+    [self doesNotRecognizeSelector:_cmd];
+    return -1;
 }
 
 - (BOOL)hasSpaceAvailable
@@ -3027,20 +3045,17 @@ extern NSString *const NSRangeException;
 
 - (id)initWithData:(id)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFReadStreamCreateWithData(kCFAllocatorDefault, (CFDataRef)(void *)objc_autorelease([a0 copy]));
 }
 
 - (id)initWithURL:(id)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFReadStreamCreateWithFile(kCFAllocatorDefault, (CFURLRef)a0);
 }
 
 - (id)initWithFileAtPath:(id)a0
 {
-    // unresolved
-    return nil;
+    return [self initWithURL:objc_autorelease((id)CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)a0, kCFURLPOSIXPathStyle, false))];
 }
 
 @end
@@ -3067,26 +3082,24 @@ extern NSString *const NSRangeException;
 
 - (id)initToMemory
 {
-    // unresolved
-    return nil;
+    return (id)CFWriteStreamCreateWithAllocatedBuffers(kCFAllocatorDefault, kCFAllocatorDefault);
 }
 
 - (id)initToBuffer:(char *)a0 capacity:(unsigned long)a1
 {
-    // unresolved
-    return nil;
+    return (id)CFWriteStreamCreateWithBuffer(kCFAllocatorDefault, a0, a1);
 }
 
 - (id)initWithURL:(id)a0 append:(BOOL)a1
 {
-    // unresolved
-    return nil;
+    CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, (CFURLRef)a0);
+    if (stream && a1) CFWriteStreamSetProperty(stream, kCFStreamPropertyAppendToFile, kCFBooleanTrue);
+    return (id)stream;
 }
 
 - (id)initToFileAtPath:(id)a0 append:(BOOL)a1
 {
-    // unresolved
-    return nil;
+    return [self initWithURL:objc_autorelease((id)CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)a0, kCFURLPOSIXPathStyle, false)) append:a1];
 }
 
 @end
@@ -3175,32 +3188,33 @@ extern NSString *const NSRangeException;
 
 - (void)setDelegate:(id)a0
 {
-    // unresolved
-
+    [super setDelegate:a0];
+    CFStreamClientContext context = {0};
+    CFReadStreamSetClient((CFReadStreamRef)self, 0x1f, readCallback, &context);
 }
 
 - (id)propertyForKey:(id)a0
 {
-    // unresolved
-    return nil;
+    id result = (id)CFReadStreamCopyProperty((CFReadStreamRef)self, (CFStringRef)a0);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (BOOL)setProperty:(id)a0 forKey:(id)a1
 {
-    // unresolved
-    return NO;
+    return CFReadStreamSetProperty((CFReadStreamRef)self, (CFStringRef)a1, (CFTypeRef)a0);
 }
 
 - (void)scheduleInRunLoop:(id)a0 forMode:(id)a1
 {
-    // unresolved
-
+    CFRunLoopRef loop = (CFRunLoopRef)[a0 getCFRunLoop];
+    CFStreamClientContext context = {0};
+    CFReadStreamSetClient((CFReadStreamRef)self, 0x1f, readCallback, &context);
+    CFReadStreamScheduleWithRunLoop((CFReadStreamRef)self, loop, (CFStringRef)a1);
 }
 
 - (void)removeFromRunLoop:(id)a0 forMode:(id)a1
 {
-    // unresolved
-
+    CFReadStreamUnscheduleFromRunLoop((CFReadStreamRef)self, (CFRunLoopRef)[a0 getCFRunLoop], (CFStringRef)a1);
 }
 
 - (unsigned long)streamStatus
@@ -3210,8 +3224,8 @@ extern NSString *const NSRangeException;
 
 - (id)streamError
 {
-    // unresolved
-    return nil;
+    id result = (id)CFReadStreamCopyError((CFReadStreamRef)self);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (void *)_cfStreamError
@@ -3226,14 +3240,20 @@ extern NSString *const NSRangeException;
 
 - (BOOL)getBuffer:(char * *)a0 length:(unsigned long *)a1
 {
-    // unresolved
-    return NO;
+    CFIndex length = 0;
+    const UInt8 *buffer = CFReadStreamGetBuffer((CFReadStreamRef)self, 0, &length);
+    BOOL result = 0;
+    if (buffer != NULL && length > 0) {
+        if (a0) *a0 = (uint8_t *)buffer;
+        result = 1;
+        if (a1) *a1 = length;
+    }
+    return result;
 }
 
 - (BOOL)hasBytesAvailable
 {
-    // unresolved
-    return NO;
+    return CFReadStreamHasBytesAvailable((CFReadStreamRef)self);
 }
 
 @end
@@ -3321,32 +3341,33 @@ extern NSString *const NSRangeException;
 
 - (void)setDelegate:(id)a0
 {
-    // unresolved
-
+    [super setDelegate:a0];
+    CFStreamClientContext context = {0};
+    CFWriteStreamSetClient((CFWriteStreamRef)self, 0x1f, writeCallback, &context);
 }
 
 - (id)propertyForKey:(id)a0
 {
-    // unresolved
-    return nil;
+    id result = (id)CFWriteStreamCopyProperty((CFWriteStreamRef)self, (CFStringRef)a0);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (BOOL)setProperty:(id)a0 forKey:(id)a1
 {
-    // unresolved
-    return NO;
+    return CFWriteStreamSetProperty((CFWriteStreamRef)self, (CFStringRef)a1, (CFTypeRef)a0);
 }
 
 - (void)scheduleInRunLoop:(id)a0 forMode:(id)a1
 {
-    // unresolved
-
+    CFRunLoopRef loop = (CFRunLoopRef)[a0 getCFRunLoop];
+    CFStreamClientContext context = {0};
+    CFWriteStreamSetClient((CFWriteStreamRef)self, 0x1f, writeCallback, &context);
+    CFWriteStreamScheduleWithRunLoop((CFWriteStreamRef)self, loop, (CFStringRef)a1);
 }
 
 - (void)removeFromRunLoop:(id)a0 forMode:(id)a1
 {
-    // unresolved
-
+    CFWriteStreamUnscheduleFromRunLoop((CFWriteStreamRef)self, (CFRunLoopRef)[a0 getCFRunLoop], (CFStringRef)a1);
 }
 
 - (unsigned long)streamStatus
@@ -3356,8 +3377,8 @@ extern NSString *const NSRangeException;
 
 - (id)streamError
 {
-    // unresolved
-    return nil;
+    id result = (id)CFWriteStreamCopyError((CFWriteStreamRef)self);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (void *)_cfStreamError
@@ -3372,8 +3393,7 @@ extern NSString *const NSRangeException;
 
 - (BOOL)hasSpaceAvailable
 {
-    // unresolved
-    return NO;
+    return CFWriteStreamCanAcceptBytes((CFWriteStreamRef)self);
 }
 
 @end
