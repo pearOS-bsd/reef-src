@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Alexandru Balan
 // SPDX-License-Identifier: BSD-2-Clause
 //
-// Private AppKit methods QuickTime Player calls while it shows a movie (signatures of macOS 26's AppKit).
+// Private AppKit methods QuickTime Player calls while it shows a movie (signatures of macOS 26's AppKit; contextID is in
+// AppKitGarageBandFunctions.m).
 
 #import <AppKit/AppKit.h>
 #import <objc/runtime.h>
@@ -12,8 +13,6 @@ static char kGestureMask, kTitlebarAlpha, kHostsLayers;
 // The gesture events the application wants (trackpad gestures): kept, Reef has no such events.
 - (unsigned long long)gestureEventMask { return [objc_getAssociatedObject(self, &kGestureMask) unsignedLongLongValue]; }
 - (void)setGestureEventMask:(unsigned long long)mask { objc_setAssociatedObject(self, &kGestureMask, @(mask), OBJC_ASSOCIATION_RETAIN_NONATOMIC); }
-// The window server connection of the application; Reef has one per process.
-- (unsigned int)contextID { return 1; }
 @end
 
 @implementation NSWindow (ReefQuickTime)

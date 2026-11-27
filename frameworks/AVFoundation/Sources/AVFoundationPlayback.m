@@ -1101,8 +1101,8 @@ static ReefItemState *SetUpItem(AVPlayerItem *item, AVAsset *asset)
 - (void)setAudioOutputDeviceUniqueID:(NSString *)i {}
 - (NSInteger)_externalProtectionStatus { return 0; }
 - (void)_setDisplaysUsedForPlayback:(NSArray *)displays {}
-- (id)sourceClock { return nil; }
-- (void)setSourceClock:(id)c {}
+- (CMClockRef)sourceClock { return (__bridge CMClockRef)objc_getAssociatedObject(self, @selector(sourceClock)); }
+- (void)setSourceClock:(CMClockRef)c { objc_setAssociatedObject(self, @selector(sourceClock), (__bridge id)c, OBJC_ASSOCIATION_RETAIN_NONATOMIC); }
 - (id)masterClock { return nil; }
 - (void)setMasterClock:(id)c {}
 - (void)prerollAtRate:(float)rate completionHandler:(void (^)(BOOL))handler { if (handler) dispatch_async(dispatch_get_main_queue(), ^{ handler(YES); }); }
