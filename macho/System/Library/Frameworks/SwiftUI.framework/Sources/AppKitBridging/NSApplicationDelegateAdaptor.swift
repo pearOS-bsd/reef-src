@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct NSApplicationDelegateAdaptor<A> where A: NSObject, A: NSApplicationDelegate {
+@propertyWrapper public struct NSApplicationDelegateAdaptor<A> where A: NSObject, A: NSApplicationDelegate {
     let box: SwiftUI.DelegateBox
     public init(_ a0: A.Type) { _skeleton() }
     public var wrappedValue: A { _skeleton() }

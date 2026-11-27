@@ -18,10 +18,10 @@ import Metal
 import os
 
 open class NSHostingView<A>: NSView where A: SwiftUI.View {
-    public internal(set) var rootView: A = _skeletonValue()
-    public internal(set) var sizingOptions: SwiftUI.NSHostingSizingOptions = _skeletonValue()
-    public internal(set) var safeAreaRegions: SwiftUI.SafeAreaRegions = _skeletonValue()
-    public internal(set) var sceneBridgingOptions: SwiftUI.NSHostingSceneBridgingOptions = _skeletonValue()
+    public var rootView: A = _skeletonValue()
+    public var sizingOptions: SwiftUI.NSHostingSizingOptions = _skeletonValue()
+    public var safeAreaRegions: SwiftUI.SafeAreaRegions = _skeletonValue()
+    public var sceneBridgingOptions: SwiftUI.NSHostingSceneBridgingOptions = _skeletonValue()
     let driver: SwiftUI.HostingDriver = _skeletonValue()
     var isUpdatingWindowSize: Swift.Bool = _skeletonValue()
     var sizeConstraints: [NSLayoutConstraint] = _skeletonValue()

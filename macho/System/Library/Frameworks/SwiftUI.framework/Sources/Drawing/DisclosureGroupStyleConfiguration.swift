@@ -18,11 +18,7 @@ import Metal
 import os
 
 public struct DisclosureGroupStyleConfiguration {
-    var _isExpanded: SwiftUI.Binding<Swift.Bool>
-    public var isExpanded: Swift.Bool {
-        get { _skeleton() }
-        set { _skeleton() }
-    }
+    @SwiftUI.Binding public var isExpanded: Swift.Bool
     public var label: SwiftUI.DisclosureGroupStyleConfiguration.Label { _skeleton() }
     public var content: SwiftUI.DisclosureGroupStyleConfiguration.Content { _skeleton() }
     public struct Label {

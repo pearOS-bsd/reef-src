@@ -23,6 +23,7 @@ public protocol Layout: SwiftUI.Animatable {
     func updateCache(_ a0: inout Self.Cache, subviews a1: SwiftUI.LayoutSubviews)
     func spacing(subviews a0: SwiftUI.LayoutSubviews, cache a1: inout Self.Cache) -> SwiftUI.ViewSpacing
     func explicitAlignment(of a0: SwiftUI.HorizontalAlignment, `in` a1: CGRect, proposal a2: SwiftUI.ProposedViewSize, subviews a3: SwiftUI.LayoutSubviews, cache a4: inout Self.Cache) -> CoreGraphics.CGFloat?
+    func explicitAlignment(of a0: SwiftUI.VerticalAlignment, `in` a1: CGRect, proposal a2: SwiftUI.ProposedViewSize, subviews a3: SwiftUI.LayoutSubviews, cache a4: inout Self.Cache) -> CoreGraphics.CGFloat?
     static func _makeLayoutView(root a0: SwiftUI._GraphValue<Self>, inputs a1: SwiftUI._ViewInputs, body a2: (SwiftUI._Graph, SwiftUI._ViewInputs) -> SwiftUI._ViewListOutputs) -> SwiftUI._ViewOutputs
     func makeCache(subviews a0: SwiftUI.LayoutSubviews) -> Self.Cache
     func sizeThatFits(proposal a0: SwiftUI.ProposedViewSize, subviews a1: SwiftUI.LayoutSubviews, cache a2: inout Self.Cache) -> CGSize

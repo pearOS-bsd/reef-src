@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct FocusedObject<A> where A: Combine.ObservableObject {
+@propertyWrapper public struct FocusedObject<A> where A: Combine.ObservableObject {
     public init() { _skeleton() }
     public var wrappedValue: A? { _skeleton() }
 }

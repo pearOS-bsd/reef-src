@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct GestureState<A> {
+@propertyWrapper public struct GestureState<A> {
     public var _state: SwiftUI.State<A>
     public var _reset: (A, inout SwiftUI.Transaction) -> ()
     public init(wrappedValue a0: A) { _skeleton() }

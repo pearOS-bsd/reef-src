@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct SceneStorage<A> {
+@propertyWrapper public struct SceneStorage<A> {
     let state: SwiftUI.State<A>
     public init(wrappedValue a0: Swift.Bool, _ a1: Swift.String) where A == Swift.Bool { _skeleton() }
     public init(wrappedValue a0: Swift.Int, _ a1: Swift.String) where A == Swift.Int { _skeleton() }

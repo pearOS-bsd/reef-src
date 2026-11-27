@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct AppStorage<A> {
+@propertyWrapper public struct AppStorage<A> {
     public var location: SwiftUI.AnyLocation<A>
     static func _reefInstall(at a0: Swift.UnsafeMutableRawPointer, context a1: SwiftUI.PropertyInstallContext) { _skeleton() }
     public init(wrappedValue a0: A, _ a1: Swift.String, store a2: UserDefaults?) where A: Swift.RawRepresentable, A.RawValue == Swift.String { _skeleton() }

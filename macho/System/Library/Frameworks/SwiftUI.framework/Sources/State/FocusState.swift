@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct FocusState<A> where A: Swift.Hashable {
+@propertyWrapper public struct FocusState<A> where A: Swift.Hashable {
     public var value: A
     public var location: (SwiftUI.AnyLocation<A>)?
     public var resetValue: A
@@ -29,7 +29,7 @@ public struct FocusState<A> where A: Swift.Hashable {
     public var projectedValue: SwiftUI.FocusState<A>.Binding { _skeleton() }
     public init<A1>() where A == A1?, A1: Swift.Hashable { _skeleton() }
     public init() where A == Swift.Bool { _skeleton() }
-    public struct Binding {
+    @propertyWrapper public struct Binding {
         public var binding: SwiftUI.Binding<A>
         public init(binding a0: SwiftUI.Binding<A>) { _skeleton() }
         public var wrappedValue: A {

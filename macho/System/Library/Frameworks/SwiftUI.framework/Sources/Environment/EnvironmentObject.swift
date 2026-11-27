@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct EnvironmentObject<A> where A: Combine.ObservableObject {
+@propertyWrapper public struct EnvironmentObject<A> where A: Combine.ObservableObject {
     public var _store: A?
     public var _seed: Swift.Int
     static func _reefInstall(at a0: Swift.UnsafeMutableRawPointer, context a1: SwiftUI.PropertyInstallContext) { _skeleton() }

@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct Bindable<A> {
+@propertyWrapper public struct Bindable<A> {
     var value: A
     public var wrappedValue: A {
         get { _skeleton() }

@@ -20,11 +20,11 @@ import os
 open class NSHostingController<A>: NSViewController where A: SwiftUI.View {
     var storedRootView: A = _skeletonValue()
     var hostingView: (SwiftUI.NSHostingView<A>)? = _skeletonValue()
-    public internal(set) var sizingOptions: SwiftUI.NSHostingSizingOptions = _skeletonValue()
-    public internal(set) var sceneBridgingOptions: SwiftUI.NSHostingSceneBridgingOptions = _skeletonValue()
-    public internal(set) var safeAreaRegions: SwiftUI.SafeAreaRegions = _skeletonValue()
+    public var sizingOptions: SwiftUI.NSHostingSizingOptions = _skeletonValue()
+    public var sceneBridgingOptions: SwiftUI.NSHostingSceneBridgingOptions = _skeletonValue()
+    public var safeAreaRegions: SwiftUI.SafeAreaRegions = _skeletonValue()
     public init(rootView a0: A) { _skeleton() }
-    open internal(set) var rootView: A {
+    open var rootView: A {
         get { _skeleton() }
         set { _skeleton() }
     }

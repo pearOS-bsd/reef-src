@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct Environment<A> {
+@propertyWrapper public struct Environment<A> {
     public var content: SwiftUI.Environment<A>.Content
     static func _reefInstall(at a0: Swift.UnsafeMutableRawPointer, context a1: SwiftUI.PropertyInstallContext) { _skeleton() }
     public init(_ a0: Swift.KeyPath<SwiftUI.EnvironmentValues, A>) { _skeleton() }

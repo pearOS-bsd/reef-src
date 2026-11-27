@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct Namespace {
+@propertyWrapper public struct Namespace {
     public var id: Swift.Int
     public init() { _skeleton() }
     public var wrappedValue: SwiftUI.Namespace.ID { _skeleton() }

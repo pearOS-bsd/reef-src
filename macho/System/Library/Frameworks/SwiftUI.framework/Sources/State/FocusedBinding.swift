@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct FocusedBinding<A> {
+@propertyWrapper public struct FocusedBinding<A> {
     let keyPath: Swift.KeyPath<SwiftUI.FocusedValues, (SwiftUI.Binding<A>)?>
     public var wrappedValue: A? {
         get { _skeleton() }

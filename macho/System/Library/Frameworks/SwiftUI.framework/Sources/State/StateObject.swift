@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct StateObject<A> where A: Combine.ObservableObject {
+@propertyWrapper public struct StateObject<A> where A: Combine.ObservableObject {
     public var storage: SwiftUI.StateObject<A>.Storage
     static func _reefInstall(at a0: Swift.UnsafeMutableRawPointer, context a1: SwiftUI.PropertyInstallContext) { _skeleton() }
     public init(wrappedValue a0: @escaping @autoclosure () -> A) { _skeleton() }

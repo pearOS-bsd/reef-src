@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct AccessibilityFocusState<A> where A: Swift.Hashable {
+@propertyWrapper public struct AccessibilityFocusState<A> where A: Swift.Hashable {
     public var technologies: SwiftUI.AccessibilityTechnologies?
     public var value: A
     public var location: (SwiftUI.AnyLocation<A>)?
@@ -32,7 +32,7 @@ public struct AccessibilityFocusState<A> where A: Swift.Hashable {
     }
     public var projectedValue: SwiftUI.AccessibilityFocusState<A>.Binding { _skeleton() }
     static func _reefInstall(at a0: Swift.UnsafeMutableRawPointer, context a1: SwiftUI.PropertyInstallContext) { _skeleton() }
-    public struct Binding {
+    @propertyWrapper public struct Binding {
         public var state: SwiftUI.Binding<A>
         public var wrappedValue: A {
             get { _skeleton() }

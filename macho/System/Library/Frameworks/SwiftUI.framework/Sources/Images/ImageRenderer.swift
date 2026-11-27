@@ -18,8 +18,8 @@ import Metal
 import os
 
 open class ImageRenderer<A> where A: SwiftUI.View {
-    public var content: A = _skeletonValue()
-    public var scale: CoreGraphics.CGFloat = _skeletonValue()
+    public final var content: A = _skeletonValue()
+    public final var scale: CoreGraphics.CGFloat = _skeletonValue()
     public init(content a0: A) { _skeleton() }
     public final var nsImage: NSImage? { _skeleton() }
     public final var cgImage: CGImage? { _skeleton() }

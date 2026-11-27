@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct State<A> {
+@propertyWrapper public struct State<A> {
     public var _value: A
     public var _location: (SwiftUI.AnyLocation<A>)?
     public var wrappedValue: A {

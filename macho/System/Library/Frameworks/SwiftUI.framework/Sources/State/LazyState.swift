@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct LazyState<A> {
+@propertyWrapper public struct LazyState<A> {
     public var storage: SwiftUI.LazyState<A>.Storage
     public var location: AnyObject?
     static func _reefInstall(at a0: Swift.UnsafeMutableRawPointer, context a1: SwiftUI.PropertyInstallContext) { _skeleton() }

@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct Binding<A> {
+@propertyWrapper public struct Binding<A> {
     public var transaction: SwiftUI.Transaction
     public var location: SwiftUI.AnyLocation<A>
     public var _value: A

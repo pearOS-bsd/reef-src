@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct FocusedValue<A> {
+@propertyWrapper public struct FocusedValue<A> {
     let keyPath: Swift.KeyPath<SwiftUI.FocusedValues, A?>
     public init(_ a0: Swift.KeyPath<SwiftUI.FocusedValues, A?>) { _skeleton() }
     public var content: SwiftUI.FocusedValue<A>.Content { _skeleton() }

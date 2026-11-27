@@ -17,7 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-public struct ScaledMetric<A> where A: Swift.BinaryFloatingPoint {
+@propertyWrapper public struct ScaledMetric<A> where A: Swift.BinaryFloatingPoint {
     let value: A
     public init(wrappedValue a0: A, relativeTo a1: SwiftUI.Font.TextStyle) { _skeleton() }
     public var wrappedValue: A { _skeleton() }
