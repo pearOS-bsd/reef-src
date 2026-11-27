@@ -109,6 +109,10 @@ extern void __reefRaiseImmutable(id, SEL) __attribute__((noreturn));
 extern void __reefRaiseNil(id, SEL, const char *) __attribute__((noreturn));
 extern void __reefRaiseIndex(id, SEL, unsigned long, unsigned long) __attribute__((noreturn));
 extern unsigned long _CFArrayFastEnumeration(id, NSFastEnumerationState *, id *, unsigned long);
+extern unsigned long _CFDictionaryFastEnumeration(id, NSFastEnumerationState *, id *, unsigned long);
+extern unsigned long _CFSetFastEnumeration(id, NSFastEnumerationState *, id *, unsigned long);
+extern id objc_autorelease(id);
+extern void objc_release(id);
 extern const char *object_getClassName(id);
 extern NSString *const NSRangeException;
 
@@ -1026,8 +1030,7 @@ extern NSString *const NSRangeException;
 
 - (Class)classForCoder
 {
-    // unresolved
-    return nil;
+    return [(REEF_INFO(self) & 0x40 ? [NSDictionary class] : [NSMutableDictionary class]) class];
 }
 
 - (unsigned long)count
@@ -1037,14 +1040,21 @@ extern NSString *const NSRangeException;
 
 - (id)objectForKey:(id)a0
 {
-    // unresolved
-    return nil;
+    if (a0 == 0) return 0;
+    return (id)CFDictionaryGetValue((CFDictionaryRef)self, a0);
 }
 
 - (id)keyEnumerator
 {
-    // unresolved
-    return nil;
+    CFIndex count = CFDictionaryGetCount((CFDictionaryRef)self);
+    const void **items = malloc(count * sizeof(void *) + 1);
+    CFDictionaryGetKeysAndValues((CFDictionaryRef)self, items, NULL);
+    CFArrayRef snapshot = CFArrayCreate(kCFAllocatorSystemDefault, items, count, &kCFTypeArrayCallBacks);
+    id enumerator = [[__NSCFSnapshotEnumerator alloc] initWithSnapshot:(id)snapshot];
+    CFRelease(snapshot);
+    id result = objc_autorelease(enumerator);
+    free(items);
+    return result;
 }
 
 - (void)getObjects:(id *)a0 andKeys:(id *)a1
@@ -1054,14 +1064,13 @@ extern NSString *const NSRangeException;
 
 - (BOOL)containsKey:(id)a0
 {
-    // unresolved
-    return NO;
+    return (BOOL)CFDictionaryContainsKey((CFDictionaryRef)self, a0);
 }
 
 - (BOOL)containsObject:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return CFDictionaryContainsValue((CFDictionaryRef)self, a0) != 0;
 }
 
 - (unsigned long)countForKey:(id)a0
@@ -1076,56 +1085,59 @@ extern NSString *const NSRangeException;
 
 - (void)setObject:(id)a0 forKey:(id)a1
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 0x40) __reefRaiseImmutable(self, _cmd);
+    if (a0 == 0) __reefRaiseNil(self, _cmd, "object");
+    if (a1 == 0) __reefRaiseNil(self, _cmd, "key");
+    id key = [a1 copy];
+    CFDictionarySetValue((CFMutableDictionaryRef)self, key, a0);
+    objc_release(key);
 }
 
 - (void)__setObject:(id)a0 forKey:(id)a1
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 0x40) __reefRaiseImmutable(self, _cmd);
+    CFDictionarySetValue((CFMutableDictionaryRef)self, a1, a0);
 }
 
 - (void)__addObject:(id)a0 forKey:(id)a1
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 0x40) __reefRaiseImmutable(self, _cmd);
+    CFDictionaryAddValue((CFMutableDictionaryRef)self, a1, a0);
 }
 
 - (void)replaceObject:(id)a0 forKey:(id)a1
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 0x40) __reefRaiseImmutable(self, _cmd);
+    CFDictionaryReplaceValue((CFMutableDictionaryRef)self, a1, a0);
 }
 
 - (void)removeObjectForKey:(id)a0
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 0x40) __reefRaiseImmutable(self, _cmd);
+    if (a0 == 0) __reefRaiseNil(self, _cmd, "key");
+    CFDictionaryRemoveValue((CFMutableDictionaryRef)self, a0);
 }
 
 - (void)removeAllObjects
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 0x40) __reefRaiseImmutable(self, _cmd);
+    CFDictionaryRemoveAllValues((CFMutableDictionaryRef)self);
 }
 
 - (unsigned long)countByEnumeratingWithState:(NSFastEnumerationState *)a0 objects:(id *)a1 count:(unsigned long)a2
 {
-    // unresolved
-    return 0;
+    if (a0->state == 0) a0->mutationsPtr = (unsigned long *)&a0->extra[0];
+    return _CFDictionaryFastEnumeration(self, a0, a1, a2);
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFDictionaryCreateCopy(kCFAllocatorSystemDefault, (CFDictionaryRef)self);
 }
 
 - (id)mutableCopyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFDictionaryCreateMutableCopy(kCFAllocatorSystemDefault, 0, (CFDictionaryRef)self);
 }
 
 @end
@@ -1348,8 +1360,7 @@ extern NSString *const NSRangeException;
 
 - (Class)classForCoder
 {
-    // unresolved
-    return nil;
+    return [(REEF_INFO(self) & 0x40 ? [NSSet class] : [NSMutableSet class]) class];
 }
 
 - (unsigned long)count
@@ -1359,14 +1370,22 @@ extern NSString *const NSRangeException;
 
 - (id)member:(id)a0
 {
-    // unresolved
-    return nil;
+    const void *value = NULL;
+    if (a0 == 0 || !CFSetGetValueIfPresent((CFSetRef)self, a0, &value)) return 0;
+    return (id)value;
 }
 
 - (id)objectEnumerator
 {
-    // unresolved
-    return nil;
+    CFIndex count = CFSetGetCount((CFSetRef)self);
+    const void **items = malloc(count * sizeof(void *) + 1);
+    CFSetGetValues((CFSetRef)self, items);
+    CFArrayRef snapshot = CFArrayCreate(kCFAllocatorSystemDefault, items, count, &kCFTypeArrayCallBacks);
+    id enumerator = [[__NSCFSnapshotEnumerator alloc] initWithSnapshot:(id)snapshot];
+    CFRelease(snapshot);
+    id result = objc_autorelease(enumerator);
+    free(items);
+    return result;
 }
 
 - (void)getObjects:(id *)a0
@@ -1376,8 +1395,8 @@ extern NSString *const NSRangeException;
 
 - (BOOL)containsObject:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return CFSetContainsValue((CFSetRef)self, a0) != 0;
 }
 
 - (unsigned long)countForObject:(id)a0
@@ -1387,44 +1406,45 @@ extern NSString *const NSRangeException;
 
 - (void)addObject:(id)a0
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 0x40) __reefRaiseImmutable(self, _cmd);
+    if (a0 == 0) __reefRaiseNil(self, _cmd, "object");
+    CFSetAddValue((CFMutableSetRef)self, a0);
 }
 
 - (void)removeObject:(id)a0
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 0x40) __reefRaiseImmutable(self, _cmd);
+    if (a0 == 0) __reefRaiseNil(self, _cmd, "object");
+    CFSetRemoveValue((CFMutableSetRef)self, a0);
 }
 
 - (void)removeAllObjects
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 0x40) __reefRaiseImmutable(self, _cmd);
+    CFSetRemoveAllValues((CFMutableSetRef)self);
 }
 
 - (void)replaceObject:(id)a0
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 0x40) __reefRaiseImmutable(self, _cmd);
+    CFSetReplaceValue((CFMutableSetRef)self, a0);
 }
 
 - (void)setObject:(id)a0
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 0x40) __reefRaiseImmutable(self, _cmd);
+    CFSetSetValue((CFMutableSetRef)self, a0);
 }
 
 - (unsigned long)countByEnumeratingWithState:(NSFastEnumerationState *)a0 objects:(id *)a1 count:(unsigned long)a2
 {
-    // unresolved
-    return 0;
+    if (a0->state == 0) a0->mutationsPtr = (unsigned long *)&a0->extra[0];
+    return _CFSetFastEnumeration(self, a0, a1, a2);
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFSetCreateCopy(kCFAllocatorSystemDefault, (CFSetRef)self);
 }
 
 @end
