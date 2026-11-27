@@ -1220,8 +1220,7 @@ extern NSString *const NSRangeException;
 
 - (unsigned long)countForObject:(id)a0
 {
-    // unresolved
-    return 0;
+    return [self member:a0] != nil;
 }
 
 - (void)getObjects:(id *)a0
@@ -1232,8 +1231,9 @@ extern NSString *const NSRangeException;
 
 - (BOOL)__getValue:(id *)a0 forObj:(id)a1
 {
-    // unresolved
-    return NO;
+    id value = [self member:a1];
+    if (a0) *a0 = value;
+    return value != nil;
 }
 
 - (void)__applyValues:(void * *)a0 context:(void *)a1
@@ -1244,8 +1244,10 @@ extern NSString *const NSRangeException;
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    CFMutableSetRef mutableCopy = CFSetCreateMutableCopy(kCFAllocatorSystemDefault, 0, (CFSetRef)self);
+    CFSetRef copy = CFSetCreateCopy(kCFAllocatorSystemDefault, mutableCopy);
+    CFRelease(mutableCopy);
+    return (id)copy;
 }
 
 - (id)mutableCopyWithZone:(struct _NSZone *)a0
@@ -1298,20 +1300,25 @@ extern NSString *const NSRangeException;
 
 - (void)removeAllObjects
 {
-    // unresolved
-
+    unsigned long count = [self count];
+    id *objects = malloc(count * sizeof(id) + 1);
+    [self getObjects:objects];
+    for (unsigned long idx = 0; idx < count; idx++) [self removeObject:objects[idx]];
+    free(objects);
 }
 
 - (void)replaceObject:(id)a0
 {
-    // unresolved
-
+    if ([self member:a0]) {
+        [self removeObject:a0];
+        [self addObject:a0];
+    }
 }
 
 - (void)setObject:(id)a0
 {
-    // unresolved
-
+    [self removeObject:a0];
+    [self addObject:a0];
 }
 
 @end
@@ -4804,44 +4811,48 @@ extern NSString *const NSRangeException;
 
 - (BOOL)longCharacterIsMember:(unsigned int)a0
 {
-    // unresolved
-    return NO;
+    if (a0 > 0xffff) return 0;
+    return [self characterIsMember:(unichar)a0] != 0;
 }
 
 - (BOOL)hasMemberInPlane:(unsigned char)a0
 {
-    // unresolved
-    return NO;
+    return a0 == 0;
 }
 
 - (id)invertedSet
 {
-    // unresolved
-    return nil;
+    id result = (id)CFCharacterSetCreateInvertedSet(kCFAllocatorSystemDefault, (CFCharacterSetRef)[self _expandedCFCharacterSet]);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (struct __CFCharacterSet *)_expandedCFCharacterSet
 {
-    // unresolved
-    return 0;
+    id bitmap = [self _retainedBitmapRepresentation];
+    id set = (id)CFCharacterSetCreateWithBitmapRepresentation(kCFAllocatorSystemDefault, (CFDataRef)bitmap);
+    CFRelease(bitmap);
+    return set ? objc_autorelease(set) : nil;
 }
 
 - (struct __CFData *)_retainedBitmapRepresentation
 {
-    // unresolved
-    return 0;
+    CFMutableDataRef data = CFDataCreateMutable(kCFAllocatorSystemDefault, 0x2000);
+    CFDataSetLength(data, 0x2000);
+    UInt8 *bytes = CFDataGetMutableBytePtr(data);
+    for (unsigned int character = 0; character != 0x10000; character++) {
+        if ([self characterIsMember:(unichar)character]) bytes[character >> 3] |= (UInt8)(1 << (character & 7));
+    }
+    return (id)data;
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFCharacterSetCreateCopy(kCFAllocatorSystemDefault, (CFCharacterSetRef)[self _expandedCFCharacterSet]);
 }
 
 - (id)mutableCopyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFCharacterSetCreateMutableCopy(kCFAllocatorSystemDefault, (CFCharacterSetRef)[self _expandedCFCharacterSet]);
 }
 
 - (unsigned long)_cfTypeID
