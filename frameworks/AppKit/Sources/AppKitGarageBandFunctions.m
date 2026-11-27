@@ -596,3 +596,48 @@ __attribute__((constructor)) static void ReefClassInfo(void) {
         }
     });
 }
+
+// A control's value, formatter, font and alignment live in its cell in AppKit: Reef's NSControl keeps its own copies,
+// so a custom cell that draws its own value (GarageBand's LCD time and tempo scrubbers) never saw the value the app
+// set on the control. The setters now also reach the cell (guarded: a cell may call back into its control).
+static IMP originalControlSetObjectValue, originalControlSetFormatter, originalControlSetFont, originalControlSetAlignment;
+static __thread int forwardingToCell;
+static void controlSetObjectValue(NSControl *self, SEL _cmd, id value) {
+    ((void (*)(id, SEL, id))originalControlSetObjectValue)(self, _cmd, value);
+    if (forwardingToCell) return;
+    NSCell *cell = self.cell;
+    if (cell && [cell respondsToSelector:@selector(setObjectValue:)]) {
+        forwardingToCell++;
+        @try { [cell setObjectValue:value]; } @catch (id e) {}
+        forwardingToCell--;
+    }
+}
+static void controlSetFormatter(NSControl *self, SEL _cmd, NSFormatter *formatter) {
+    ((void (*)(id, SEL, id))originalControlSetFormatter)(self, _cmd, formatter);
+    if (forwardingToCell) return;
+    NSCell *cell = self.cell;
+    if (cell && cell.formatter != formatter) { forwardingToCell++; cell.formatter = formatter; forwardingToCell--; }
+}
+static void controlSetFont(NSControl *self, SEL _cmd, NSFont *font) {
+    ((void (*)(id, SEL, id))originalControlSetFont)(self, _cmd, font);
+    if (forwardingToCell || !font) return;
+    NSCell *cell = self.cell;
+    if (cell && cell.font != font) { forwardingToCell++; cell.font = font; forwardingToCell--; }
+}
+static void controlSetAlignment(NSControl *self, SEL _cmd, NSTextAlignment alignment) {
+    ((void (*)(id, SEL, NSTextAlignment))originalControlSetAlignment)(self, _cmd, alignment);
+    if (forwardingToCell) return;
+    NSCell *cell = self.cell;
+    if (cell && cell.alignment != alignment) { forwardingToCell++; cell.alignment = alignment; forwardingToCell--; }
+}
+__attribute__((constructor)) static void controlValueToCell(void) {
+    Class c = [NSControl class];
+    Method m = class_getInstanceMethod(c, @selector(setObjectValue:));
+    if (m) originalControlSetObjectValue = method_setImplementation(m, (IMP)controlSetObjectValue);
+    m = class_getInstanceMethod(c, @selector(setFormatter:));
+    if (m) originalControlSetFormatter = method_setImplementation(m, (IMP)controlSetFormatter);
+    m = class_getInstanceMethod(c, @selector(setFont:));
+    if (m) originalControlSetFont = method_setImplementation(m, (IMP)controlSetFont);
+    m = class_getInstanceMethod(c, @selector(setAlignment:));
+    if (m) originalControlSetAlignment = method_setImplementation(m, (IMP)controlSetAlignment);
+}
