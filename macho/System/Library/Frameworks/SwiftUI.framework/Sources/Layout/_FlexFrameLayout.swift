@@ -25,7 +25,12 @@ public struct _FlexFrameLayout {
     public let idealHeight: CoreGraphics.CGFloat?
     public let maxHeight: CoreGraphics.CGFloat?
     public let alignment: SwiftUI.Alignment
-    func _apply(_ a0: SwiftUI.BuildContext, content a1: @escaping (SwiftUI.BuildContext) -> [SwiftUI.Element]) -> [SwiftUI.Element] { _skeleton() }
+    /// the content (under "frame") as one element in a flexible frame
+    func _apply(_ a0: SwiftUI.BuildContext, content a1: @escaping (SwiftUI.BuildContext) -> [SwiftUI.Element]) -> [SwiftUI.Element] {
+        var context = a0
+        context.path.append(AnyHashable("frame"))
+        return [SwiftUI.FlexFrameElement(SwiftUI.singleElement(a1(context)), layout: self)]
+    }
     public init(minWidth a0: CoreGraphics.CGFloat?, idealWidth a1: CoreGraphics.CGFloat?, maxWidth a2: CoreGraphics.CGFloat?, minHeight a3: CoreGraphics.CGFloat?, idealHeight a4: CoreGraphics.CGFloat?, maxHeight a5: CoreGraphics.CGFloat?, alignment a6: SwiftUI.Alignment) {
         minWidth = a0
         idealWidth = a1

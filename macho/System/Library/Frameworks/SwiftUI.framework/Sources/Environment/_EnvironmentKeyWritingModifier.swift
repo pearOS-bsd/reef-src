@@ -20,9 +20,17 @@ import os
 public struct _EnvironmentKeyWritingModifier<A> {
     public var keyPath: Swift.WritableKeyPath<SwiftUI.EnvironmentValues, A>
     public var value: A
-    func write(_ a0: inout SwiftUI.EnvironmentValues) { _skeleton() }
-    func _apply(_ a0: SwiftUI.BuildContext, content a1: @escaping (SwiftUI.BuildContext) -> [SwiftUI.Element]) -> [SwiftUI.Element] { _skeleton() }
-    public init(keyPath a0: Swift.WritableKeyPath<SwiftUI.EnvironmentValues, A>, value a1: A) { _skeleton() }
+    func write(_ a0: inout SwiftUI.EnvironmentValues) { a0[keyPath: keyPath] = value }
+    /// the content with the value written into its environment
+    func _apply(_ a0: SwiftUI.BuildContext, content a1: @escaping (SwiftUI.BuildContext) -> [SwiftUI.Element]) -> [SwiftUI.Element] {
+        var context = a0
+        context.environment[keyPath: keyPath] = value
+        return a1(context)
+    }
+    public init(keyPath a0: Swift.WritableKeyPath<SwiftUI.EnvironmentValues, A>, value a1: A) {
+        keyPath = a0
+        value = a1
+    }
 }
 
 extension SwiftUI._EnvironmentKeyWritingModifier: SwiftUI.EnvironmentWriting {

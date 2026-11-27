@@ -83,7 +83,11 @@ struct SelfTestStacks: SwiftUI.View {
             }
             if wide { SelfTestLeaf(width: 100) } else { SelfTestLeaf(width: 10) }
             SwiftUI.ZStack(alignment: .center) { SelfTestLeaf(width: 5) }
+                .padding(3)
+                .frame(width: 60, height: nil, alignment: .trailing)
+                .environment(\.isEnabled, false)
         }
+        .padding(.horizontal, nil)
     }
 }
 

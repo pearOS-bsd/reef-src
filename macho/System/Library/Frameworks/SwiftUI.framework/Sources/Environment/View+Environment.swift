@@ -19,7 +19,9 @@ import os
 
 extension SwiftUI.View {
     func environmentSet(_ a0: @escaping (inout SwiftUI.EnvironmentValues) -> ()) -> SwiftUI.ModifiedContent<Self, SwiftUI.EnvironmentSetModifier> { _skeleton() }
-    public func environment<A1>(_ a0: Swift.WritableKeyPath<SwiftUI.EnvironmentValues, A1>, _ a1: A1) -> some SwiftUI.View { self }
+    public func environment<A1>(_ a0: Swift.WritableKeyPath<SwiftUI.EnvironmentValues, A1>, _ a1: A1) -> some SwiftUI.View {
+        modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: a0, value: a1))
+    }
     public func transformEnvironment<A1>(_ a0: Swift.WritableKeyPath<SwiftUI.EnvironmentValues, A1>, transform a1: @escaping (inout A1) -> ()) -> some SwiftUI.View { self }
     public func environmentObject<A1>(_ a0: A1) -> some SwiftUI.View where A1: Combine.ObservableObject { self }
     public func preferredColorScheme(_ a0: SwiftUI.ColorScheme?) -> some SwiftUI.View { self }

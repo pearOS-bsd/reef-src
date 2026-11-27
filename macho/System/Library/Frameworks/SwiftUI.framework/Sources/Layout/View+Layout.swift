@@ -18,13 +18,23 @@ import Metal
 import os
 
 extension SwiftUI.View {
-    public func frame(minWidth a0: CoreGraphics.CGFloat?, idealWidth a1: CoreGraphics.CGFloat?, maxWidth a2: CoreGraphics.CGFloat?, minHeight a3: CoreGraphics.CGFloat?, idealHeight a4: CoreGraphics.CGFloat?, maxHeight a5: CoreGraphics.CGFloat?, alignment a6: SwiftUI.Alignment) -> some SwiftUI.View { self }
+    public func frame(minWidth a0: CoreGraphics.CGFloat?, idealWidth a1: CoreGraphics.CGFloat?, maxWidth a2: CoreGraphics.CGFloat?, minHeight a3: CoreGraphics.CGFloat?, idealHeight a4: CoreGraphics.CGFloat?, maxHeight a5: CoreGraphics.CGFloat?, alignment a6: SwiftUI.Alignment) -> some SwiftUI.View {
+        modifier(SwiftUI._FlexFrameLayout(minWidth: a0, idealWidth: a1, maxWidth: a2, minHeight: a3, idealHeight: a4, maxHeight: a5, alignment: a6))
+    }
     public func fixedSize(horizontal a0: Swift.Bool, vertical a1: Swift.Bool) -> some SwiftUI.View { self }
     public func matchedGeometryEffect<A1>(id a0: A1, `in` a1: SwiftUI.Namespace.ID, properties a2: SwiftUI.MatchedGeometryProperties, anchor a3: SwiftUI.UnitPoint, isSource a4: Swift.Bool) -> some SwiftUI.View where A1: Swift.Hashable { self }
-    public func padding(_ a0: SwiftUI.EdgeInsets) -> some SwiftUI.View { self }
-    public func padding(_ a0: SwiftUI.Edge.Set, _ a1: CoreGraphics.CGFloat?) -> some SwiftUI.View { self }
-    public func padding(_ a0: CoreGraphics.CGFloat) -> some SwiftUI.View { self }
-    public func frame(width a0: CoreGraphics.CGFloat?, height a1: CoreGraphics.CGFloat?, alignment a2: SwiftUI.Alignment) -> some SwiftUI.View { self }
+    public func padding(_ a0: SwiftUI.EdgeInsets) -> some SwiftUI.View {
+        modifier(SwiftUI._PaddingLayout(edges: .all, insets: a0))
+    }
+    public func padding(_ a0: SwiftUI.Edge.Set, _ a1: CoreGraphics.CGFloat?) -> some SwiftUI.View {
+        modifier(SwiftUI._PaddingLayout(edges: a0, insets: a1.map { SwiftUI.EdgeInsets(_all: $0) }))
+    }
+    public func padding(_ a0: CoreGraphics.CGFloat) -> some SwiftUI.View {
+        modifier(SwiftUI._PaddingLayout(edges: .all, insets: SwiftUI.EdgeInsets(_all: a0)))
+    }
+    public func frame(width a0: CoreGraphics.CGFloat?, height a1: CoreGraphics.CGFloat?, alignment a2: SwiftUI.Alignment) -> some SwiftUI.View {
+        modifier(SwiftUI._FrameLayout(width: a0, height: a1, alignment: a2))
+    }
     public func alignmentGuide(_ a0: SwiftUI.VerticalAlignment, computeValue a1: @escaping (SwiftUI.ViewDimensions) -> CoreGraphics.CGFloat) -> some SwiftUI.View { self }
     public func multilineTextAlignment(_ a0: SwiftUI.TextAlignment) -> some SwiftUI.View { self }
     public func lineSpacing(_ a0: CoreGraphics.CGFloat) -> some SwiftUI.View { self }
