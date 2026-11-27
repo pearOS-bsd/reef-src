@@ -196,7 +196,34 @@ class StackElement: SwiftUI.Element {
             main += length + (i < spaces.count ? spaces[i] : 0)
         }
     }
-    override func explicitAlignment(_ a0: SwiftUI.AlignmentKey, size a1: CGSize) -> CoreGraphics.CGFloat? { _skeleton() }
+    /// text baselines of a stack: a column's first / last item's, a row's from its items
+    override func explicitAlignment(_ a0: SwiftUI.AlignmentKey, size a1: CGSize) -> CoreGraphics.CGFloat? {
+        let first = SwiftUI.VerticalAlignment.firstTextBaseline.key, last = SwiftUI.VerticalAlignment.lastTextBaseline.key
+        guard a0 == first || a0 == last, let head = items.first, let tail = items.last else { return nil }
+        if axis == .vertical {
+            if a0 == last {
+                let size = tail.sizeThatFits(SwiftUI.ProposedViewSize(width: a1.width, height: nil))
+                return (a1.height - size.height) + tail.alignment(a0, size: size)
+            }
+            let size = head.sizeThatFits(SwiftUI.ProposedViewSize(width: a1.width, height: nil))
+            return head.alignment(a0, size: size)
+        }
+        if alignmentKey == first || alignmentKey == last {
+            // a row aligned on baselines: the lowest baseline of its items
+            var result = -CoreGraphics.CGFloat.infinity
+            for item in items {
+                let size = item.sizeThatFits(.unspecified)
+                result = max(result, item.alignment(a0, size: size))
+            }
+            return result
+        }
+        // a row aligned otherwise: the baseline of its first item with text, where the row's alignment puts it
+        let item = items.first(where: { $0.hasTextBaseline }) ?? head
+        let size = item.sizeThatFits(.unspecified)
+        let value = alignmentKey.defaultValue(width: 1, height: 1)
+        let fraction: CoreGraphics.CGFloat = value.isFinite ? (value > 0 ? min(value, 1) : 0) : 0.5
+        return (a1.height - size.height) * fraction + item.alignment(a0, size: size)
+    }
     override func draw(_ a0: SwiftUI.RenderContext) {
         // in zIndex order (the same order as ZStackElement's children)
         for item in items.sorted(by: { $0.zIndex < $1.zIndex }) where !item.isHidden { item.draw(a0) }
