@@ -1,0 +1,150 @@
+# Reef's changes to CFBundle_Locale.c of CoreFoundation (swift-corelibs-foundation swift-6.0-RELEASE).
+# The patched file is a derived work: Apache License v2.0 with Runtime Library Exception, see upstream/corefoundation/LICENSE.
+# Written from the published binary. SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+--- CFBundle_Locale.c
++++ CFBundle_Locale.c
+@@ -722,88 +722,72 @@
+ }
+ 
+ // Given a list of localizations (e.g., provided as argument to API, or present as .lproj directories), return a mutable array of localizations in preferred order. Returns NULL if nothing is found.
+-static CFMutableArrayRef _CFBundleCreateMutableArrayOfFallbackLanguages(CFArrayRef availableLocalizations, CFArrayRef preferredLocalizations) {
+-    
+-    // stringPointers must be the length of list
+-    char * (^makeBuffer)(CFArrayRef, char **) = ^(CFArrayRef list, char *stringPointers[]) {
+-#if !__HAS_APPLE_ICU__
+-        return (char *)NULL;
+-#else
+-        CFIndex listCount = CFArrayGetCount(list);
+-        if (listCount == 0) return (char *)NULL;
+-        
+-        size_t bufferSize = listCount * sizeof(char) * ULOC_FULLNAME_CAPACITY; // entries are only allowed to be ULOC_FULLNAME_CAPACITY long with terminating null.
+-        char *stringBuffer = malloc(bufferSize);
+-        if (!stringBuffer) return (char *)NULL;
+-        
+-        char *last = stringBuffer + bufferSize;
+-        char *strings = stringBuffer;
++// Reef has no ICU matching of localizations: the names are made canonical (with "-" between the parts), then each preferred language is
++// matched against the available ones, with fewer and fewer parts from the end, and last by its language alone.
++static inline CFStringRef _reefCopyCanonicalLocalization(CFStringRef name) {
++    CFStringRef canonical = CFLocaleCreateCanonicalLanguageIdentifierFromString(kCFAllocatorSystemDefault, name);
++    CFMutableStringRef copy = CFStringCreateMutableCopy(kCFAllocatorSystemDefault, 0, canonical ? canonical : name);
++    if (canonical) CFRelease(canonical);
++    CFStringFindAndReplace(copy, CFSTR("_"), CFSTR("-"), CFRangeMake(0, CFStringGetLength(copy)), 0);
++    return copy;
++}
+ 
+-        for (CFIndex i = 0; i < listCount; i++) {
+-            CFStringRef theLocalization = CFArrayGetValueAtIndex(list, i);
+-            CFIndex usedLength;
+-            
+-            // The max size available is -1 because we need to reserve space for the last NULL byte.
+-            CFIndex theLocalizationLength = CFStringGetLength(theLocalization);
+-            CFIndex charactersConverted = CFStringGetBytes(theLocalization, CFRangeMake(0, MIN(theLocalizationLength, ULOC_FULLNAME_CAPACITY - 1)), kCFStringEncodingASCII, 0, false, (UInt8 *)strings, last - strings - 1, &usedLength);
+-            if (charactersConverted == theLocalizationLength) {
+-                stringPointers[i] = strings;
+-                
+-                strings += usedLength;
+-                *strings = 0; // null terminate
+-                strings++;
+-            } else {
+-                // We didn't have enough space to convert the string.
+-                free(stringBuffer);
+-                return (char *)NULL;
+-            }
+-        }
+-        
+-        return stringBuffer;
+-#endif
+-    };
+-    
+-    
+-    CFIndex availableCount = CFArrayGetCount(availableLocalizations);
+-    char **availableCStrings = malloc(sizeof(char *) * availableCount);
+-    char *availableStringsBuffer = makeBuffer(availableLocalizations, availableCStrings);
++// The language part of a canonical localization (before the first "-").
++static inline CFStringRef _reefCopyLanguagePart(CFStringRef name) {
++    CFRange found = CFStringFind(name, CFSTR("-"), 0);
++    if (found.location == kCFNotFound) return (CFStringRef)CFRetain(name);
++    return CFStringCreateWithSubstring(kCFAllocatorSystemDefault, name, CFRangeMake(0, found.location));
++}
+ 
++static __attribute__((noinline)) CFMutableArrayRef _CFBundleCreateMutableArrayOfFallbackLanguages(CFArrayRef availableLocalizations, CFArrayRef preferredLocalizations) {
++    CFAllocatorRef allocator = kCFAllocatorSystemDefault;
++    CFIndex availableCount = CFArrayGetCount(availableLocalizations);
++    CFMutableArrayRef availableCanonical = CFArrayCreateMutable(allocator, availableCount, &kCFTypeArrayCallBacks);
++    for (CFIndex idx = 0; idx < availableCount; idx++) {
++        CFStringRef canonical = _reefCopyCanonicalLocalization((CFStringRef)CFArrayGetValueAtIndex(availableLocalizations, idx));
++        CFArrayAppendValue(availableCanonical, canonical);
++        CFRelease(canonical);
++    }
++    CFMutableArrayRef result = CFArrayCreateMutable(allocator, 0, &kCFTypeArrayCallBacks);
+     CFIndex preferredCount = CFArrayGetCount(preferredLocalizations);
+-    char **preferredCStrings = malloc(sizeof(char *) * preferredCount);
+-    char *preferredStringsBuffer = makeBuffer(preferredLocalizations, preferredCStrings);
+-    
+-    CFMutableArrayRef result = CFArrayCreateMutable(kCFAllocatorSystemDefault, 0, &kCFTypeArrayCallBacks);
+-    if (availableStringsBuffer && preferredStringsBuffer) {
+-        // proceed to call ICU API
+-        const char *localizationsToUse[512];
+-        UErrorCode status = U_ZERO_ERROR;
+-#if __HAS_APPLE_ICU__
+-        int32_t numberOfResults = ualoc_localizationsToUse((const char * const *)preferredCStrings, preferredCount,
+-                                                           (const char * const *)availableCStrings, availableCount,
+-                                                           localizationsToUse, 512,
+-                                                           &status);
+-#else
+-        int32_t numberOfResults = 0;
+-#endif
+-        for (int32_t i = 0; i < numberOfResults; i++) {
+-            CFStringRef oneResultString = CFStringCreateWithCString(kCFAllocatorSystemDefault, localizationsToUse[i], kCFStringEncodingUTF8);
+-            if (oneResultString) {
+-                CFArrayAppendValue(result, oneResultString);
+-                CFRelease(oneResultString);
++    for (CFIndex idx = 0; idx < preferredCount && CFArrayGetCount(result) == 0; idx++) {
++        CFStringRef preferred = _reefCopyCanonicalLocalization((CFStringRef)CFArrayGetValueAtIndex(preferredLocalizations, idx));
++        CFStringRef candidate = (CFStringRef)CFRetain(preferred);
++        while (candidate) {
++            CFIndex found = CFArrayGetFirstIndexOfValue(availableCanonical, CFRangeMake(0, availableCount), candidate);
++            if (found != kCFNotFound) {
++                CFStringRef original = (CFStringRef)CFArrayGetValueAtIndex(availableLocalizations, found);
++                if (!CFArrayContainsValue(result, CFRangeMake(0, CFArrayGetCount(result)), original)) CFArrayAppendValue(result, original);
++            }
++            CFRange lastPart;
++            if (!CFStringFindWithOptions(candidate, CFSTR("-"), CFRangeMake(0, CFStringGetLength(candidate)), kCFCompareBackwards, &lastPart)) {
++                CFRelease(candidate);
++                break;
++            }
++            CFStringRef shorter = CFStringCreateWithSubstring(allocator, candidate, CFRangeMake(0, lastPart.location));
++            CFRelease(candidate);
++            candidate = shorter;
++        }
++        if (CFArrayGetCount(result) == 0) {
++            CFStringRef language = _reefCopyLanguagePart(preferred);
++            for (CFIndex other = 0; other < availableCount; other++) {
++                CFStringRef otherLanguage = _reefCopyLanguagePart((CFStringRef)CFArrayGetValueAtIndex(availableCanonical, other));
++                Boolean same = CFEqual(language, otherLanguage);
++                CFRelease(otherLanguage);
++                if (same) {
++                    CFArrayAppendValue(result, CFArrayGetValueAtIndex(availableLocalizations, other));
++                    break;
++                }
+             }
++            CFRelease(language);
+         }
++        CFRelease(preferred);
+     }
+-    
+-    if (availableCStrings) free(availableCStrings);
+-    if (availableStringsBuffer) free(availableStringsBuffer);
+-    if (preferredCStrings) free(preferredCStrings);
+-    if (preferredStringsBuffer) free(preferredStringsBuffer);
+-    
++    CFRelease(availableCanonical);
+     if (CFArrayGetCount(result) == 0) {
+         CFRelease(result);
+         result = NULL;
+     }
+-    
+     return result;
+ }
+ 

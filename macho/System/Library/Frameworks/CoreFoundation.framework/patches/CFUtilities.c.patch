@@ -1,0 +1,44 @@
+# Reef's changes to CFUtilities.c of CoreFoundation (swift-corelibs-foundation swift-6.0-RELEASE).
+# The patched file is a derived work: Apache License v2.0 with Runtime Library Exception, see upstream/corefoundation/LICENSE.
+# Written from the published binary. SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+--- CFUtilities.c
++++ CFUtilities.c
+@@ -292,7 +292,37 @@
+ }
+ #endif
+ 
+-static CFDictionaryRef _CFCopyVersionDictionary(CFStringRef path) {
++static __attribute__((noinline)) CFDictionaryRef _CFCopyVersionDictionary(CFStringRef path) {
++    CFPropertyListRef plist = NULL;
++    
++    // Reef: the property list as it is on the disk (a mutable dictionary), with the version strings built from its version and build,
++    // without the localized strings of the SystemVersion bundle.
++    CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorSystemDefault, path, kCFURLPOSIXPathStyle, false);
++    if (!url) return NULL;
++    CFDataRef data;
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wdeprecated"
++    if (!CFURLCreateDataAndPropertiesFromResource(kCFAllocatorSystemDefault, url, &data, NULL, NULL, NULL)) {
++#pragma GCC diagnostic pop
++        CFRelease(url);
++        return NULL;
++    }
++    plist = CFPropertyListCreateWithData(kCFAllocatorSystemDefault, data, kCFPropertyListMutableContainers, NULL, NULL);
++    CFRelease(data);
++    CFRelease(url);
++    if (plist && CFGetTypeID(plist) == CFDictionaryGetTypeID()) {
++        CFStringRef vers = (CFStringRef)CFDictionaryGetValue((CFDictionaryRef)plist, _kCFSystemVersionProductVersionKey);
++        CFStringRef build = (CFStringRef)CFDictionaryGetValue((CFDictionaryRef)plist, _kCFSystemVersionBuildVersionKey);
++        CFStringRef fullVersion = CFStringCreateWithFormat(kCFAllocatorSystemDefault, NULL, CFSTR("Version %@ (Build %@)"), vers ? vers : CFSTR("?"), build ? build : CFSTR("?"));
++        CFDictionarySetValue((CFMutableDictionaryRef)plist, _kCFSystemVersionProductVersionStringKey, CFSTR("Version"));
++        CFDictionarySetValue((CFMutableDictionaryRef)plist, _kCFSystemVersionBuildStringKey, CFSTR("Build"));
++        CFDictionarySetValue((CFMutableDictionaryRef)plist, CFSTR("FullVersionString"), fullVersion);
++        CFRelease(fullVersion);
++    }
++    return (CFDictionaryRef)plist;
++}
++
++static CFDictionaryRef _CFCopyVersionDictionaryMac(CFStringRef path) {
+     CFPropertyListRef plist = NULL;
+     
+ #if TARGET_OS_MAC
