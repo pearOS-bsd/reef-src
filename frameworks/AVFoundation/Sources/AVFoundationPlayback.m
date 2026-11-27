@@ -420,6 +420,20 @@ static void *WriteThread(void *argument)
             }
             continue;
         }
+        // at another rate than 1 the sound is not played (it would not keep up with the pictures)
+        if (e->rate != 1 && e->ringTime < t) {
+            int late = (int)((t - e->ringTime) * e->sampleRate);
+            if (late > e->ringCount)
+                late = e->ringCount;
+            e->ringStart = (e->ringStart + late) % e->ringCapacity;
+            e->ringCount -= late;
+            e->ringTime += (double)late / e->sampleRate;
+            pthread_cond_broadcast(&e->changed);
+            pthread_mutex_unlock(&e->lock);
+            usleep(10000);
+            pthread_mutex_lock(&e->lock);
+            continue;
+        }
         // sound that is late (after a stall) is dropped; sound that is early waits
         if (e->ringTime < t - 0.25) {
             int late = (int)((t - e->ringTime) * e->sampleRate);
