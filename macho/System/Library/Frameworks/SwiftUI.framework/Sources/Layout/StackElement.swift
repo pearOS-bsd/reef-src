@@ -24,7 +24,19 @@ class StackElement: SwiftUI.Element {
     let items: [SwiftUI.Element]
     var spacingBetween: ((SwiftUI.Element, SwiftUI.Element) -> CoreGraphics.CGFloat?)? = nil
     override var children: [SwiftUI.Element] { items }
-    override var spacingKind: SwiftUI.SpacingKind { _skeleton() }
+    override var spacingKind: SwiftUI.SpacingKind {
+        // one item: its kind; a row: the kind of its first item that is not a Spacer, when that is a control
+        if items.count == 1 { return items[0].spacingOverride ?? items[0].spacingKind }
+        guard axis == .horizontal else { return .other }
+        for item in items where !item.isSpacer {
+            let kind = item.spacingOverride ?? item.spacingKind
+            switch kind {
+            case .control, .checkbox, .toggleSwitch: return kind
+            default: return .other
+            }
+        }
+        return .other
+    }
     /// the space between each pair of neighbouring items
     final func gaps() -> [CoreGraphics.CGFloat] {
         guard items.count >= 2 else { return [] }
@@ -185,7 +197,10 @@ class StackElement: SwiftUI.Element {
         }
     }
     override func explicitAlignment(_ a0: SwiftUI.AlignmentKey, size a1: CGSize) -> CoreGraphics.CGFloat? { _skeleton() }
-    override func draw(_ a0: SwiftUI.RenderContext) { _skeleton() }
+    override func draw(_ a0: SwiftUI.RenderContext) {
+        // in zIndex order (the same order as ZStackElement's children)
+        for item in items.sorted(by: { $0.zIndex < $1.zIndex }) where !item.isHidden { item.draw(a0) }
+    }
     init(axis a0: SwiftUI.Axis, alignment a1: SwiftUI.AlignmentKey, spacing a2: CoreGraphics.CGFloat?, items a3: [SwiftUI.Element]) {
         axis = a0
         alignmentKey = a1
