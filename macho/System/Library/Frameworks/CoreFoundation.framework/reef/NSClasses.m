@@ -112,6 +112,7 @@ extern unsigned long _CFArrayFastEnumeration(id, NSFastEnumerationState *, id *,
 extern unsigned long _CFDictionaryFastEnumeration(id, NSFastEnumerationState *, id *, unsigned long);
 extern unsigned long _CFSetFastEnumeration(id, NSFastEnumerationState *, id *, unsigned long);
 extern id objc_autorelease(id);
+extern id objc_retain(id);
 extern void objc_release(id);
 extern long _CFNumberGetType2(CFNumberRef);
 extern const char *object_getClassName(id);
@@ -180,8 +181,8 @@ extern NSString *const NSRangeException;
 
 - (id)description
 {
-    // unresolved
-    return nil;
+    id result = (id)CFCopyDescription((CFTypeRef)self);
+    return result ? objc_autorelease(result) : nil;
 }
 
 @end
@@ -1805,8 +1806,7 @@ extern NSString *const NSRangeException;
 
 - (double)timeIntervalSinceReferenceDate
 {
-    // unresolved
-    return 0;
+    return CFDateGetAbsoluteTime((CFDateRef)self);
 }
 
 @end
@@ -2200,8 +2200,8 @@ extern NSString *const NSRangeException;
 
 - (id)displayNameForKey:(id)a0 value:(id)a1
 {
-    // unresolved
-    return nil;
+    id result = (id)CFLocaleCopyDisplayNameForPropertyValue((CFLocaleRef)self, (CFStringRef)a0, (CFStringRef)a1);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (id)localeIdentifier
@@ -2383,38 +2383,37 @@ extern NSString *const NSRangeException;
 
 - (long)secondsFromGMTForDate:(id)a0
 {
-    // unresolved
-    return 0;
+    return (long)CFTimeZoneGetSecondsFromGMT((CFTimeZoneRef)self, CFDateGetAbsoluteTime((CFDateRef)a0));
 }
 
 - (id)abbreviationForDate:(id)a0
 {
-    // unresolved
-    return nil;
+    id result = (id)CFTimeZoneCopyAbbreviation((CFTimeZoneRef)self, CFDateGetAbsoluteTime((CFDateRef)a0));
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (BOOL)isDaylightSavingTimeForDate:(id)a0
 {
-    // unresolved
-    return NO;
+    return CFTimeZoneIsDaylightSavingTime((CFTimeZoneRef)self, CFDateGetAbsoluteTime((CFDateRef)a0));
 }
 
 - (double)daylightSavingTimeOffsetForDate:(id)a0
 {
-    // unresolved
-    return 0;
+    return CFTimeZoneGetDaylightSavingTimeOffset((CFTimeZoneRef)self, CFDateGetAbsoluteTime((CFDateRef)a0));
 }
 
 - (id)nextDaylightSavingTimeTransitionAfterDate:(id)a0
 {
-    // unresolved
-    return nil;
+    CFAbsoluteTime next = CFTimeZoneGetNextDaylightSavingTimeTransition((CFTimeZoneRef)self, CFDateGetAbsoluteTime((CFDateRef)a0));
+    if (next == 0) return nil;
+    id result = (id)CFDateCreate(kCFAllocatorSystemDefault, next);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (id)localizedName:(long)a0 locale:(id)a1
 {
-    // unresolved
-    return nil;
+    id result = (id)CFTimeZoneCopyLocalizedName((CFTimeZoneRef)self, (CFTimeZoneNameStyle)a0, (CFLocaleRef)a1);
+    return result ? objc_autorelease(result) : nil;
 }
 
 @end
@@ -2506,8 +2505,17 @@ extern NSString *const NSRangeException;
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    CFAllocatorRef allocator = kCFAllocatorSystemDefault;
+    CFCalendarRef copy = CFCalendarCreateWithIdentifier(allocator, CFCalendarGetIdentifier((CFCalendarRef)self));
+    CFLocaleRef locale = CFCalendarCopyLocale((CFCalendarRef)self);
+    CFTimeZoneRef timeZone = CFCalendarCopyTimeZone((CFCalendarRef)self);
+    CFCalendarSetLocale(copy, locale);
+    CFCalendarSetTimeZone(copy, timeZone);
+    CFCalendarSetFirstWeekday(copy, CFCalendarGetFirstWeekday((CFCalendarRef)self));
+    CFCalendarSetMinimumDaysInFirstWeek(copy, CFCalendarGetMinimumDaysInFirstWeek((CFCalendarRef)self));
+    CFRelease(locale);
+    CFRelease(timeZone);
+    return (id)copy;
 }
 
 @end
@@ -5123,8 +5131,7 @@ extern NSString *const NSRangeException;
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return objc_retain(self);
 }
 
 - (id)domain
@@ -5139,26 +5146,26 @@ extern NSString *const NSRangeException;
 
 - (id)userInfo
 {
-    // unresolved
-    return nil;
+    id result = (id)CFErrorCopyUserInfo((CFErrorRef)self);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (id)localizedDescription
 {
-    // unresolved
-    return nil;
+    id result = (id)CFErrorCopyDescription((CFErrorRef)self);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (id)localizedFailureReason
 {
-    // unresolved
-    return nil;
+    id result = (id)CFErrorCopyFailureReason((CFErrorRef)self);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (id)localizedRecoverySuggestion
 {
-    // unresolved
-    return nil;
+    id result = (id)CFErrorCopyRecoverySuggestion((CFErrorRef)self);
+    return result ? objc_autorelease(result) : nil;
 }
 
 @end
