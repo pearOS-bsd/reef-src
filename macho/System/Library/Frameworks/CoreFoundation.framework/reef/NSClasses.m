@@ -5704,8 +5704,13 @@ static ReefNumberValue reefNumberValue(id number) {
 
 - (void)getValue:(void *)a0
 {
-    // unresolved
-
+    switch (*_encoding) {
+    case 'B': case 'C': case 'c': *(char *)a0 = (char)_value; break;
+    case 'S': case 's': *(short *)a0 = (short)_value; break;
+    case 'I': case 'i': *(int *)a0 = (int)_value; break;
+    case 'L': case 'Q': case 'l': case 'q': *(long *)a0 = _value; break;
+    default: break;
+    }
 }
 
 @end
