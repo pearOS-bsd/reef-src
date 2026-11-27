@@ -57,3 +57,4 @@ usr/lib/libcompression
 System/Library/PrivateFrameworks/SkyLight.framework
 System/Library/Frameworks/LocalAuthenticationEmbeddedUI.framework
 System/Library/Frameworks/CoreTelephony.framework
+System/Library/Frameworks/CallKit.framework
