@@ -1,0 +1,47 @@
+# Reef's changes to CFRunLoop.c of CoreFoundation (swift-corelibs-foundation swift-6.0-RELEASE).
+# The patched file is a derived work: Apache License v2.0 with Runtime Library Exception, see upstream/corefoundation/LICENSE.
+# Written from the published binary. SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+--- CFRunLoop.c
++++ CFRunLoop.c
+@@ -2816,6 +2816,21 @@
+     }
+ }
+ 
++// Descriptors that someone else acknowledges (NSRunLoop of Foundation: its own pipes and event descriptors). When one of them wakes the
++// loop, the loop does not read the 8 bytes itself.
++#define __CFWatchedDescriptorMax 8
++static int __CFWatchedDescriptors[__CFWatchedDescriptorMax];
++static int __CFWatchedDescriptorCount = 0;
++
++CF_EXPORT void _CFRunLoopWatchDescriptor(int fd) {
++    int count = __CFWatchedDescriptorCount;
++    if (count < __CFWatchedDescriptorMax) {
++        __CFWatchedDescriptors[count] = fd;
++        __sync_synchronize();
++        __CFWatchedDescriptorCount = count + 1;
++    }
++}
++
+ // pass in either a portSet or onePort. portSet is an epollfd, onePort is either a timerfd or an eventfd.
+ // TODO: Better error handling. What should happen if we get an error on a file descriptor?
+ static Boolean __CFRunLoopServiceFileDescriptors(__CFPortSet portSet, __CFPort onePort, uint64_t timeout, int *livePort) {
+@@ -2850,6 +2865,9 @@
+         awokenFd = event.data.fd;
+     }
+     
++    for (int idx = 0; idx < __CFWatchedDescriptorCount; idx++) {
++        if (__CFWatchedDescriptors[idx] == awokenFd) goto awoken;
++    }
+     // Now we acknowledge the wakeup. awokenFd is an eventfd (or possibly a
+     // timerfd ?). In either case, we read an 8-byte integer, as per eventfd(2)
+     // and timerfd_create(2).
+@@ -2864,8 +2882,7 @@
+         return false;
+     }
+     
+-    CFAssert2(result == sizeof(value), __kCFLogAssertion, "%s(): error %d from read(2) while acknowledging wakeup", __PRETTY_FUNCTION__, errno);
+-    
++awoken:
+     if (livePort)
+         *livePort = awokenFd;
+     

@@ -23,6 +23,7 @@ Each folder has a target.conf of `key = value` lines:
   minos     deployment target, default 11.0
 patches/NAME.patch in a target folder is a unified diff (`patch -p0`, paths ignored) of the upstream source NAME: the build applies it to a copy of the
 file, which keeps its place for `#include "..."` (the upstream folder is a -iquote path) and in assert paths (the file prefix map is repeated for the copy).
+patches/include/NAME.patch does the same for a header of the upstream include folders (include/, internalInclude/): the patched copy comes first in the include path.
 The patch keeps the licence notice of the upstream file (Apache-2.0 with Runtime Library Exception) in its header: the patched file is a derived work.
 Compiler: -O2 with no stack protector and no NDEBUG is what the original was built with (docs/MACHO.md).
 """
@@ -57,6 +58,13 @@ def build(root, out, folder):
     os.makedirs(os.path.dirname(target), exist_ok=True)
     work = tempfile.mkdtemp()
     try:
+        overlay = os.path.join(work, 'overlay'); os.makedirs(overlay)
+        pinc = os.path.join(SRC, folder, 'patches', 'include')
+        for h in sorted(os.listdir(pinc)) if os.path.isdir(pinc) else []:
+            name = h[:-len('.patch')]
+            found = [os.path.join(REPO, c['sourcedir'], d, name) for d in ('include', 'internalInclude', '.') if os.path.exists(os.path.join(REPO, c['sourcedir'], d, name))]
+            shutil.copy(found[0], os.path.join(overlay, name))
+            run(['patch', '-s', '-p0', os.path.join(overlay, name), os.path.join(pinc, h)])
         objects = []
         for s in c['sources'].split():
             o = os.path.join(work, '%d_%s.o' % (len(objects), os.path.basename(s)))
@@ -74,6 +82,7 @@ def build(root, out, folder):
             if s.endswith('.m'): cmd += ['-x', 'objective-c']
             if s.endswith('.cpp'): cmd += ['-x', 'c++']
             # the flags come first: libc++'s headers must be found before the C headers they wrap
+            cmd += ['-I', overlay]
             cmd += shlex.split((c['cflags'] + ' ' + c.get('cflags.' + s, '')).replace('$REPO', REPO).replace('$SRC', os.path.join(SRC, folder)))
             if extra:       # assert paths: the copy is mapped like the original folder
                 for m in [x for x in cmd if x.startswith('-ffile-prefix-map=' + orig_dir + '=')]:
