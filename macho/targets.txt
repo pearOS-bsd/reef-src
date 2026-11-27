@@ -81,3 +81,4 @@ System/Library/Frameworks/OSAKit.framework
 System/Library/Frameworks/QuickLookThumbnailing.framework
 System/Library/Frameworks/Vision.framework
 System/Library/Frameworks/Speech.framework
+System/Library/Frameworks/ScreenCaptureKit.framework
