@@ -19,13 +19,13 @@ import os
 
 public struct HorizontalAlignment {
     public let key: SwiftUI.AlignmentKey
-    public static var center: SwiftUI.HorizontalAlignment { _skeleton() }
-    public init(_ a0: any SwiftUI.AlignmentID.Type) { _skeleton() }
-    public static var leading: SwiftUI.HorizontalAlignment { _skeleton() }
-    public static var trailing: SwiftUI.HorizontalAlignment { _skeleton() }
-    public static var listRowSeparatorLeading: SwiftUI.HorizontalAlignment { _skeleton() }
-    public static var listRowSeparatorTrailing: SwiftUI.HorizontalAlignment { _skeleton() }
-    public static func == (_ a0: SwiftUI.HorizontalAlignment, _ a1: SwiftUI.HorizontalAlignment) -> Swift.Bool { _skeleton() }
+    public static let center = SwiftUI.HorizontalAlignment(SwiftUI.CenterHorizontalAlignment.self)
+    public init(_ a0: any SwiftUI.AlignmentID.Type) { key = SwiftUI.AlignmentKey(id: a0, axis: .horizontal) }
+    public static let leading = SwiftUI.HorizontalAlignment(SwiftUI.LeadingAlignment.self)
+    public static let trailing = SwiftUI.HorizontalAlignment(SwiftUI.TrailingAlignment.self)
+    public static let listRowSeparatorLeading = SwiftUI.HorizontalAlignment(SwiftUI.HorizontalAlignment.ListRowSeparatorLeading.self)
+    public static let listRowSeparatorTrailing = SwiftUI.HorizontalAlignment(SwiftUI.HorizontalAlignment.ListRowSeparatorTrailing.self)
+    public static func == (_ a0: SwiftUI.HorizontalAlignment, _ a1: SwiftUI.HorizontalAlignment) -> Swift.Bool { a0.key == a1.key }
     enum ListRowSeparatorLeading {
     }
     enum ListRowSeparatorTrailing {
@@ -36,9 +36,9 @@ extension SwiftUI.HorizontalAlignment: Swift.Equatable {
 }
 
 extension SwiftUI.HorizontalAlignment.ListRowSeparatorLeading: SwiftUI.AlignmentID {
-    static func defaultValue(`in` a0: SwiftUI.ViewDimensions) -> CoreGraphics.CGFloat { _skeleton() }
+    static func defaultValue(`in` a0: SwiftUI.ViewDimensions) -> CoreGraphics.CGFloat { a0[SwiftUI.HorizontalAlignment.leading] }
 }
 
 extension SwiftUI.HorizontalAlignment.ListRowSeparatorTrailing: SwiftUI.AlignmentID {
-    static func defaultValue(`in` a0: SwiftUI.ViewDimensions) -> CoreGraphics.CGFloat { _skeleton() }
+    static func defaultValue(`in` a0: SwiftUI.ViewDimensions) -> CoreGraphics.CGFloat { a0[SwiftUI.HorizontalAlignment.trailing] }
 }

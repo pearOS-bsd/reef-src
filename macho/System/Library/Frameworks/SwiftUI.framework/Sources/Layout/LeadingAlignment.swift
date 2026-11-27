@@ -21,5 +21,5 @@ enum LeadingAlignment {
 }
 
 extension SwiftUI.LeadingAlignment: SwiftUI.AlignmentID {
-    static func defaultValue(`in` a0: SwiftUI.ViewDimensions) -> CoreGraphics.CGFloat { _skeleton() }
+    static func defaultValue(`in` a0: SwiftUI.ViewDimensions) -> CoreGraphics.CGFloat { 0 }
 }

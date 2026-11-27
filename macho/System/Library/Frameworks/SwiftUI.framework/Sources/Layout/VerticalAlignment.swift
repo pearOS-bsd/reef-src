@@ -19,13 +19,13 @@ import os
 
 public struct VerticalAlignment {
     public let key: SwiftUI.AlignmentKey
-    public static var center: SwiftUI.VerticalAlignment { _skeleton() }
-    public init(_ a0: any SwiftUI.AlignmentID.Type) { _skeleton() }
-    public static var lastTextBaseline: SwiftUI.VerticalAlignment { _skeleton() }
-    public static var top: SwiftUI.VerticalAlignment { _skeleton() }
-    public static var bottom: SwiftUI.VerticalAlignment { _skeleton() }
-    public static var firstTextBaseline: SwiftUI.VerticalAlignment { _skeleton() }
-    public static func == (_ a0: SwiftUI.VerticalAlignment, _ a1: SwiftUI.VerticalAlignment) -> Swift.Bool { _skeleton() }
+    public static let center = SwiftUI.VerticalAlignment(SwiftUI.CenterVerticalAlignment.self)
+    public init(_ a0: any SwiftUI.AlignmentID.Type) { key = SwiftUI.AlignmentKey(id: a0, axis: .vertical) }
+    public static let lastTextBaseline = SwiftUI.VerticalAlignment(SwiftUI.LastTextBaselineAlignment.self)
+    public static let top = SwiftUI.VerticalAlignment(SwiftUI.TopAlignment.self)
+    public static let bottom = SwiftUI.VerticalAlignment(SwiftUI.BottomAlignment.self)
+    public static let firstTextBaseline = SwiftUI.VerticalAlignment(SwiftUI.FirstTextBaselineAlignment.self)
+    public static func == (_ a0: SwiftUI.VerticalAlignment, _ a1: SwiftUI.VerticalAlignment) -> Swift.Bool { a0.key == a1.key }
 }
 
 extension SwiftUI.VerticalAlignment: Swift.Equatable {

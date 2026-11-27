@@ -21,5 +21,5 @@ enum CenterHorizontalAlignment {
 }
 
 extension SwiftUI.CenterHorizontalAlignment: SwiftUI.AlignmentID {
-    static func defaultValue(`in` a0: SwiftUI.ViewDimensions) -> CoreGraphics.CGFloat { _skeleton() }
+    static func defaultValue(`in` a0: SwiftUI.ViewDimensions) -> CoreGraphics.CGFloat { a0.width * 0.5 }
 }
