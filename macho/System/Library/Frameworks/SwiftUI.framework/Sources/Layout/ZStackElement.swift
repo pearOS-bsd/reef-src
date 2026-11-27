@@ -50,7 +50,28 @@ class ZStackElement: SwiftUI.Element {
     }
     override func measure(_ a0: SwiftUI.ProposedViewSize) -> CGSize { layout(a0).size }
     override func explicitAlignment(_ a0: SwiftUI.AlignmentKey, size a1: CGSize) -> CoreGraphics.CGFloat? { _skeleton() }
-    override func place(`in` a0: CGRect) { _skeleton() }
+    override func place(`in` a0: CGRect) {
+        frame = a0
+        let result = layout(SwiftUI.ProposedViewSize(width: a0.width, height: a0.height))
+        // the box of the items goes where the alignment's fraction of the free space says (center: half of it)
+        func fraction(_ key: SwiftUI.AlignmentKey) -> CoreGraphics.CGFloat {
+            let value = key.defaultValue(width: 1, height: 1)
+            guard value.isFinite else { return 0.5 }
+            return value > 0 ? min(value, 1) : 0
+        }
+        let x = a0.minX + (a0.width - result.size.width) * fraction(alignment.h)
+        let y = a0.minY + (a0.height - result.size.height) * fraction(alignment.v)
+        for (i, item) in items.enumerated() {
+            let offset = result.offsets[i]
+            item.place(in: CGRect(x: x + offset.x, y: y + offset.y, width: result.sizes[i].width, height: result.sizes[i].height))
+        }
+        // Reef then lifts the items above the first platform view onto their own canvas (liftedCanvas, front, tail,
+        // liftedFrom); not written yet
+        liftedCanvas = nil
+        front.items = []
+        tail.liftedCanvas = nil
+        tail.part.items = []
+    }
     final func lifts(_ a0: SwiftUI.Element) -> Swift.Bool { _skeleton() }
     final var coveredViews: [NSView] { _skeleton() }
     override func draw(_ a0: SwiftUI.RenderContext) { _skeleton() }
