@@ -114,3 +114,9 @@ binary has next to the table is Reef's own wrapper code, written in a second sou
   __DATA,__common` and are accessed directly, `-fcommon` ones through an address register.
 Not done (they are real implementations, not wrappers): `libxar` (19 KB, XML parser and writer, CommonCrypto), the C frameworks `Carbon`, `ColorSync`, `VideoToolbox`, `Accelerate`
 (vDSP, vImage), `ApplicationServices` (AX, HIShape, printing), `SystemConfiguration`, `CFNetwork`, `ImageIO`, `CoreMedia`, `libswiftsimd` (Swift).
+
+## ObjC frameworks written by hand (small ones)
+Each folder has the source, `target.conf` (`cflags = -fno-objc-arc` when the binary releases ivars itself, plus `-fobjc-weak` for weak ivars), a test under `tests/` and a line in `targets.txt`.
+Habits of the compiler that decide the match: MRR files get the GOT calls `objc_release`, `objc_retain` and `objc_autorelease` (and `objc_alloc_init` for `[[X alloc] init]`) only when `NSObject` declares `release`, `retain` and `autorelease`
+(declare them in a category in the file); nested messages in one statement load the receivers' class references first; `dispatch_once` needs the inline fast path of the SDK header; a program (`type = executable`) is tested with `testruns`.
+A test that links AppKit explicitly or runs the initializer of an `NSPanel` subclass cannot run in the image (no host AppKit library): allocate without `init`.
