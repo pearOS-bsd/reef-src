@@ -18,14 +18,43 @@ import Metal
 import os
 
 class GraphRule {
-    var sources: [SwiftUI.GraphSignal] = _skeletonValue()
-    var isDirty: Swift.Bool = _skeletonValue()
+    var sources: [SwiftUI.GraphSignal] = []
+    var isDirty: Swift.Bool = false
     weak var host: SwiftUI.ViewHost?
-    static func untracked<A>(_ a0: () -> A) -> A { _skeleton() }
-    func invalidate(_ a0: SwiftUI.Transaction) { _skeleton() }
-    func track<A>(_ a0: () -> A) -> A { _skeleton() }
-    static func reading<A>(`as` a0: SwiftUI.GraphRule, _ a1: () -> A) -> A { _skeleton() }
-    init() { _skeleton() }
-    static var current: SwiftUI.GraphRule? { _skeleton() }
+    /// run without a current rule: nothing read is tracked
+    static func untracked<A>(_ a0: () -> A) -> A {
+        let previous = current
+        current = nil
+        defer { current = previous }
+        return a0()
+    }
+    /// mark dirty and ask the host for an update, on the main thread
+    func invalidate(_ a0: SwiftUI.Transaction) {
+        let transaction = (a0.animation != nil || a0.disablesAnimations) ? a0 : SwiftUI.TransactionStack.current
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { self.invalidate(transaction) }
+            return
+        }
+        isDirty = true
+        host?.setNeedsUpdate(transaction)
+    }
+    /// run as the current rule: the signals read while it runs become its sources
+    func track<A>(_ a0: () -> A) -> A {
+        for source in sources { source.readers.removeValue(forKey: ObjectIdentifier(self)) }
+        sources = []
+        let previous = SwiftUI.GraphRule.current
+        SwiftUI.GraphRule.current = self
+        isDirty = false
+        defer { SwiftUI.GraphRule.current = previous }
+        return a0()
+    }
+    static func reading<A>(`as` a0: SwiftUI.GraphRule, _ a1: () -> A) -> A {
+        let previous = current
+        current = a0
+        defer { current = previous }
+        return a1()
+    }
+    init() {}
+    static var current: SwiftUI.GraphRule? = nil
     deinit {}
 }
