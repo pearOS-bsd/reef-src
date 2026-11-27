@@ -51,7 +51,7 @@ Header facts that changed code (`macho/include`): Darwin `WIFSTOPPED` (`WSTOPSIG
 `$1050`, `realpath$DARWIN_EXTSN`, `htons` as an inline byte swap. Test: 47 scripts through the bytecode compiler, bignums, regexps, zlib, TclOO, files, `exec`, sockets and the event loop.
 (`open {|cat} r+` hangs under reef with the original too; it is not in the test.)
 
-## CoreFoundation 6.0: first stage (2026-11-27), not yet a target in `macho/targets.txt`
+## CoreFoundation 6.0: stages 1 to 3 (2026-11-27); a target in `macho/targets.txt` since stage 3 (minimum 60 %)
 `upstream/corefoundation` (swift-corelibs-foundation `swift-6.0-RELEASE`, Sources/CoreFoundation) and `upstream/icu` (swift-foundation-icu ICU 74 headers) are unchanged; `upstream/libdispatch`
 holds the 6.0 headers (the file itself comes later). `macho/System/Library/Frameworks/CoreFoundation.framework` builds all 89 sources with the configuration read from the binary and
 links with `-undefined dynamic_lookup`: 1948 of 2258 functions that exist in both match, 70.7 % of those bytes (`tools/compare-macho.py --present`).
@@ -83,7 +83,17 @@ Per-file flavour found on the way: `CFFileUtilities.c`, `CFBundle_Executable.c`,
 Still missing: Reef's own changes inside upstream files (the autoupdating calendar and locale in CFCalendar.c and CFLocale.c, the host locale preferences `__CFLocaleReadHostLocked`, `__CFLocaleCopyFileValue`,
 the file descriptor watching of CFRunLoop.c `__CFRunLoopWatchDescriptor`; they need a patch step in `build-macho.py`), the locale display names (`__reef*`, with their data tables), the NSInvocation forwarding
 (`_reefForwarding*`, `_reefFrame*`, `__CFBridgeInitialize`, `__CFExceptionInitialize`), and the 926 Objective-C methods (`__NSCF*`, NSString, NSURL ...). Without the classes the rebuilt file does not run:
-`macho/.../CoreFoundation.framework/tests/cf.c` (strings, tokenizer, notification center, bound pair) passes with the original and crashes in the first `objc_msgSend` with ours (`MACHO_FRAMES=1 tests/macho.py` shows the frames).
+Stage 3 (links, two behaviour tests pass: `tests/cf.c` strings, tokenizer, notification center, bound pair; `tests/cfobjc.c` messages to CF objects through the `__NSCF*` classes, errors, enumerators):
+- Patches of upstream files (`patches/NAME.patch`, `patches/include/NAME.patch` for headers, applied to a copy by `tools/build-macho.py`; the Apache-2.0 notice stays in them): CFRuntime (the `libdispatch_init` call
+  becomes `__CFBridgeInitialize`; objects take the class of their type in `_CFRuntimeSetInstanceTypeIDAndIsa`; `__CFConstantStringClassReference` is the class `__NSCFConstantString` itself), CFBundle (framework search,
+  bundle discovery from the loaded images), CFBundle_Resources (case-folded query table lookup), CFBundle_Locale (fallback languages without ICU), CFLocale/CFCalendar (autoupdating, host locale), CFRunLoop
+  (`_CFRunLoopWatchDescriptor`), CFUtilities (version dictionary), CFStringEncodingDatabase (known encodings), CFError (typographic apostrophe).
+- `reef/NSClasses.m`: the 61 Objective-C classes (`__NSCF*`, `NS*` that CF itself defines) with their ivars and methods, from the metadata (`tools/macho-gen-objc.py` draft) and written from the binary: the thin methods
+  (one call of a CF function) are generated from the disassembly, the others by hand; the methods still marked `// unresolved` are stubs (NSInvocation/NSMethodSignature and the forwarding entries, streams, NSRunLoop,
+  NSCache, NSURL, NSString/NSMutableString/NSNumber base methods, attributed string). `reef/CFReefMisc.c`: `__CFBridgeInitialize` (1024 type slots = `__NSCFType`, then the classes by type id), exception handlers.
+- Per-file flags of the files in `reef/` are required (`cflags.reef/NAME.c`, one key per file): without them the constant strings take the Swift class.
+- Still to do: the stubs above, the locale name tables and `__reef*` functions (`___reefLocaleNamesData`, 214 KB, ICU resource lookup), the encoding tables (`_MacJapaneseEntries` ... 700 KB) with `__reefTableConverter`, the `_os_log_fmt`
+  statics of `os_log`, the forwarding handler (`__CFForwardingInitialize` is empty), libdispatch.
 
 ## libdispatch: what was found
 `usr/lib/system/libdispatch.dylib` (636 functions) is built as `__APPLE__` (the Apple branch of `internal.h`: `os/availability.h`, `mach/*`, `mach_msg`, `mach_port_*`) with the epoll backend of
