@@ -130,33 +130,7 @@ int res_9_send(const unsigned char *message, int length, unsigned char *answer, 
     return result;
 }
 
-// Adds a name server (an IPv4 or IPv6 address, with a %scope for link-local ones); at most three.
-static void addServer(res_state state, const char *text)
-{
-    if (state->nscount > 2)
-        return;
-    union res_sockaddr_union address = {0};
-    char buffer[62];
-    snprintf(buffer, sizeof buffer, "%s", text);
-    char *scope = strchr(buffer, '%');
-    if (scope)
-        *scope = 0;
-    if (inet_pton(AF_INET, buffer, &address.sin.sin_addr) == 1) {
-        address.sin.sin_len = sizeof(struct sockaddr_in);
-        address.sin.sin_family = AF_INET;
-        address.sin.sin_port = htons(53);
-        state->nsaddr_list[state->nscount] = address.sin;
-    } else if (inet_pton(AF_INET6, buffer, &address.sin6.sin6_addr) == 1) {
-        address.sin6.sin6_len = sizeof(struct sockaddr_in6);
-        address.sin6.sin6_family = AF_INET6;
-        address.sin6.sin6_port = htons(53);
-        if (scope)
-            address.sin6.sin6_scope_id = if_nametoindex(scope + 1);
-    } else {
-        return;
-    }
-    state->_u._ext.ext->nsaddrs[state->nscount++] = address;
-}
+static void addServer(res_state state, const char *text);
 
 // The search list: up to six words in the default domain buffer.
 static void setSearchList(res_state state, char *words)
@@ -263,6 +237,34 @@ void res_9_ndestroy(res_state state)
     state->options &= ~(unsigned long)RES_INIT;
 }
 
+// Adds a name server (an IPv4 or IPv6 address, with a %scope for link-local ones); at most three.
+static void addServer(res_state state, const char *text)
+{
+    if (state->nscount > 2)
+        return;
+    union res_sockaddr_union address = {0};
+    char buffer[62];
+    snprintf(buffer, sizeof buffer, "%s", text);
+    char *scope = strchr(buffer, '%');
+    if (scope)
+        *scope = 0;
+    if (inet_pton(AF_INET, buffer, &address.sin.sin_addr) == 1) {
+        address.sin.sin_len = sizeof(struct sockaddr_in);
+        address.sin.sin_family = AF_INET;
+        address.sin.sin_port = htons(53);
+        state->nsaddr_list[state->nscount] = address.sin;
+    } else if (inet_pton(AF_INET6, buffer, &address.sin6.sin6_addr) == 1) {
+        address.sin6.sin6_len = sizeof(struct sockaddr_in6);
+        address.sin6.sin6_family = AF_INET6;
+        address.sin6.sin6_port = htons(53);
+        if (scope)
+            address.sin6.sin6_scope_id = if_nametoindex(scope + 1);
+    } else {
+        return;
+    }
+    state->_u._ext.ext->nsaddrs[state->nscount++] = address;
+}
+
 int res_9_getservers(res_state state, union res_sockaddr_union *servers, int count)
 {
     if (!state->_u._ext.ext)
@@ -298,6 +300,34 @@ int res_9_nquerydomain(res_state state, const char *name, const char *domain, in
 int res_9_nsend(res_state state, const unsigned char *message, int length, unsigned char *answer, int answerLength)
 {
     return res_9_send(message, length, answer, answerLength);
+}
+
+// Packs a dotted name into labels (no compression).
+int res_9_dn_comp(const char *name, unsigned char *buffer, int size, unsigned char **pointers, unsigned char **last)
+{
+    if (name[0] == '.' && name[1] == 0)
+        name = "";
+    int n = 0;
+    while (*name) {
+        const char *dot = strchr(name, '.');
+        long length = dot ? dot - name : (long)strlen(name);
+        if ((unsigned long)(length - 1) > 62)
+            return -1;
+        int next = (int)(n + length + 1);
+        if (next >= size)
+            return -1;
+        buffer[n] = (unsigned char)length;
+        n = (int)((unsigned)n + 1);
+        memcpy(buffer + n, name, length);
+        n = next;
+        name = dot + 1;
+        if (!dot)
+            break;
+    }
+    if (n >= size)
+        return -1;
+    buffer[n++] = 0;
+    return n;
 }
 
 // Unpacks a name, following compression pointers (at most 64 of them); returns the length of the packed name where it starts.
@@ -346,4 +376,50 @@ int res_9_dn_expand(const unsigned char *message, const unsigned char *end, cons
         return -1;
     buffer[used] = 0;
     return packed >= 0 ? packed : (int)(current - source);
+}
+
+// Builds a standard query: a header with a fresh id and recursion desired, then the name, type and class.
+int res_9_mkquery(int op, const char *name, int class, int type, const unsigned char *data, int dataLength, const void *newRecord,
+                  unsigned char *buffer, int size)
+{
+    static unsigned short nextID = 1;
+    if (op != 0 || size < 12)
+        return -1;
+    unsigned short id = nextID++;
+    memset(buffer + 3, 0, 9);
+    buffer[0] = id >> 8;
+    buffer[1] = (unsigned char)id;
+    buffer[2] = 1;
+    buffer[5] = 1;
+    if (name[0] == '.' && name[1] == 0)
+        name = "";
+    unsigned char *packed = buffer + 12;
+    size -= 16;
+    int n = 0;
+    while (*name) {
+        const char *dot = strchr(name, '.');
+        long length = dot ? dot - name : (long)strlen(name);
+        if ((unsigned long)(length - 1) > 62)
+            return -1;
+        int next = (int)(n + length + 1);
+        if (next >= size)
+            return -1;
+        packed[n] = (unsigned char)length;
+        n = (int)((unsigned)n + 1);
+        memcpy(packed + n, name, length);
+        n = next;
+        name = dot + 1;
+        if (!dot)
+            break;
+    }
+    if (n >= size)
+        return -1;
+    packed[n] = 0;
+    if (n < -1)
+        return -1;
+    packed[n + 1] = type >> 8;
+    packed[n + 2] = (unsigned char)type;
+    packed[n + 3] = class >> 8;
+    packed[n + 4] = (unsigned char)class;
+    return n + 17;
 }
