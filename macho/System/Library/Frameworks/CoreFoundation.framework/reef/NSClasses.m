@@ -501,8 +501,7 @@ extern NSString *const NSRangeException;
 
 - (void)getObjects:(id *)a0 range:(NSRange)a1
 {
-    // unresolved
-
+    for (unsigned long idx = 0; idx < a1.length; idx++) a0[idx] = [self objectAtIndex:a1.location + idx];
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
@@ -517,8 +516,15 @@ extern NSString *const NSRangeException;
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == self) return 1;
+    if (a0 == nil) return 0;
+    if (![a0 isKindOfClass:[NSArray class]]) return 0;
+    unsigned long count = [self count];
+    if ([a0 count] != count) return 0;
+    for (unsigned long idx = 0; idx < count; idx++) {
+        if (![[self objectAtIndex:idx] isEqual:[a0 objectAtIndex:idx]]) return 0;
+    }
+    return 1;
 }
 
 - (unsigned long)hash
@@ -533,8 +539,16 @@ extern NSString *const NSRangeException;
 
 - (unsigned long)countByEnumeratingWithState:(NSFastEnumerationState *)a0 objects:(id *)a1 count:(unsigned long)a2
 {
-    // unresolved
-    return 0;
+    unsigned long count = [self count];
+    unsigned long position = a0->state;
+    if (position == 0) a0->mutationsPtr = (unsigned long *)&a0->extra[0];
+    if (count <= position) return 0;
+    unsigned long n = count - position;
+    if (n > a2) n = a2;
+    [self getObjects:a1 range:NSMakeRange(position, n)];
+    a0->itemsPtr = a1;
+    a0->state += n;
+    return n;
 }
 
 @end
@@ -569,38 +583,39 @@ extern NSString *const NSRangeException;
 
 - (void)addObject:(id)a0
 {
-    // unresolved
-
+    [self insertObject:a0 atIndex:[self count]];
 }
 
 - (void)removeLastObject
 {
-    // unresolved
-
+    unsigned long count = [self count];
+    if (count != 0) [self removeObjectAtIndex:count - 1];
 }
 
 - (void)setObject:(id)a0 atIndex:(unsigned long)a1
 {
-    // unresolved
-
+    if ([self count] == a1) [self addObject:a0];
+    else [self replaceObjectAtIndex:a1 withObject:a0];
 }
 
 - (void)exchangeObjectAtIndex:(unsigned long)a0 withObjectAtIndex:(unsigned long)a1
 {
-    // unresolved
-
+    id first = objc_retain([self objectAtIndex:a0]);
+    [self replaceObjectAtIndex:a0 withObject:[self objectAtIndex:a1]];
+    [self replaceObjectAtIndex:a1 withObject:first];
+    objc_release(first);
 }
 
 - (void)removeAllObjects
 {
-    // unresolved
-
+    unsigned long count = [self count];
+    for (unsigned long idx = count; idx != 0; idx--) [self removeObjectAtIndex:idx - 1];
 }
 
 - (void)replaceObjectsInRange:(NSRange)a0 withObjects:(id *)a1 count:(unsigned long)a2
 {
-    // unresolved
-
+    for (unsigned long n = a0.length; n != 0; n--) [self removeObjectAtIndex:a0.location + n - 1];
+    for (unsigned long idx = 0; idx < a2; idx++) [self insertObject:a1[idx] atIndex:a0.location + idx];
 }
 
 @end
