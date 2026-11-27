@@ -83,6 +83,13 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 extern long reefCall__CFIsDeallocating(long) __asm__("__CFIsDeallocating");
 extern long reefCall__CFTryRetain(long) __asm__("__CFTryRetain");
 extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
+
+static CFStringRef copyFormatDescription(void *object, const void *locale) {
+    id description = [(id)object description];
+    if (description) return CFStringCreateCopy(kCFAllocatorSystemDefault, (CFStringRef)description);
+    return CFSTR("(null)");
+}
+
 @interface NSException : NSObject
 {
     NSString * _name;
@@ -114,6 +121,13 @@ extern unsigned long _CFSetFastEnumeration(id, NSFastEnumerationState *, id *, u
 extern id objc_autorelease(id);
 extern id objc_retain(id);
 extern void objc_release(id);
+#include <stdarg.h>
+#include <dlfcn.h>
+#include <string.h>
+#include <pthread.h>
+extern void *pthread_get_stackaddr_np(pthread_t);
+extern void objc_exception_throw(id) __attribute__((noreturn));
+extern NSString *const NSInvalidArgumentException;
 extern long _CFNumberGetType2(CFNumberRef);
 extern void *CFAttributedStringCreateCopy(CFAllocatorRef, void *);
 extern void *CFAttributedStringCreateMutableCopy(CFAllocatorRef, CFIndex, void *);
@@ -1967,44 +1981,53 @@ extern NSString *const NSRangeException;
 @implementation NSException
 + (id)exceptionWithName:(id)a0 reason:(id)a1 userInfo:(id)a2
 {
-    // unresolved
-    return nil;
+    id exception = [[self alloc] initWithName:a0 reason:a1 userInfo:a2];
+    return objc_autorelease(exception);
 }
 
 + (void)raise:(id)a0 format:(id)a1, ...
 {
-    // unresolved
-
+    va_list arguments;
+    va_start(arguments, a1);
+    [self raise:a0 format:a1 arguments:arguments];
+    va_end(arguments);
 }
 
 + (void)raise:(id)a0 format:(id)a1 arguments:(void *)a2
 {
-    // unresolved
-
+    CFStringRef text = _CFStringCreateWithFormatAndArgumentsAux2(kCFAllocatorSystemDefault, copyFormatDescription, NULL, NULL, (CFStringRef)a1, a2);
+    id reason = text ? objc_autorelease((id)text) : nil;
+    [[self exceptionWithName:a0 reason:reason userInfo:nil] raise];
 }
 
 - (id)initWithName:(id)a0 reason:(id)a1 userInfo:(id)a2
 {
-    // unresolved
-    return nil;
+    self = [super init];
+    if (self) {
+        _name = [a0 copy];
+        _reason = [a1 copy];
+        _userInfo = objc_retain(a2);
+    }
+    return self;
 }
 
 - (void)dealloc
 {
-    // unresolved
-
+    objc_release(_name);
+    objc_release(_reason);
+    objc_release(_userInfo);
+    if (_callStack) CFRelease(_callStack);
+    [super dealloc];
 }
 
 - (void)raise
 {
-    // unresolved
-
+    objc_exception_throw(self);
 }
 
 - (id)name
 {
-    // unresolved
-    return nil;
+    return _name;
 }
 
 - (id)reason
@@ -2019,32 +2042,68 @@ extern NSString *const NSRangeException;
 
 - (void)_recordCallStack
 {
-    // unresolved
-
+    if (_callStack) return;
+    CFAllocatorRef allocator = kCFAllocatorSystemDefault;
+    CFMutableArrayRef stack = CFArrayCreateMutable(allocator, 0, &kCFTypeArrayCallBacks);
+    void *top = pthread_get_stackaddr_np(pthread_self());
+    unsigned long *frame = (unsigned long *)__builtin_frame_address(0);
+    int budget = 127;
+    while ((top == NULL || (void *)(frame + 2) <= top) && frame[1] != 0) {
+        unsigned long address = frame[1];
+        CFNumberRef number = CFNumberCreate(allocator, kCFNumberLongType, &address);
+        CFArrayAppendValue(stack, number);
+        CFRelease(number);
+        unsigned long *next = (unsigned long *)(frame[0] & 0xefffffffffffffffUL);
+        if (next <= frame) break;
+        frame = next;
+        if (budget-- == 0) break;
+    }
+    _callStack = (struct __CFArray *)stack;
 }
 
 - (id)callStackReturnAddresses
 {
-    // unresolved
-    return nil;
+    if (_callStack) return (id)_callStack;
+    id empty = (id)CFArrayCreate(NULL, NULL, 0, &kCFTypeArrayCallBacks);
+    return empty ? objc_autorelease(empty) : nil;
 }
 
 - (id)callStackSymbols
 {
-    // unresolved
-    return nil;
+    CFAllocatorRef allocator = kCFAllocatorSystemDefault;
+    CFMutableArrayRef symbols = CFArrayCreateMutable(allocator, 0, &kCFTypeArrayCallBacks);
+    CFIndex count = _callStack ? CFArrayGetCount(_callStack) : 0;
+    for (CFIndex idx = 0; idx < count; idx++) {
+        unsigned long address = 0;
+        CFNumberGetValue((CFNumberRef)CFArrayGetValueAtIndex(_callStack, idx), kCFNumberLongType, &address);
+        Dl_info info;
+        const char *image = "???";
+        CFStringRef line;
+        if (dladdr((void *)address, &info) && info.dli_fname) {
+            const char *slash = strrchr(info.dli_fname, '/');
+            image = slash ? slash + 1 : info.dli_fname;
+            if (info.dli_sname) {
+                line = CFStringCreateWithFormat(allocator, NULL, CFSTR("%-4ld%-35s 0x%016lx %s + %lu"), idx, image, address, info.dli_sname, address - (unsigned long)info.dli_saddr);
+            } else {
+                line = CFStringCreateWithFormat(allocator, NULL, CFSTR("%-4ld%-35s 0x%016lx 0x0 + %lu"), idx, image, address, address - (unsigned long)info.dli_fbase);
+            }
+        } else {
+            line = CFStringCreateWithFormat(allocator, NULL, CFSTR("%-4ld%-35s 0x%016lx 0x0 + %lu"), idx, image, address, address);
+        }
+        CFArrayAppendValue(symbols, line);
+        CFRelease(line);
+    }
+    return symbols ? objc_autorelease((id)symbols) : nil;
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return objc_retain(self);
 }
 
 - (id)description
 {
-    // unresolved
-    return nil;
+    return _reason ? _reason : _name;
 }
 
 @end
@@ -4947,20 +5006,27 @@ extern NSString *const NSRangeException;
 @implementation NSError
 + (id)errorWithDomain:(id)a0 code:(long)a1 userInfo:(id)a2
 {
-    // unresolved
-    return nil;
+    id error = [[self alloc] initWithDomain:a0 code:a1 userInfo:a2];
+    return objc_autorelease(error);
 }
 
 - (id)initWithDomain:(id)a0 code:(long)a1 userInfo:(id)a2
 {
-    // unresolved
-    return nil;
+    if (a0 == nil) [NSException raise:NSInvalidArgumentException format:CFSTR("*** -[NSError initWithDomain:code:userInfo:]: nil domain")];
+    self = [super init];
+    if (self) {
+        _domain = [a0 copy];
+        _code = a1;
+        _userInfo = a2 ? (NSDictionary *)CFDictionaryCreateCopy(kCFAllocatorSystemDefault, (CFDictionaryRef)a2) : nil;
+    }
+    return self;
 }
 
 - (void)dealloc
 {
-    // unresolved
-
+    objc_release((id)_domain);
+    objc_release((id)_userInfo);
+    [super dealloc];
 }
 
 - (id)domain
@@ -4975,14 +5041,28 @@ extern NSString *const NSRangeException;
 
 - (id)userInfo
 {
-    // unresolved
-    return nil;
+    if (_userInfo) return (id)_userInfo;
+    id empty = (id)CFDictionaryCreate(NULL, NULL, NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    return empty ? objc_autorelease(empty) : nil;
 }
 
 - (id)localizedDescription
 {
-    // unresolved
-    return nil;
+    id key = (id)kCFErrorLocalizedDescriptionKey;
+    id description = [[self userInfo] objectForKey:key];
+    if (description) return description;
+    void *block = CFErrorCopyCallBackBlockForDomain([self domain]);
+    if (block) {
+        id (^callback)(id, id) = block;
+        description = callback(self, key);
+        objc_release(block);
+        if (description) return description;
+    }
+    CFErrorRef error = CFErrorCreate(kCFAllocatorSystemDefault, (CFStringRef)[self domain], [self code], (CFDictionaryRef)[self userInfo]);
+    CFStringRef text = CFErrorCopyDescription(error);
+    id result = text ? objc_autorelease((id)text) : nil;
+    CFRelease(error);
+    return result;
 }
 
 - (id)localizedFailureReason
@@ -4999,20 +5079,21 @@ extern NSString *const NSRangeException;
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == self) return 1;
+    if (![a0 isKindOfClass:[NSError class]]) return 0;
+    if ([self code] != [a0 code]) return 0;
+    if (!CFEqual((CFTypeRef)[self domain], (CFTypeRef)[a0 domain])) return 0;
+    return CFEqual((CFTypeRef)[self userInfo], (CFTypeRef)[a0 userInfo]) != 0;
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return [self code] ^ CFHash((CFTypeRef)[self domain]);
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return objc_retain(self);
 }
 
 - (unsigned long)_cfTypeID

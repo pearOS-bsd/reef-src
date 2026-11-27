@@ -25,6 +25,7 @@ extern CFIndex CFArrayGetCount(CFArrayRef);
 extern void CFArrayAppendValue(CFMutableArrayRef, const void *);
 extern void *objc_msgSend(void *, void *, ...);
 extern void *sel_registerName(const char *);
+extern void *objc_getClass(const char *);
 #define MSG(T, o, n, ...) ((T (*)(void *, void *, ...))objc_msgSend)((void *)(o), sel_registerName(n), ##__VA_ARGS__)
 typedef struct { unsigned long location, length; } Range;
 
@@ -124,6 +125,14 @@ int main(void) {
     printf("getValue %d\n", back);
     CFRelease(n1); CFRelease(n2); CFRelease(n3);
     CFRelease(x); CFRelease(y); CFRelease(z);
+    // errors
+    CFStringRef domain = CFStringCreateWithCString(a, "TestDomain", 0x08000100);
+    void *error = MSG(void *, objc_getClass("NSError"), "errorWithDomain:code:userInfo:", domain, 42L, 0);
+    void *error2 = MSG(void *, objc_getClass("NSError"), "errorWithDomain:code:userInfo:", domain, 42L, 0);
+    printf("error code %ld, equal %d, hash equal %d\n", MSG(long, error, "code"), (int)MSG(char, error, "isEqual:", error2), MSG(unsigned long, error, "hash") == MSG(unsigned long, error2, "hash"));
+    show("domain", MSG(void *, error, "domain"));
+    show("description", MSG(void *, error, "localizedDescription"));
+    CFRelease(domain);
     printf("(end)\n");
     return 0;
 }
