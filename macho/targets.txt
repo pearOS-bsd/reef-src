@@ -83,3 +83,4 @@ System/Library/Frameworks/Vision.framework
 System/Library/Frameworks/Speech.framework
 System/Library/Frameworks/ScreenCaptureKit.framework
 System/Library/Frameworks/Photos.framework
+System/Library/Frameworks/AuthenticationServices.framework
