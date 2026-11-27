@@ -3487,86 +3487,102 @@ extern NSString *const NSRangeException;
 
 - (void)appendString:(id)a0
 {
-    // unresolved
-
+    [self replaceCharactersInRange:NSMakeRange([self length], 0) withString:a0];
 }
 
 - (void)insertString:(id)a0 atIndex:(unsigned long)a1
 {
-    // unresolved
-
+    [self replaceCharactersInRange:NSMakeRange(a1, 0) withString:a0];
 }
 
 - (void)deleteCharactersInRange:(NSRange)a0
 {
-    // unresolved
-
+    [self replaceCharactersInRange:a0 withString:(id)CFSTR("")];
 }
 
 - (void)setString:(id)a0
 {
-    // unresolved
-
+    [self replaceCharactersInRange:NSMakeRange(0, [self length]) withString:a0];
 }
 
 - (void)appendCharacters:(unsigned short *)a0 length:(unsigned long)a1
 {
-    // unresolved
-
+    CFStringRef string = CFStringCreateWithCharacters(kCFAllocatorSystemDefault, a0, a1);
+    [self appendString:(id)string];
+    CFRelease(string);
 }
 
 - (void)_cfAppendCString:(char *)a0 length:(long)a1
 {
-    // unresolved
-
+    CFStringRef string = CFStringCreateWithBytes(kCFAllocatorSystemDefault, (const UInt8 *)a0, a1, 0x600, false);
+    [self appendString:(id)string];
+    CFRelease(string);
 }
 
 - (unsigned long)replaceOccurrencesOfString:(id)a0 withString:(id)a1 options:(unsigned long)a2 range:(NSRange)a3
 {
-    // unresolved
-    return 0;
+    if (a2 & 0x400) return [self _reefReplaceMatchesOfPattern:a0 withTemplate:a1 options:a2 range:a3];
+    CFMutableStringRef copy = CFStringCreateMutableCopy(kCFAllocatorSystemDefault, 0, (CFStringRef)self);
+    unsigned long count = CFStringFindAndReplace(copy, (CFStringRef)a0, (CFStringRef)a1, CFRangeMake(a3.location, a3.length), a2);
+    if (count) [self setString:(id)copy];
+    CFRelease(copy);
+    return count;
 }
 
 - (void)_cfLowercase:(void *)a0
 {
-    // unresolved
-
+    CFMutableStringRef copy = CFStringCreateMutableCopy(kCFAllocatorSystemDefault, 0, (CFStringRef)self);
+    CFStringLowercase(copy, (CFLocaleRef)a0);
+    [self setString:(id)copy];
+    CFRelease(copy);
 }
 
 - (void)_cfUppercase:(void *)a0
 {
-    // unresolved
-
+    CFMutableStringRef copy = CFStringCreateMutableCopy(kCFAllocatorSystemDefault, 0, (CFStringRef)self);
+    CFStringUppercase(copy, (CFLocaleRef)a0);
+    [self setString:(id)copy];
+    CFRelease(copy);
 }
 
 - (void)_cfCapitalize:(void *)a0
 {
-    // unresolved
-
+    CFMutableStringRef copy = CFStringCreateMutableCopy(kCFAllocatorSystemDefault, 0, (CFStringRef)self);
+    CFStringCapitalize(copy, (CFLocaleRef)a0);
+    [self setString:(id)copy];
+    CFRelease(copy);
 }
 
 - (void)_cfNormalize:(long)a0
 {
-    // unresolved
-
+    CFMutableStringRef copy = CFStringCreateMutableCopy(kCFAllocatorSystemDefault, 0, (CFStringRef)self);
+    CFStringNormalize(copy, a0);
+    [self setString:(id)copy];
+    CFRelease(copy);
 }
 
 - (void)_cfPad:(struct __CFString *)a0 length:(unsigned int)a1 padIndex:(unsigned int)a2
 {
-    // unresolved
-
+    CFMutableStringRef copy = CFStringCreateMutableCopy(kCFAllocatorSystemDefault, 0, (CFStringRef)self);
+    CFStringPad(copy, (CFStringRef)a0, a1, a2);
+    [self setString:(id)copy];
+    CFRelease(copy);
 }
 
 - (void)_cfTrim:(struct __CFString *)a0
 {
-    // unresolved
-
+    CFMutableStringRef copy = CFStringCreateMutableCopy(kCFAllocatorSystemDefault, 0, (CFStringRef)self);
+    CFStringTrim(copy, (CFStringRef)a0);
+    [self setString:(id)copy];
+    CFRelease(copy);
 }
 
 - (void)_cfTrimWS
 {
-    // unresolved
-
+    CFMutableStringRef copy = CFStringCreateMutableCopy(kCFAllocatorSystemDefault, 0, (CFStringRef)self);
+    CFStringTrimWhitespace(copy);
+    [self setString:(id)copy];
+    CFRelease(copy);
 }
 
 @end
