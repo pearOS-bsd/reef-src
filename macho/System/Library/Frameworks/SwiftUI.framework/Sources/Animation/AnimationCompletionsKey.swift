@@ -22,5 +22,5 @@ enum AnimationCompletionsKey {
 
 extension SwiftUI.AnimationCompletionsKey: SwiftUI.TransactionKey {
     typealias Value = [SwiftUI.AnimationCompletionTicket]
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { [] }
 }

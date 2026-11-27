@@ -29,4 +29,43 @@ public func swiftui_selftest() {
     print("env set", env.isEnabled)
     let st = SwiftUI.State(wrappedValue: 3)
     print("state", st.wrappedValue, st.projectedValue.wrappedValue)
+    selftestBuild()
+}
+
+/// a primitive view of the test: one fixed-size element
+struct SelfTestLeaf: SwiftUI.View, SwiftUI.PrimitiveView {
+    typealias Body = Never
+    var body: Never { fatalError() }
+    let width: CGFloat
+    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] {
+        [SwiftUI.FrameElement(SwiftUI.Element(), width: width, height: 10, alignment: .center)]
+    }
+}
+
+/// a view with state whose body is a leaf as wide as the state
+struct SelfTestCounter: SwiftUI.View {
+    @SwiftUI.State var count = 7
+    var body: SelfTestLeaf { SelfTestLeaf(width: CGFloat(count)) }
+}
+
+/// ViewBuild: a body built under its node, reused in the next generation, built again after a State change
+func selftestBuild() {
+    let host = SwiftUI.ViewHost(rootType: SelfTestCounter.self)
+    func context() -> SwiftUI.BuildContext {
+        SwiftUI.BuildContext(host: host, scope: host.root, path: [], environment: SwiftUI.EnvironmentValues(), canvas: nil,
+            modifierContents: [:], styleLabels: [:], stackAxis: nil, container: .none, scrollAxes: [])
+    }
+    host.generation = 1
+    let first = SwiftUI.ViewBuild.build(SelfTestCounter(), context())
+    let node = host.root.children.values.first!
+    print("build", first.count, first[0].sizeThatFits(.unspecified), "runs", node.bodyRuns, "entries",
+          SwiftUI.DynamicPropertyLayout.entries(of: SelfTestCounter.self).count)
+    host.generation = 2
+    let second = SwiftUI.ViewBuild.build(SelfTestCounter(), context())
+    print("reuse", second[0] === first[0], "runs", node.bodyRuns)
+    (node.storage.values.first as! SwiftUI.StoredLocation<Int>).set(12, transaction: SwiftUI.Transaction())
+    print("dirty", node.isDirty, node.needsBuild, host.needsUpdate)
+    host.generation = 3
+    let third = SwiftUI.ViewBuild.build(SelfTestCounter(), context())
+    print("rebuild", third[0] === first[0], third[0].sizeThatFits(.unspecified), "runs", node.bodyRuns)
 }

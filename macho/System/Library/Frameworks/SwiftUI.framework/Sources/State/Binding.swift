@@ -33,7 +33,12 @@ import os
     public init(get a0: @escaping () -> A, set a1: @escaping (A) -> ()) {
         self.init(location: SwiftUI.FunctionalLocation(get: a0, set: { value, _ in a1(value) }), transaction: SwiftUI.Transaction())
     }
-    static func sameBinding(_ a0: Swift.UnsafeRawPointer, _ a1: Swift.UnsafeRawPointer) -> Swift.Bool { _skeleton() }
+    /// the bindings at a0 and a1 use the same location and carry equal values
+    static func sameBinding(_ a0: Swift.UnsafeRawPointer, _ a1: Swift.UnsafeRawPointer) -> Swift.Bool {
+        let left = a0.load(as: SwiftUI.Binding<A>.self), right = a1.load(as: SwiftUI.Binding<A>.self)
+        guard left.location.isSame(as: right.location) else { return false }
+        return SwiftUI.GraphCompare.equal(left._value, right._value)
+    }
     public init?(_ a0: SwiftUI.Binding<A?>) { _skeleton() }
     public init<A1>(_ a0: SwiftUI.Binding<A1>) where A == A1? { _skeleton() }
     public init<A1>(_ a0: SwiftUI.Binding<A1>) where A == Swift.AnyHashable, A1: Swift.Hashable { _skeleton() }

@@ -9,3 +9,7 @@ flex inf (inf, 20.0) nil (20.0, 20.0)
 env true 1.0 nil light
 env set false
 state 3 3
+build 1 (7.0, 10.0) runs 1 entries 1
+reuse true runs 1
+dirty true true true
+rebuild false (12.0, 10.0) runs 2
