@@ -1,0 +1,18 @@
+# Reef's changes to CFStringEncodingDatabase.c of CoreFoundation (swift-corelibs-foundation swift-6.0-RELEASE).
+# The patched file is a derived work: Apache License v2.0 with Runtime Library Exception, see upstream/corefoundation/LICENSE.
+# Written from the published binary. SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+--- CFStringEncodingDatabase.c
++++ CFStringEncodingDatabase.c
+@@ -354,6 +354,12 @@
+     "ibm037",
+ };
+ 
++// The list of the encodings this file knows, as the sorted table of their identifiers; returns the number of entries.
++CFIndex __CFStringEncodingGetKnownEncodings(const uint16_t **list) {
++    *list = __CFKnownEncodingList;
++    return sizeof(__CFKnownEncodingList) / sizeof(*__CFKnownEncodingList);
++}
++
+ static inline CFIndex __CFGetEncodingIndex(CFStringEncoding encoding) {
+     const uint16_t *head = __CFKnownEncodingList;
+     const uint16_t *tail = head + ((sizeof(__CFKnownEncodingList) / sizeof(*__CFKnownEncodingList)) - 1);

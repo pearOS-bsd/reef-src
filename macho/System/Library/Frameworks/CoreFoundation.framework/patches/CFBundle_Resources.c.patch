@@ -1,0 +1,82 @@
+# Reef's changes to CFBundle_Resources.c of CoreFoundation (swift-corelibs-foundation swift-6.0-RELEASE).
+# The patched file is a derived work: Apache License v2.0 with Runtime Library Exception, see upstream/corefoundation/LICENSE.
+# Written from the published binary. SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+--- CFBundle_Resources.c
++++ CFBundle_Resources.c
+@@ -18,6 +18,7 @@
+ #include "CFPreferences.h"
+ #include <string.h>
+ #include "CFInternal.h"
++#include <objc/runtime.h>
+ #include "CFPriv.h"
+ #include <sys/stat.h>
+ #include <fcntl.h>
+@@ -923,6 +924,41 @@
+     free(values);
+ }
+ 
++// Looks a resource up in a query table. When the exact name is not there, the names of the table are folded (decomposed, case and width
++// insensitive) once, kept on the table, and the folded name is looked up: resources are found whatever the case of the file system.
++CF_PRIVATE const void *__CFBundleQueryTableGetValue(CFDictionaryRef table, CFStringRef key) {
++    static char foldedNamesKey;
++    const void *value = CFDictionaryGetValue(table, key);
++    if (value || !key) return value;
++    CFMutableDictionaryRef folded = (CFMutableDictionaryRef)objc_getAssociatedObject((id)table, &foldedNamesKey);
++    if (!folded) {
++        CFIndex count = CFDictionaryGetCount(table);
++        size_t size = (count + (count == 0)) * sizeof(void *);
++        const void **keys = malloc(size);
++        const void **values = malloc(size);
++        CFDictionaryGetKeysAndValues(table, keys, values);
++        folded = CFDictionaryCreateMutable(kCFAllocatorSystemDefault, count, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
++        for (CFIndex idx = 0; idx < count; idx++) {
++            if (CFGetTypeID(keys[idx]) != CFStringGetTypeID()) continue;
++            CFMutableStringRef name = CFStringCreateMutableCopy(kCFAllocatorSystemDefault, 0, (CFStringRef)keys[idx]);
++            CFStringNormalize(name, kCFStringNormalizationFormD);
++            CFStringFold(name, kCFCompareCaseInsensitive, NULL);
++            CFDictionaryAddValue(folded, name, values[idx]);
++            CFRelease(name);
++        }
++        free(keys);
++        free(values);
++        objc_setAssociatedObject((id)table, &foldedNamesKey, (id)folded, OBJC_ASSOCIATION_RETAIN);
++        CFRelease(folded);
++    }
++    CFMutableStringRef name = CFStringCreateMutableCopy(kCFAllocatorSystemDefault, 0, key);
++    CFStringNormalize(name, kCFStringNormalizationFormD);
++    CFStringFold(name, kCFCompareCaseInsensitive, NULL);
++    value = CFDictionaryGetValue(folded, name);
++    CFRelease(name);
++    return value;
++}
++
+ static CFTypeRef _copyResourceURLsFromBundle(CFBundleRef bundle, CFURLRef bundleURL, CFArrayRef bundleURLLanguages, CFStringRef resourcesDirectory, CFStringRef subDir, CFStringRef key, CFStringRef lproj, Boolean returnArray, Boolean localized, _CFBundleVersion bundleVersion, Boolean (^predicate)(CFStringRef filename, Boolean *stop))
+ {
+     Boolean stop = false; // for predicate
+@@ -941,7 +977,7 @@
+         if (predicate) {
+             _CFBundleFindResourcesWithPredicate(interResult, subTable, predicate, &stop);
+         } else {
+-            value = CFDictionaryGetValue(subTable, key);
++            value = __CFBundleQueryTableGetValue(subTable, key);
+         }
+         CFStringDelete(path, CFRangeMake(savedPathLength, CFStringGetLength(path) - savedPathLength));    // Strip the string back to the base path
+     }
+@@ -953,7 +989,7 @@
+             _CFBundleFindResourcesWithPredicate(interResult, subTable, predicate, &stop);
+         } else {
+             // get the path or paths for the given key
+-            value = CFDictionaryGetValue(subTable, key);
++            value = __CFBundleQueryTableGetValue(subTable, key);
+         }
+     }
+     
+@@ -1031,7 +1067,7 @@
+         }
+         subTable = _copyQueryTable(bundle, bundleURL, bundleURLLanguages, path, lprojSubdirName);
+         CFRelease(lprojSubdirName);
+-        value = CFDictionaryGetValue(subTable, key);
++        value = __CFBundleQueryTableGetValue(subTable, key);
+         
+         if (value) {
+             if (CFGetTypeID(value) == CFStringGetTypeID()) {
