@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // Reconstructed from the published binary.
-// ZStackElement (Layout).
+// ZStackElement: the element of ZStack (items on top of each other, aligned on one guide; platform views lifted above).
 
 import Foundation
 import AppKit
@@ -18,16 +18,37 @@ import Metal
 import os
 
 class ZStackElement: SwiftUI.Element {
-    let alignment: (h: SwiftUI.AlignmentKey, v: SwiftUI.AlignmentKey) = _skeletonValue()
-    let items: [SwiftUI.Element] = _skeletonValue()
+    let alignment: (h: SwiftUI.AlignmentKey, v: SwiftUI.AlignmentKey)
+    let items: [SwiftUI.Element]
     weak var liftedCanvas: SwiftUI.ElementCanvas?
-    var liftedFrom: Swift.Int = _skeletonValue()
-    let front: SwiftUI.FrontElements = _skeletonValue()
-    let tail: SwiftUI.StackTail = _skeletonValue()
-    init(alignment a0: SwiftUI.Alignment, items a1: [SwiftUI.Element]) { _skeleton() }
-    override var children: [SwiftUI.Element] { _skeleton() }
-    final func layout(_ a0: SwiftUI.ProposedViewSize) -> (sizes: [CGSize], offsets: [CGPoint], size: CGSize) { _skeleton() }
-    override func measure(_ a0: SwiftUI.ProposedViewSize) -> CGSize { _skeleton() }
+    var liftedFrom: Swift.Int = 0
+    let front: SwiftUI.FrontElements = SwiftUI.FrontElements()
+    let tail: SwiftUI.StackTail = SwiftUI.StackTail()
+    init(alignment a0: SwiftUI.Alignment, items a1: [SwiftUI.Element]) {
+        alignment = (a0.horizontal.key, a0.vertical.key)
+        items = a1
+        super.init()
+    }
+    /// back to front: by zIndex, in declaration order among equals
+    override var children: [SwiftUI.Element] { items.sorted { $0.zIndex < $1.zIndex } }
+    /// every item at its size for the proposal, their alignment guides on one point; the box they cover
+    final func layout(_ a0: SwiftUI.ProposedViewSize) -> (sizes: [CGSize], offsets: [CGPoint], size: CGSize) {
+        let sizes = items.map { $0.sizeThatFits(a0) }
+        var guides: [CGPoint] = []
+        var low = CGPoint(x: CoreGraphics.CGFloat.infinity, y: .infinity)
+        var high = CGPoint(x: -CoreGraphics.CGFloat.infinity, y: -.infinity)
+        for (item, size) in zip(items, sizes) {
+            let x = item.alignment(alignment.h, size: size)
+            let y = item.alignment(alignment.v, size: size)
+            guides.append(CGPoint(x: x, y: y))
+            low = CGPoint(x: min(low.x, -x), y: min(low.y, -y))
+            high = CGPoint(x: max(high.x, size.width - x), y: max(high.y, size.height - y))
+        }
+        if items.isEmpty { return (sizes, [], .zero) }
+        let offsets = guides.map { CGPoint(x: -$0.x - low.x, y: -$0.y - low.y) }
+        return (sizes, offsets, CGSize(width: high.x - low.x, height: high.y - low.y))
+    }
+    override func measure(_ a0: SwiftUI.ProposedViewSize) -> CGSize { layout(a0).size }
     override func explicitAlignment(_ a0: SwiftUI.AlignmentKey, size a1: CGSize) -> CoreGraphics.CGFloat? { _skeleton() }
     override func place(`in` a0: CGRect) { _skeleton() }
     final func lifts(_ a0: SwiftUI.Element) -> Swift.Bool { _skeleton() }

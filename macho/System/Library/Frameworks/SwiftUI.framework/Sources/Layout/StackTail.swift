@@ -18,13 +18,13 @@ import Metal
 import os
 
 final class StackTail: SwiftUI.Element {
-    let part: SwiftUI.FrontElements = _skeletonValue()
-    var liftedFrom: Swift.Int = _skeletonValue()
+    let part: SwiftUI.FrontElements = SwiftUI.FrontElements()
+    var liftedFrom: Swift.Int = 0
     weak var stack: SwiftUI.Element?
     weak var liftedCanvas: SwiftUI.ElementCanvas?
     func lifts(_ a0: SwiftUI.Element) -> Swift.Bool { _skeleton() }
     var coveredViews: [NSView] { _skeleton() }
-    override init() { _skeleton() }
+    override init() { super.init() }
     deinit {}
 }
 

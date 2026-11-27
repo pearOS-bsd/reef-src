@@ -18,7 +18,7 @@ import Metal
 import os
 
 final class FrontElements: SwiftUI.Element {
-    var items: [SwiftUI.Element] = _skeletonValue()
-    override var children: [SwiftUI.Element] { _skeleton() }
+    var items: [SwiftUI.Element] = []
+    override var children: [SwiftUI.Element] { items }
     deinit {}
 }
