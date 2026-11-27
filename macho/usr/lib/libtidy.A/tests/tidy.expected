@@ -1,0 +1,13 @@
+parse 1
+clean 1
+diagnostics 1, warnings 1, errors 0
+xhtml option 1, mark 0
+root unnamed, html html, head head, body body
+title: 1
+p: 2
+br: 1
+table: 1
+tr: 1
+td: 1
+save 1, output ok
+contains table 1, contains <p>one 1

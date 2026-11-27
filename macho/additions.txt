@@ -12,3 +12,4 @@ usr/lib/swift/libswiftVideoToolbox
 usr/lib/swift/libswiftMLCompute
 usr/lib/libxslt.1
 usr/lib/libexslt.0
+usr/lib/libtidy.A
