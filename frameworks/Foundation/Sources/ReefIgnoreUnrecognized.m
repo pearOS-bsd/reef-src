@@ -136,3 +136,28 @@ __attribute__((constructor)) static void installIgnoreUnrecognized(void) {
     } else if (!m)
         class_addMethod(meta, s, (IMP)classForwardingTarget, "@@::");
 }
+
+// Also part of the aid: attributes set on a range outside the string are left out (and printed) instead of raising.
+static IMP originalSetAttributes, originalAddAttributes, originalAddAttribute;
+static BOOL rangeFits(NSAttributedString *s, NSRange r, SEL sel) {
+    if (r.location <= s.length && r.length <= s.length - r.location) return YES;
+    fprintf(stderr, "reef: ignored %s %s outside \"%s\" (%lu)\n", sel_getName(sel), NSStringFromRange(r).UTF8String,
+            s.string.UTF8String, (unsigned long)s.length);
+    return NO;
+}
+static void setAttributesRange(NSMutableAttributedString *self, SEL _cmd, NSDictionary *a, NSRange r) {
+    if (rangeFits(self, r, _cmd)) ((void (*)(id, SEL, id, NSRange))originalSetAttributes)(self, _cmd, a, r);
+}
+static void addAttributesRange(NSMutableAttributedString *self, SEL _cmd, NSDictionary *a, NSRange r) {
+    if (rangeFits(self, r, _cmd)) ((void (*)(id, SEL, id, NSRange))originalAddAttributes)(self, _cmd, a, r);
+}
+static void addAttributeRange(NSMutableAttributedString *self, SEL _cmd, NSString *n, id v, NSRange r) {
+    if (rangeFits(self, r, _cmd)) ((void (*)(id, SEL, id, id, NSRange))originalAddAttribute)(self, _cmd, n, v, r);
+}
+__attribute__((constructor)) static void installAttributeRanges(void) {
+    if (!getenv("REEF_IGNORE_UNRECOGNIZED")) return;
+    Class c = [NSMutableAttributedString class];
+    swizzle(c, @selector(setAttributes:range:), (IMP)setAttributesRange, &originalSetAttributes);
+    swizzle(c, @selector(addAttributes:range:), (IMP)addAttributesRange, &originalAddAttributes);
+    swizzle(c, @selector(addAttribute:value:range:), (IMP)addAttributeRange, &originalAddAttribute);
+}

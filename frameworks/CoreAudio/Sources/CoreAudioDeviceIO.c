@@ -65,22 +65,22 @@ int ReefDeviceIsRunning(AudioObjectID device) {
     return running;
 }
 
-static void render(void *user, AudioQueueRef q, AudioQueueBufferRef buffer) {
-    const UInt32 frames = buffer->mAudioDataBytesCapacity / (4 * queueChannels);
-    memset(buffer->mAudioData, 0, buffer->mAudioDataBytesCapacity);
+// One IO cycle of every started proc on a slice of frames, with time stamps from the sample time (the host time
+// advances with the samples at the nominal rate, so the device clock is exact).
+static UInt64 baseHostTime;
+static void cycle(float *output, UInt32 frames) {
     AudioTimeStamp now = {0};
     now.mSampleTime = sampleTime;
-    now.mHostTime = mach_absolute_time();
+    now.mHostTime = baseHostTime + (UInt64)(sampleTime / queueRate * 1e9);   // mach ticks are nanoseconds on Reef
     now.mRateScalar = 1;
     now.mFlags = kAudioTimeStampSampleTimeValid | kAudioTimeStampHostTimeValid | kAudioTimeStampRateScalarValid;
     AudioTimeStamp inputTime = now, outputTime = now;
     outputTime.mSampleTime += frames;
-    outputTime.mHostTime += (UInt64)(frames / queueRate * 1e9);   // mach ticks are nanoseconds on Reef
+    outputTime.mHostTime += (UInt64)(frames / queueRate * 1e9);
     pthread_mutex_lock(&lock);
     for (int pass = 0; pass < 2; pass++) {
         for (struct proc *p = procs; p; p = p->next) {
             if (!p->started || p->input != (pass == 0)) continue;
-            AudioBufferList list = {1, {{queueChannels, frames * 4 * queueChannels, NULL}}};
             if (p->input) {
                 UInt32 channels = ReefDeviceChannels(p->device, kAudioObjectPropertyScopeInput);
                 size_t size = (size_t)frames * 4 * (channels ? channels : 1);
@@ -89,22 +89,36 @@ static void render(void *user, AudioQueueRef q, AudioQueueBufferRef buffer) {
                 AudioBufferList in = {1, {{channels ? channels : 1, (UInt32)size, inputSilence}}};
                 p->function(p->device, &now, &in, &inputTime, NULL, &outputTime, p->data);
             } else {
-                list.mBuffers[0].mData = buffer->mAudioData;
+                AudioBufferList list = {1, {{queueChannels, frames * 4 * queueChannels, output}}};
                 p->function(p->device, &now, NULL, &inputTime, &list, &outputTime, p->data);
             }
         }
     }
     pthread_mutex_unlock(&lock);
     sampleTime += frames;
+}
+
+// A queue buffer holds several IO cycles of the device's buffer frame size: Reef's queue asks for buffers on a
+// coarse timer, small buffers would starve it.
+static void render(void *user, AudioQueueRef q, AudioQueueBufferRef buffer) {
+    const UInt32 capacity = buffer->mAudioDataBytesCapacity / (4 * queueChannels);
+    memset(buffer->mAudioData, 0, buffer->mAudioDataBytesCapacity);
+    if (!baseHostTime) baseHostTime = mach_absolute_time();
+    UInt32 done = 0;
+    while (done < capacity) {
+        UInt32 n = frameSize < capacity - done ? frameSize : capacity - done;
+        cycle((float *)buffer->mAudioData + (size_t)done * queueChannels, n);
+        done += n;
+    }
     static unsigned long renders;
     if (getenv("REEF_LOG_HAL") && (renders++ % 500) == 0) {
         int n = 0;
         pthread_mutex_lock(&lock);
         for (struct proc *p = procs; p; p = p->next) n += p->started;
         pthread_mutex_unlock(&lock);
-        fprintf(stderr, "hal: render %lu (%u frames, %d procs running)\n", renders, frames, n);
+        fprintf(stderr, "hal: render %lu (%u frames in cycles of %u, %d procs running)\n", renders, capacity, frameSize, n);
     }
-    buffer->mAudioDataByteSize = frames * 4 * queueChannels;
+    buffer->mAudioDataByteSize = capacity * 4 * queueChannels;
     OSStatus (*enqueue)(AudioQueueRef, AudioQueueBufferRef, UInt32, const void *) = toolbox("AudioQueueEnqueueBuffer");
     if (enqueue) enqueue(q, buffer, 0, NULL);
 }
@@ -124,9 +138,11 @@ static OSStatus startQueue(AudioObjectID output) {
     AudioQueueRef q = NULL;
     OSStatus r = newOutput(&format, render, NULL, NULL, NULL, 0, &q);
     if (r) return r;
+    UInt32 frames = frameSize;
+    while (frames < 1024) frames += frameSize;   // whole IO cycles, at least 1024 frames
     for (int i = 0; i < 3; i++) {
         AudioQueueBufferRef b = NULL;
-        if (allocate(q, frameSize * 4 * queueChannels, &b) == noErr) render(NULL, q, b);
+        if (allocate(q, frames * 4 * queueChannels, &b) == noErr) render(NULL, q, b);
     }
     queue = q;
     return start(q, NULL);
