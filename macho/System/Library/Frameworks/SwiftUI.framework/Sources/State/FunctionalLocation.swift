@@ -18,10 +18,14 @@ import Metal
 import os
 
 class FunctionalLocation<A>: SwiftUI.AnyLocation<A> {
-    let getter: () -> A = _skeletonValue()
-    let setter: (A, SwiftUI.Transaction) -> () = _skeletonValue()
-    init(get a0: @escaping () -> A, set a1: @escaping (A, SwiftUI.Transaction) -> ()) { _skeleton() }
-    override func set(_ a0: A, transaction a1: SwiftUI.Transaction) { _skeleton() }
-    override func get() -> A { _skeleton() }
+    let getter: () -> A
+    let setter: (A, SwiftUI.Transaction) -> ()
+    init(get a0: @escaping () -> A, set a1: @escaping (A, SwiftUI.Transaction) -> ()) {
+        getter = a0
+        setter = a1
+        super.init()
+    }
+    override func set(_ a0: A, transaction a1: SwiftUI.Transaction) { setter(a0, a1) }
+    override func get() -> A { getter() }
     deinit {}
 }

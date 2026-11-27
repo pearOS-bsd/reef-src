@@ -30,17 +30,33 @@ import os
         location = a0
         _value = a0.get()
     }
-    public init(get a0: @escaping () -> A, set a1: @escaping (A) -> ()) { _skeleton() }
+    public init(get a0: @escaping () -> A, set a1: @escaping (A) -> ()) {
+        self.init(location: SwiftUI.FunctionalLocation(get: a0, set: { value, _ in a1(value) }), transaction: SwiftUI.Transaction())
+    }
     static func sameBinding(_ a0: Swift.UnsafeRawPointer, _ a1: Swift.UnsafeRawPointer) -> Swift.Bool { _skeleton() }
     public init?(_ a0: SwiftUI.Binding<A?>) { _skeleton() }
     public init<A1>(_ a0: SwiftUI.Binding<A1>) where A == A1? { _skeleton() }
     public init<A1>(_ a0: SwiftUI.Binding<A1>) where A == Swift.AnyHashable, A1: Swift.Hashable { _skeleton() }
-    public static func constant(_ a0: A) -> SwiftUI.Binding<A> { _skeleton() }
-    public init(get a0: @escaping () -> A, set a1: @escaping (A, SwiftUI.Transaction) -> ()) { _skeleton() }
-    public subscript<A1>(dynamicMember a0: Swift.WritableKeyPath<A, A1>) -> SwiftUI.Binding<A1> { _skeleton() }
-    public func transaction(_ a0: SwiftUI.Transaction) -> SwiftUI.Binding<A> { _skeleton() }
-    public func animation(_ a0: SwiftUI.Animation?) -> SwiftUI.Binding<A> { _skeleton() }
-    public var projectedValue: SwiftUI.Binding<A> { _skeleton() }
+    public static func constant(_ a0: A) -> SwiftUI.Binding<A> {
+        SwiftUI.Binding(location: SwiftUI.ConstantLocation(a0), transaction: SwiftUI.Transaction())
+    }
+    public init(get a0: @escaping () -> A, set a1: @escaping (A, SwiftUI.Transaction) -> ()) {
+        self.init(location: SwiftUI.FunctionalLocation(get: a0, set: a1), transaction: SwiftUI.Transaction())
+    }
+    public subscript<A1>(dynamicMember a0: Swift.WritableKeyPath<A, A1>) -> SwiftUI.Binding<A1> {
+        SwiftUI.Binding<A1>(location: SwiftUI.ProjectedLocation(base: location, keyPath: a0, transaction: transaction), transaction: transaction)
+    }
+    public func transaction(_ a0: SwiftUI.Transaction) -> SwiftUI.Binding<A> {
+        var binding = self
+        binding.transaction = a0
+        return binding
+    }
+    public func animation(_ a0: SwiftUI.Animation?) -> SwiftUI.Binding<A> {
+        var binding = self
+        binding.transaction.animation = a0
+        return binding
+    }
+    public var projectedValue: SwiftUI.Binding<A> { self }
 }
 
 extension SwiftUI.Binding where A: Swift.Identifiable {
