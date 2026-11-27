@@ -1,0 +1,31 @@
+// SPDX-FileCopyrightText: 2026 Reion Wong <reionwong@gmail.com>
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// Reconstructed from the published binary.
+// TextEditorStyleModifier (Text).
+
+import Foundation
+import AppKit
+import CoreGraphics
+import CoreText
+import Combine
+import Observation
+import CoreTransferable
+import UniformTypeIdentifiers
+import Symbols
+import DeveloperToolsSupport
+import Metal
+import os
+
+struct TextEditorStyleModifier<A> where A: SwiftUI.TextEditorStyle {
+    let style: A
+    init(style a0: A) { _skeleton() }
+}
+
+extension SwiftUI.TextEditorStyleModifier: SwiftUI.PrimitiveModifier {
+    func _apply(_ a0: SwiftUI.BuildContext, content a1: @escaping (SwiftUI.BuildContext) -> [SwiftUI.Element]) -> [SwiftUI.Element] { _skeleton() }
+}
+
+extension SwiftUI.TextEditorStyleModifier: SwiftUI.ViewModifier {
+    typealias Body = Swift.Never
+}
