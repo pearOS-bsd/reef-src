@@ -20,7 +20,10 @@ import os
 public struct _VStackLayout {
     public var alignment: SwiftUI.HorizontalAlignment
     public var spacing: CoreGraphics.CGFloat?
-    public init(alignment a0: SwiftUI.HorizontalAlignment, spacing a1: CoreGraphics.CGFloat?) { _skeleton() }
+    public init(alignment a0: SwiftUI.HorizontalAlignment, spacing a1: CoreGraphics.CGFloat?) {
+        alignment = a0
+        spacing = a1
+    }
 }
 
 extension SwiftUI._VStackLayout: SwiftUI._VariadicView_UnaryViewRoot {

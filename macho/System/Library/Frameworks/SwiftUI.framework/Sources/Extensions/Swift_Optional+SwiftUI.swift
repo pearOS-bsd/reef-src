@@ -18,10 +18,16 @@ import Metal
 import os
 
 extension Swift.Optional where Wrapped: SwiftUI.View {
-    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
+    /// nothing, or the wrapped view under "some"
+    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] {
+        guard case let .some(view) = self else { return [] }
+        var context = a0
+        context.path.append(AnyHashable("some"))
+        return SwiftUI.ViewBuild.build(view, context)
+    }
     func _lazyRows(_ a0: SwiftUI.BuildContext) -> [SwiftUI.LazyRow] { _skeleton() }
     func menuEntries(_ a0: SwiftUI.EnvironmentValues) -> [SwiftUI.MenuEntry] { _skeleton() }
-    var wrappedPart: Any? { _skeleton() }
+    var wrappedPart: Any? { self.map { $0 } }
 }
 
 extension Swift.Optional where Wrapped: SwiftUI.ToolbarContent {

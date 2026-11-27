@@ -20,7 +20,10 @@ import os
 public struct ModifiedContent<A, B> {
     public var content: A
     public var modifier: B
-    public init(content a0: A, modifier a1: B) { _skeleton() }
+    public init(content a0: A, modifier a1: B) {
+        content = a0
+        modifier = a1
+    }
     var writesTag: Swift.Bool { _skeleton() }
     var contentPart: Any { _skeleton() }
 }
@@ -50,7 +53,11 @@ extension SwiftUI.ModifiedContent where B == SwiftUI.AccessibilityAttachmentModi
 }
 
 extension SwiftUI.ModifiedContent where A: SwiftUI.View, B: SwiftUI.ViewModifier {
-    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
+    /// the content built with the modifier applied
+    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] {
+        let content = self.content
+        return SwiftUI.ViewBuild.apply(modifier, a0) { context in SwiftUI.ViewBuild.build(content, context) }
+    }
     func menuEntries(_ a0: SwiftUI.EnvironmentValues) -> [SwiftUI.MenuEntry] { _skeleton() }
     var tagValues: [Swift.AnyHashable] { _skeleton() }
     var taggedContent: Any { _skeleton() }

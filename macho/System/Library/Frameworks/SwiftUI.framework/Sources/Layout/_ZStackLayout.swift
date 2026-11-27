@@ -19,7 +19,7 @@ import os
 
 public struct _ZStackLayout {
     public var alignment: SwiftUI.Alignment
-    public init(alignment a0: SwiftUI.Alignment) { _skeleton() }
+    public init(alignment a0: SwiftUI.Alignment) { alignment = a0 }
 }
 
 extension SwiftUI._ZStackLayout: SwiftUI._VariadicView_UnaryViewRoot {

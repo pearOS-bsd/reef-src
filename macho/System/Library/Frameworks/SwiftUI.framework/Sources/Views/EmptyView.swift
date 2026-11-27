@@ -18,7 +18,7 @@ import Metal
 import os
 
 public struct EmptyView {
-    public init() { _skeleton() }
+    public init() {}
 }
 
 extension SwiftUI.EmptyView: SwiftUI.View {
@@ -26,7 +26,7 @@ extension SwiftUI.EmptyView: SwiftUI.View {
 }
 
 extension SwiftUI.EmptyView: SwiftUI.PrimitiveView {
-    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
+    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { [] }
 }
 
 extension SwiftUI.EmptyView: SwiftUI.LazyRowSource {

@@ -49,7 +49,32 @@ class ZStackElement: SwiftUI.Element {
         return (sizes, offsets, CGSize(width: high.x - low.x, height: high.y - low.y))
     }
     override func measure(_ a0: SwiftUI.ProposedViewSize) -> CGSize { layout(a0).size }
-    override func explicitAlignment(_ a0: SwiftUI.AlignmentKey, size a1: CGSize) -> CoreGraphics.CGFloat? { _skeleton() }
+    /// text baselines: those of the items that have one (a guide or their own), where the items sit in a box of size a1;
+    /// the first baseline is the highest, the last the lowest
+    override func explicitAlignment(_ a0: SwiftUI.AlignmentKey, size a1: CGSize) -> CoreGraphics.CGFloat? {
+        let first = SwiftUI.VerticalAlignment.firstTextBaseline.key, last = SwiftUI.VerticalAlignment.lastTextBaseline.key
+        guard a0 == first || a0 == last else { return nil }
+        let result = layout(SwiftUI.ProposedViewSize(width: a1.width, height: a1.height))
+        let value = alignment.v.defaultValue(width: 1, height: 1)
+        let fraction: CoreGraphics.CGFloat = value.isFinite ? (value > 0 ? min(value, 1) : 0) : 0.5
+        let shift = (a1.height - result.size.height) * fraction
+        var baselines: [CoreGraphics.CGFloat] = []
+        for (i, item) in items.enumerated() {
+            let size = result.sizes[i]
+            let baseline: CoreGraphics.CGFloat
+            if let guide = item.alignmentGuides[a0] {
+                var dimensions = SwiftUI.ViewDimensions(width: size.width, height: size.height)
+                dimensions.element = item
+                baseline = guide(dimensions)
+            } else if let own = item.explicitAlignment(a0, size: size) {
+                baseline = own
+            } else {
+                continue
+            }
+            baselines.append(shift + result.offsets[i].y + baseline)
+        }
+        return a0 == first ? baselines.min() : baselines.max()
+    }
     override func place(`in` a0: CGRect) {
         frame = a0
         let result = layout(SwiftUI.ProposedViewSize(width: a0.width, height: a0.height))

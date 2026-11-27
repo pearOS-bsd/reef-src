@@ -68,4 +68,35 @@ func selftestBuild() {
     host.generation = 3
     let third = SwiftUI.ViewBuild.build(SelfTestCounter(), context())
     print("rebuild", third[0] === first[0], third[0].sizeThatFits(.unspecified), "runs", node.bodyRuns)
+    selftestStacks(host)
+}
+
+/// a body of stacks, a spacer, a condition and a tuple
+struct SelfTestStacks: SwiftUI.View {
+    var wide: Bool
+    @ViewBuilder var body: some SwiftUI.View {
+        SwiftUI.VStack(alignment: .leading, spacing: 4) {
+            SwiftUI.HStack(alignment: .center, spacing: nil) {
+                SelfTestLeaf(width: 30)
+                SwiftUI.Spacer(minLength: nil)
+                SelfTestLeaf(width: 20)
+            }
+            if wide { SelfTestLeaf(width: 100) } else { SelfTestLeaf(width: 10) }
+            SwiftUI.ZStack(alignment: .center) { SelfTestLeaf(width: 5) }
+        }
+    }
+}
+
+func selftestStacks(_ host: SwiftUI.ViewHost) {
+    let context = SwiftUI.BuildContext(host: host, scope: host.root, path: [], environment: SwiftUI.EnvironmentValues(),
+        canvas: nil, modifierContents: [:], styleLabels: [:], stackAxis: nil, container: .none, scrollAxes: [])
+    for wide in [false, true] {
+        let elements = SwiftUI.ViewBuild.build(SelfTestStacks(wide: wide), context)
+        let root = elements[0]
+        print("stacks", elements.count, type(of: root), root.sizeThatFits(SwiftUI.ProposedViewSize(width: 200, height: 100)))
+        root.place(in: CGRect(x: 0, y: 0, width: 200, height: 100))
+        for child in root.children {
+            print(" ", type(of: child), child.frame, child.children.map { $0.frame })
+        }
+    }
 }

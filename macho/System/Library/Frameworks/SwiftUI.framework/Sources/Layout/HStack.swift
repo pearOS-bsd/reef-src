@@ -19,8 +19,10 @@ import os
 
 public struct HStack<A> where A: SwiftUI.View {
     public var _tree: SwiftUI._VariadicView.Tree<SwiftUI._HStackLayout, A>
-    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
-    public init(alignment a0: SwiftUI.VerticalAlignment, spacing a1: CoreGraphics.CGFloat?, content a2: () -> A) { _skeleton() }
+    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _tree._buildElements(a0) }
+    public init(alignment a0: SwiftUI.VerticalAlignment, spacing a1: CoreGraphics.CGFloat?, @SwiftUI.ViewBuilder content a2: () -> A) {
+        _tree = SwiftUI._VariadicView.Tree(root: SwiftUI._HStackLayout(alignment: a0, spacing: a1), content: a2())
+    }
 }
 
 extension SwiftUI.HStack: SwiftUI.PrimitiveView {

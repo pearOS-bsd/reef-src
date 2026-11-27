@@ -19,11 +19,16 @@ import os
 
 public struct Spacer {
     public var minLength: CoreGraphics.CGFloat?
-    public init(minLength a0: CoreGraphics.CGFloat?) { _skeleton() }
+    public init(minLength a0: CoreGraphics.CGFloat?) { minLength = a0 }
 }
 
 extension SwiftUI.Spacer: SwiftUI.PrimitiveView {
-    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
+    /// a spacer element along the axis of the enclosing stack
+    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] {
+        let element = SwiftUI.SpacerElement(minLength: minLength)
+        element.axis = a0.stackAxis
+        return [element]
+    }
 }
 
 extension SwiftUI.Spacer: SwiftUI.View {

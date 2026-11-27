@@ -18,8 +18,8 @@ import Metal
 import os
 
 open class AnyViewStorageBase {
-    func buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
-    var anyView: any SwiftUI.View { _skeleton() }
-    init() { _skeleton() }
+    func buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { [] }
+    var anyView: any SwiftUI.View { SwiftUI.EmptyView() }
+    init() {}
     deinit {}
 }

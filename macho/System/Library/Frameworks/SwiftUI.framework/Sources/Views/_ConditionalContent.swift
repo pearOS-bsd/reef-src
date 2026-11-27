@@ -19,8 +19,13 @@ import os
 
 public struct _ConditionalContent<A, B> {
     public let storage: SwiftUI._ConditionalContent<A, B>.Storage
-    public init(storage a0: SwiftUI._ConditionalContent<A, B>.Storage) { _skeleton() }
-    var activePart: Any { _skeleton() }
+    public init(storage a0: SwiftUI._ConditionalContent<A, B>.Storage) { storage = a0 }
+    var activePart: Any {
+        switch storage {
+        case let .trueContent(content): return content
+        case let .falseContent(content): return content
+        }
+    }
     @frozen public enum Storage {
         case trueContent(A)
         case falseContent(B)
@@ -28,10 +33,21 @@ public struct _ConditionalContent<A, B> {
 }
 
 extension SwiftUI._ConditionalContent where A: SwiftUI.View, B: SwiftUI.View {
-    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
+    /// the active branch, under "true" or "false"
+    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] {
+        var context = a0
+        switch storage {
+        case let .trueContent(content):
+            context.path.append(AnyHashable("true"))
+            return SwiftUI.ViewBuild.build(content, context)
+        case let .falseContent(content):
+            context.path.append(AnyHashable("false"))
+            return SwiftUI.ViewBuild.build(content, context)
+        }
+    }
     func _lazyRows(_ a0: SwiftUI.BuildContext) -> [SwiftUI.LazyRow] { _skeleton() }
     func menuEntries(_ a0: SwiftUI.EnvironmentValues) -> [SwiftUI.MenuEntry] { _skeleton() }
-    public init(storage a0: SwiftUI._ConditionalContent<A, B>.Storage) { _skeleton() }
+    public init(storage a0: SwiftUI._ConditionalContent<A, B>.Storage) { storage = a0 }
 }
 
 extension SwiftUI._ConditionalContent where A: SwiftUI.ToolbarContent, B: SwiftUI.ToolbarContent {
@@ -40,7 +56,7 @@ extension SwiftUI._ConditionalContent where A: SwiftUI.ToolbarContent, B: SwiftU
 
 extension SwiftUI._ConditionalContent where A: SwiftUI.TabContent, B: SwiftUI.TabContent, A.TabValue == B.TabValue {
     public var body: Swift.Never { _skeleton() }
-    public init(storage a0: SwiftUI._ConditionalContent<A, B>.Storage) { _skeleton() }
+    public init(storage a0: SwiftUI._ConditionalContent<A, B>.Storage) { storage = a0 }
     var tabPages: [SwiftUI.TabPage] { _skeleton() }
 }
 

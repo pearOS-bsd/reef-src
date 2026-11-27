@@ -18,9 +18,17 @@ import Metal
 import os
 
 class AnyViewStorage<A>: SwiftUI.AnyViewStorageBase where A: SwiftUI.View {
-    let view: A = _skeletonValue()
-    init(_ a0: A) { _skeleton() }
-    override func buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
-    override var anyView: any SwiftUI.View { _skeleton() }
+    let view: A
+    init(_ a0: A) {
+        view = a0
+        super.init()
+    }
+    /// the view under its type, so that a new type makes new state
+    override func buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] {
+        var context = a0
+        context.path.append(AnyHashable(SwiftUI.TypeKey(type: A.self)))
+        return SwiftUI.ViewBuild.build(view, context)
+    }
+    override var anyView: any SwiftUI.View { view }
     deinit {}
 }

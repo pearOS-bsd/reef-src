@@ -19,8 +19,10 @@ import os
 
 public struct ZStack<A> where A: SwiftUI.View {
     public var _tree: SwiftUI._VariadicView.Tree<SwiftUI._ZStackLayout, A>
-    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
-    public init(alignment a0: SwiftUI.Alignment, content a1: () -> A) { _skeleton() }
+    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _tree._buildElements(a0) }
+    public init(alignment a0: SwiftUI.Alignment, @SwiftUI.ViewBuilder content a1: () -> A) {
+        _tree = SwiftUI._VariadicView.Tree(root: SwiftUI._ZStackLayout(alignment: a0), content: a1())
+    }
 }
 
 extension SwiftUI.ZStack: SwiftUI.PrimitiveView {

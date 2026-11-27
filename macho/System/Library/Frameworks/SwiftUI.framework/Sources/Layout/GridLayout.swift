@@ -21,7 +21,11 @@ public struct GridLayout {
     public var alignment: SwiftUI.Alignment
     public var horizontalSpacing: CoreGraphics.CGFloat?
     public var verticalSpacing: CoreGraphics.CGFloat?
-    public init(alignment a0: SwiftUI.Alignment, horizontalSpacing a1: CoreGraphics.CGFloat?, verticalSpacing a2: CoreGraphics.CGFloat?) { _skeleton() }
+    public init(alignment a0: SwiftUI.Alignment, horizontalSpacing a1: CoreGraphics.CGFloat?, verticalSpacing a2: CoreGraphics.CGFloat?) {
+        alignment = a0
+        horizontalSpacing = a1
+        verticalSpacing = a2
+    }
 }
 
 extension SwiftUI.GridLayout: SwiftUI._VariadicView_UnaryViewRoot {

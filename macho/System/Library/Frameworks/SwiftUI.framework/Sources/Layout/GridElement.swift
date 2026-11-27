@@ -18,8 +18,8 @@ import Metal
 import os
 
 class GridElement: SwiftUI.Element {
-    let layout: SwiftUI.GridLayout = _skeletonValue()
-    let rows: [SwiftUI.Element] = _skeletonValue()
+    let layout: SwiftUI.GridLayout
+    let rows: [SwiftUI.Element]
     override var children: [SwiftUI.Element] { _skeleton() }
     override var spacingKind: SwiftUI.SpacingKind { _skeleton() }
     final var rowGaps: [CoreGraphics.CGFloat] { _skeleton() }
@@ -31,6 +31,10 @@ class GridElement: SwiftUI.Element {
     final func rowLayout(widths a0: [CoreGraphics.CGFloat], total a1: CoreGraphics.CGFloat, height a2: CoreGraphics.CGFloat?) -> [(height: CoreGraphics.CGFloat, baseline: CoreGraphics.CGFloat?)] { _skeleton() }
     override func measure(_ a0: SwiftUI.ProposedViewSize) -> CGSize { _skeleton() }
     override func place(`in` a0: CGRect) { _skeleton() }
-    init(layout a0: SwiftUI.GridLayout, rows a1: [SwiftUI.Element]) { _skeleton() }
+    init(layout a0: SwiftUI.GridLayout, rows a1: [SwiftUI.Element]) {
+        layout = a0
+        rows = a1
+        super.init()
+    }
     deinit {}
 }

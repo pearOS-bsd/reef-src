@@ -19,8 +19,8 @@ import os
 
 public struct AnyView {
     public var storage: SwiftUI.AnyViewStorageBase
-    public init<A>(_ a0: A) where A: SwiftUI.View { _skeleton() }
-    public init<A>(erasing a0: A) where A: SwiftUI.View { _skeleton() }
+    public init<A>(_ a0: A) where A: SwiftUI.View { storage = SwiftUI.AnyViewStorage(a0) }
+    public init<A>(erasing a0: A) where A: SwiftUI.View { self.init(a0) }
 }
 
 extension SwiftUI.AnyView: SwiftUI.View {
@@ -28,7 +28,7 @@ extension SwiftUI.AnyView: SwiftUI.View {
 }
 
 extension SwiftUI.AnyView: SwiftUI.PrimitiveView {
-    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
+    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { storage.buildElements(a0) }
 }
 
 extension SwiftUI.AnyView: SwiftUI.MenuContributor {
