@@ -1107,8 +1107,15 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == self) return 1;
+    if (a0 == nil) return 0;
+    if (![a0 isKindOfClass:[NSDictionary class]]) return 0;
+    if ([a0 count] != [self count]) return 0;
+    id enumerator = [self keyEnumerator];
+    for (id key = [enumerator nextObject]; key != nil; key = [enumerator nextObject]) {
+        if (![[self objectForKey:key] isEqual:[a0 objectForKey:key]]) return 0;
+    }
+    return 1;
 }
 
 - (unsigned long)hash
@@ -5016,8 +5023,23 @@ static ReefNumberValue reefNumberValue(id number) {
 
 - (id)description
 {
-    // unresolved
-    return nil;
+    long type = _CFNumberGetType2((CFNumberRef)self);
+    CFStringRef text;
+    if (type == 17) {
+        unsigned long long value = 0;
+        [self getValue:&value];
+        text = CFStringCreateWithFormat(kCFAllocatorSystemDefault, NULL, CFSTR("%llu"), value);
+    } else if (CFNumberIsFloatType((CFNumberRef)self)) {
+        double value = 0;
+        CFNumberGetValue((CFNumberRef)self, kCFNumberDoubleType, &value);
+        if (type == 5 || type == 12) text = CFStringCreateWithFormat(kCFAllocatorSystemDefault, NULL, CFSTR("%0.7g"), (double)(float)value);
+        else text = CFStringCreateWithFormat(kCFAllocatorSystemDefault, NULL, CFSTR("%0.16g"), value);
+    } else {
+        long long value = 0;
+        CFNumberGetValue((CFNumberRef)self, kCFNumberLongLongType, &value);
+        text = CFStringCreateWithFormat(kCFAllocatorSystemDefault, NULL, CFSTR("%lld"), value);
+    }
+    return text ? objc_autorelease((id)text) : nil;
 }
 
 @end

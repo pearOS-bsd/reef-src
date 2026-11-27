@@ -125,6 +125,9 @@ int main(void) {
     CFNumberRef n1 = CFNumberCreate(a, 9, &i), n2 = CFNumberCreate(a, 13, &d), n3 = CFNumberCreate(a, 11, &q);
     printf("int: %lld %s, double: %g %s, long long: %lld %s\n", MSG(long long, n1, "longLongValue"), (const char *)MSG(void *, n1, "objCType"),
            MSG(double, n2, "doubleValue"), (const char *)MSG(void *, n2, "objCType"), MSG(long long, n3, "longLongValue"), (const char *)MSG(void *, n3, "objCType"));
+    show("number descriptions", MSG(void *, n1, "description"));
+    show("double description", MSG(void *, n2, "description"));
+    show("long long description", MSG(void *, n3, "description"));
     int back = 0; MSG(void, n1, "getValue:", &back);
     printf("getValue %d\n", back);
     CFRelease(n1); CFRelease(n2); CFRelease(n3);
