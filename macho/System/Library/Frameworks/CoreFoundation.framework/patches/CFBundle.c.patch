@@ -3,7 +3,15 @@
 # Written from the published binary. SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 --- CFBundle.c
 +++ CFBundle.c
-@@ -1566,7 +1566,7 @@
+@@ -10,6 +10,7 @@
+ 
+ #include "CoreFoundation.h"
+ #include "CFBundle_Internal.h"
++#include <mach-o/dyld.h>
+ #include "CFPropertyList.h"
+ #include "CFNumber.h"
+ #include "CFSet.h"
+@@ -1566,7 +1567,7 @@
  #define LENGTH_OF(A) (sizeof(A) / sizeof(A[0]))
          
  //If 'permissive' is set, we will maintain the historical behavior of returning frameworks with names that don't match, and frameworks for executables in Resources/
@@ -12,3 +20,93 @@
      // MF:!!! Implement me.  We need to be able to find the bundle from the exe, dealing with old vs. new as well as the Executables dir business on Windows.
  #if TARGET_OS_WIN32
      UniChar executablesToFrameworksPathBuff[] = {'.', '.', '\\', 'F', 'r', 'a', 'm', 'e', 'w', 'o', 'r', 'k', 's'};
+@@ -1707,20 +1708,64 @@
+     }
+ }
+ 
+-static void _CFBundleEnsureBundlesExistForImagePaths(CFArrayRef imagePaths) {
++static __attribute__((noinline)) void _CFBundleEnsureBundlesExistForImagePaths(CFArrayRef imagePaths) {
+     // This finds the bundles for the given paths.
+     // If an image path corresponds to a bundle, we see if there is already a bundle instance.  If there is and it is NOT in the _dynamicBundles array, it is added to the staticBundles.  Do not add the main bundle to the list here (even if it appears in imagePaths).
+     CFIndex i, imagePathCount = CFArrayGetCount(imagePaths);
+     for (i = 0; i < imagePathCount; i++) _CFBundleEnsureBundleExistsForImagePath((CFStringRef)CFArrayGetValueAtIndex(imagePaths, i), true);
+ }
+ 
+-static void _CFBundleEnsureBundlesUpToDateWithHint(CFStringRef hint) {
++// The paths of the loaded images whose file name ends the hint (the name of a library or of a framework).
++static CFArrayRef _reefCopyLoadedImagePathsForHint(CFStringRef hint) {
++    CFMutableArrayRef result = CFArrayCreateMutable(kCFAllocatorSystemDefault, 0, &kCFTypeArrayCallBacks);
++    CFIndex length = CFStringGetLength(hint);
++    const char *processPath = _CFProcessPath();
++    for (uint32_t idx = 0; idx < _dyld_image_count(); idx++) {
++        const char *name = _dyld_get_image_name(idx);
++        if (!name) continue;
++        const char *lastComponent = strrchr(name, '/');
++        if (!lastComponent) continue;
++        if (processPath && strcmp(name, processPath) == 0) continue;
++        CFStringRef component = CFStringCreateWithFileSystemRepresentation(kCFAllocatorSystemDefault, lastComponent + 1);
++        if (component) {
++            if (CFStringFindWithOptions(hint, component, CFRangeMake(0, length), kCFCompareAnchored | kCFCompareBackwards | kCFCompareCaseInsensitive, NULL)) {
++                CFStringRef path = CFStringCreateWithFileSystemRepresentation(kCFAllocatorSystemDefault, name);
++                if (path) {
++                    CFArrayAppendValue(result, path);
++                    CFRelease(path);
++                }
++            }
++            CFRelease(component);
++        }
++    }
++    return result;
++}
++
++// The paths of all the loaded images but the executable, when their number changed since the last call.
++static CFArrayRef _reefCopyLoadedImagePathsIfChanged(void) {
++    static int lastCount;
++    int count = (int)_dyld_image_count();
++    if (count == lastCount) return NULL;
++    lastCount = count;
++    CFMutableArrayRef result = CFArrayCreateMutable(kCFAllocatorSystemDefault, 0, &kCFTypeArrayCallBacks);
++    const char *processPath = _CFProcessPath();
++    for (int idx = 0; idx < count; idx++) {
++        const char *name = _dyld_get_image_name(idx);
++        if (!name || (processPath && strcmp(name, processPath) == 0)) continue;
++        CFStringRef path = CFStringCreateWithFileSystemRepresentation(kCFAllocatorSystemDefault, name);
++        if (path) {
++            CFArrayAppendValue(result, path);
++            CFRelease(path);
++        }
++    }
++    return result;
++}
++
++static __attribute__((noinline)) void _CFBundleEnsureBundlesUpToDateWithHint(CFStringRef hint) {
+     CFArrayRef imagePaths = NULL;
+     // Tickle the main bundle into existence
+     (void)CFBundleGetMainBundle();
+-#if defined(BINARY_SUPPORT_DYLD)
+-    imagePaths = _CFBundleDYLDCopyLoadedImagePathsForHint(hint);
+-#endif /* BINARY_SUPPORT_DYLD */
++    imagePaths = _reefCopyLoadedImagePathsForHint(hint);
+     if (imagePaths) {
+         _CFBundleEnsureBundlesExistForImagePaths(imagePaths);
+         CFRelease(imagePaths);
+@@ -1734,7 +1779,7 @@
+     return _CFBundleGetFromTables(bundleID);
+ }
+ 
+-static void _CFBundleEnsureAllBundlesUpToDate(void) {
++static __attribute__((noinline)) void _CFBundleEnsureAllBundlesUpToDate(void) {
+     // This method returns all the statically linked bundles.  This includes the main bundle as well as any frameworks that the process was linked against at launch time.  It does not include frameworks or opther bundles that were loaded dynamically.
+     CFArrayRef imagePaths = NULL;
+     // Tickle the main bundle into existence
+@@ -1744,9 +1789,7 @@
+ // Don't know how to find static bundles for DLLs
+ #endif /* BINARY_SUPPORT_DLL */
+ 
+-#if defined(BINARY_SUPPORT_DYLD)
+-    imagePaths = _CFBundleDYLDCopyLoadedImagePathsIfChanged();
+-#endif /* BINARY_SUPPORT_DYLD */
++    imagePaths = _reefCopyLoadedImagePathsIfChanged();
+     if (imagePaths) {
+         _CFBundleEnsureBundlesExistForImagePaths(imagePaths);
+         CFRelease(imagePaths);
