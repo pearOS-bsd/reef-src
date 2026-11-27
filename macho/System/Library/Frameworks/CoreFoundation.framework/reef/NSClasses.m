@@ -4650,6 +4650,36 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 
 @end
 
+
+// The value of an NSNumber by its Objective-C type: the kind is 0 for a signed integer, 1 for an unsigned one and 2 for a floating point number.
+typedef struct {
+    int kind;
+    union { long long s; unsigned long long u; double d; } value;
+} ReefNumberValue;
+
+static ReefNumberValue reefNumberValue(id number) {
+    ReefNumberValue result = {0, {0}};
+    const char *type = [number objCType];
+    union { long long s; unsigned long long u; float f; double d; } raw = {0};
+    [number getValue:&raw];
+    if (type == NULL) return result;
+    switch (*type) {
+    case 'B': result.value.s = *(char *)&raw != 0; break;
+    case 'C': result.value.s = *(unsigned char *)&raw; break;
+    case 'c': result.value.s = *(signed char *)&raw; break;
+    case 'S': result.value.s = *(unsigned short *)&raw; break;
+    case 's': result.value.s = *(short *)&raw; break;
+    case 'I': result.value.s = *(unsigned int *)&raw; break;
+    case 'i': result.value.s = *(int *)&raw; break;
+    case 'L': case 'l': case 'q': result.value.s = raw.s; break;
+    case 'Q': result.kind = 1; result.value.u = raw.u; break;
+    case 'f': result.kind = 2; result.value.d = raw.f; break;
+    case 'd': result.kind = 2; result.value.d = raw.d; break;
+    default: break;
+    }
+    return result;
+}
+
 @interface NSNumber : NSValue
 - (BOOL)charValue;
 - (int)intValue;
@@ -4676,44 +4706,44 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 @implementation NSNumber
 - (BOOL)charValue
 {
-    // unresolved
-    return NO;
+    ReefNumberValue v = reefNumberValue(self);
+    return (char)(v.kind == 2 ? (long long)v.value.d : v.value.s);
 }
 
 - (int)intValue
 {
-    // unresolved
-    return 0;
+    ReefNumberValue v = reefNumberValue(self);
+    return (int)(v.kind == 2 ? (long long)v.value.d : v.value.s);
 }
 
 - (long)longValue
 {
-    // unresolved
-    return 0;
+    ReefNumberValue v = reefNumberValue(self);
+    return v.kind == 2 ? (long long)v.value.d : v.value.s;
 }
 
 - (long)longLongValue
 {
-    // unresolved
-    return 0;
+    ReefNumberValue v = reefNumberValue(self);
+    return v.kind == 2 ? (long long)v.value.d : v.value.s;
 }
 
 - (long)integerValue
 {
-    // unresolved
-    return 0;
+    ReefNumberValue v = reefNumberValue(self);
+    return v.kind == 2 ? (long long)v.value.d : v.value.s;
 }
 
 - (unsigned int)unsignedIntValue
 {
-    // unresolved
-    return 0;
+    ReefNumberValue v = reefNumberValue(self);
+    return (unsigned int)(v.kind == 2 ? (long long)v.value.d : v.value.s);
 }
 
 - (unsigned long)unsignedLongLongValue
 {
-    // unresolved
-    return 0;
+    ReefNumberValue v = reefNumberValue(self);
+    return v.kind == 2 ? (unsigned long long)v.value.d : v.value.u;
 }
 
 - (unsigned long)unsignedIntegerValue
@@ -4723,20 +4753,23 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 
 - (float)floatValue
 {
-    // unresolved
-    return 0;
+    ReefNumberValue v = reefNumberValue(self);
+    double d = v.kind == 1 ? (double)v.value.u : v.kind == 2 ? v.value.d : (double)v.value.s;
+    return (float)d;
 }
 
 - (double)doubleValue
 {
-    // unresolved
-    return 0;
+    ReefNumberValue v = reefNumberValue(self);
+    double d = v.kind == 1 ? (double)v.value.u : v.kind == 2 ? v.value.d : (double)v.value.s;
+    return d;
 }
 
 - (BOOL)boolValue
 {
-    // unresolved
-    return NO;
+    ReefNumberValue v = reefNumberValue(self);
+    double d = v.kind == 1 ? (double)v.value.u : v.kind == 2 ? v.value.d : (double)v.value.s;
+    return d != 0;
 }
 
 - (id)description
