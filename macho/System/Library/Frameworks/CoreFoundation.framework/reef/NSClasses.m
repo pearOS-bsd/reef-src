@@ -113,6 +113,7 @@ extern unsigned long _CFDictionaryFastEnumeration(id, NSFastEnumerationState *, 
 extern unsigned long _CFSetFastEnumeration(id, NSFastEnumerationState *, id *, unsigned long);
 extern id objc_autorelease(id);
 extern void objc_release(id);
+extern long _CFNumberGetType2(CFNumberRef);
 extern const char *object_getClassName(id);
 extern NSString *const NSRangeException;
 
@@ -4231,8 +4232,7 @@ extern NSString *const NSRangeException;
 
 - (Class)classForCoder
 {
-    // unresolved
-    return nil;
+    return [(REEF_INFO(self) & 1 ? [NSMutableData class] : [NSData class]) class];
 }
 
 - (unsigned long)length
@@ -4247,8 +4247,7 @@ extern NSString *const NSRangeException;
 
 - (void)getBytes:(void *)a0 range:(NSRange)a1
 {
-    // unresolved
-
+    CFDataGetBytes((CFDataRef)self, CFRangeMake(a1.location, a1.length), a0);
 }
 
 - (void *)mutableBytes
@@ -4273,14 +4272,12 @@ extern NSString *const NSRangeException;
 
 - (void)replaceBytesInRange:(NSRange)a0 withBytes:(void *)a1 length:(unsigned long)a2
 {
-    // unresolved
-
+    CFDataReplaceBytes((CFMutableDataRef)self, CFRangeMake(a0.location, a0.length), a1, a2);
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFDataCreateCopy(kCFAllocatorSystemDefault, (CFDataRef)self);
 }
 
 @end
@@ -4517,26 +4514,42 @@ extern NSString *const NSRangeException;
 
 - (char *)objCType
 {
-    // unresolved
-    return 0;
+    switch (_CFNumberGetType2((CFNumberRef)self)) {
+    case 1: case 7: return "c";
+    case 2: case 8: return "s";
+    case 3: case 9: return "i";
+    case 5: case 12: return "f";
+    case 6: case 13: case 16: return "d";
+    case 17: return "Q";
+    default: return "q";
+    }
 }
 
 - (void)getValue:(void *)a0
 {
-    // unresolved
-
+    CFNumberType type = _CFNumberGetType2((CFNumberRef)self);
+    if (type == 17) {
+        unsigned long long wide[2] = {0, 0};
+        CFNumberGetValue((CFNumberRef)self, 17, wide);
+        *(unsigned long long *)a0 = wide[1];
+        return;
+    }
+    if ((type & ~4L) == 10 || type == 15) type = 4;
+    CFNumberGetValue((CFNumberRef)self, type, a0);
 }
 
 - (long)longLongValue
 {
-    // unresolved
-    return 0;
+    long long value = 0;
+    CFNumberGetValue((CFNumberRef)self, kCFNumberLongLongType, &value);
+    return value;
 }
 
 - (double)doubleValue
 {
-    // unresolved
-    return 0;
+    double value = 0;
+    CFNumberGetValue((CFNumberRef)self, kCFNumberDoubleType, &value);
+    return value;
 }
 
 - (long)_cfNumberType
@@ -4546,8 +4559,7 @@ extern NSString *const NSRangeException;
 
 - (BOOL)_getValue:(void *)a0 forType:(long)a1
 {
-    // unresolved
-    return NO;
+    return CFNumberGetValue((CFNumberRef)self, a1, a0);
 }
 
 - (long)compare:(id)a0
@@ -4628,20 +4640,17 @@ extern NSString *const NSRangeException;
 
 - (char *)objCType
 {
-    // unresolved
-    return 0;
+    return "c";
 }
 
 - (void)getValue:(void *)a0
 {
-    // unresolved
-
+    *(char *)a0 = CFBooleanGetValue((CFBooleanRef)self);
 }
 
 - (BOOL)boolValue
 {
-    // unresolved
-    return NO;
+    return CFBooleanGetValue((CFBooleanRef)self);
 }
 
 - (long)_cfNumberType
@@ -4651,8 +4660,7 @@ extern NSString *const NSRangeException;
 
 - (id)description
 {
-    // unresolved
-    return nil;
+    return (id)(CFBooleanGetValue((CFBooleanRef)self) ? CFSTR("1") : CFSTR("0"));
 }
 
 @end
