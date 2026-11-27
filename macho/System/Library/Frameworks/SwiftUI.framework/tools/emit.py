@@ -158,6 +158,7 @@ class Emitter:
             name = r[1]
             for p in ('_OBJC_PROTOCOL_$_', '__OBJC_PROTOCOL_$_', '_OBJC_LABEL_PROTOCOL_$_'):
                 if name.startswith(p): name = name[len(p):]
+            if name == 'NSObject': name = 'NSObjectProtocol'   # the protocol, not the class
             return N('Protocol', None, 0, [N('Module', '__C'), N('Identifier', name)])
         else:
             return None
@@ -1002,9 +1003,10 @@ class Emitter:
         ov = self.override_syms.get(ti.key, set())
         syms = set(ent['syms'])
         ent['vtable'] = bool(syms & vt) or bool(ent['exp'] & {'MethodDescriptor', 'DispatchThunk'})
-        ent['override'] = bool(syms & ov) or (ti.key + '|' + self.member_sig(ent)) in self.fixes.get('override', [])
+        q = self.qualified(ti) + '|' + self.member_sig(ent)
+        ent['override'] = (bool(syms & ov) or q in self.fixes.get('override', [])) and q not in self.fixes.get('not_override', [])
         ent['final'] = not ent['vtable'] and not ent['override'] and not ent.get('objc') and bool(ti.ctx.ksf & (1 << 15))
-        ent['required'] = (ti.key + '|' + self.member_sig(ent)) in self.fixes.get('required', [])
+        ent['required'] = q in self.fixes.get('required', [])
 
     def member_sig(self, ent):
         n = ent['node']
