@@ -119,25 +119,43 @@ int compression_stream_process(compression_stream *stream, int flags);
 int compression_stream_destroy(compression_stream *stream);
 
 // Makes room for `more` bytes after the data (the capacity doubles from 4 KB); false when memory is short.
+#define RESERVE_BODY \
+    size_t needed = buffer->length + more; \
+    if (needed > buffer->capacity) { \
+        size_t capacity, next = buffer->capacity ? buffer->capacity : 0x1000; \
+        do { \
+            capacity = next; \
+            next = capacity * 2; \
+        } while (capacity < needed); \
+        unsigned char *larger = realloc(buffer->data, capacity); \
+        if (!larger) \
+            return false; \
+        buffer->data = larger; \
+        buffer->capacity = capacity; \
+    } \
+    return true;
+
 static bool reserve(Buffer *buffer, size_t more)
 {
-    size_t needed = buffer->length + more;
-    if (needed > buffer->capacity) {
-        size_t capacity, next = buffer->capacity ? buffer->capacity : 0x1000;
-        do {
-            capacity = next;
-            next = capacity * 2;
-        } while (capacity < needed);
-        unsigned char *larger = realloc(buffer->data, capacity);
-        if (!larger)
-            return false;
-        buffer->data = larger;
-        buffer->capacity = capacity;
-    }
-    return true;
+    RESERVE_BODY
 }
 
-static void appendBuffer(Buffer *buffer, const void *data, size_t size)
+static inline __attribute__((always_inline)) bool reserveInline(Buffer *buffer, size_t more)
+{
+    RESERVE_BODY
+}
+
+static inline __attribute__((always_inline)) void appendInline(Buffer *buffer, const void *data, size_t size)
+{
+    if (!size)
+        return;
+    if (!reserveInline(buffer, size))
+        return;
+    memcpy(buffer->data + buffer->length, data, size);
+    buffer->length += size;
+}
+
+void appendBuffer(Buffer *buffer, const void *data, size_t size)
 {
     if (!size)
         return;
@@ -326,7 +344,38 @@ int compression_stream_process(compression_stream *stream, int flags)
     if (state->finished)
         return COMPRESSION_STATUS_END;
     int status;
-    if (state->algorithm == COMPRESSION_BROTLI) {
+    if (state->algorithm == COMPRESSION_ZLIB) {
+        unsigned availableIn = stream->src_size < 0xffffffff ? (unsigned)stream->src_size : 0xffffffff;
+        unsigned availableOut = stream->dst_size < 0xffffffff ? (unsigned)stream->dst_size : 0xffffffff;
+        state->zlib.next_in = stream->src_ptr;
+        state->zlib.avail_in = availableIn;
+        state->zlib.next_out = stream->dst_ptr;
+        state->zlib.avail_out = availableOut;
+        int result = state->operation == COMPRESSION_STREAM_ENCODE ? deflate(&state->zlib, (flags & 1) << 2) : inflate(&state->zlib, 0);
+        size_t used = availableIn - state->zlib.avail_in;
+        stream->src_ptr = (const unsigned char *)stream->src_ptr + used;
+        stream->src_size -= used;
+        size_t produced = availableOut - state->zlib.avail_out;
+        stream->dst_ptr = (unsigned char *)stream->dst_ptr + produced;
+        stream->dst_size -= produced;
+        if (result == -5)       // Z_BUF_ERROR
+            return COMPRESSION_STATUS_OK;
+        status = result;
+    } else if (state->algorithm == COMPRESSION_LZMA) {
+        state->lzma.next_in = stream->src_ptr;
+        state->lzma.avail_in = stream->src_size;
+        state->lzma.next_out = stream->dst_ptr;
+        state->lzma.avail_out = stream->dst_size;
+        int action = (flags & 1) ? (state->operation == COMPRESSION_STREAM_ENCODE) * 3 : 0;
+        int result = host.lzmaCode(&state->lzma, action);
+        stream->src_ptr = (const unsigned char *)stream->src_ptr + (stream->src_size - state->lzma.avail_in);
+        stream->src_size = state->lzma.avail_in;
+        stream->dst_ptr = (unsigned char *)stream->dst_ptr + (stream->dst_size - state->lzma.avail_out);
+        stream->dst_size = state->lzma.avail_out;
+        if (result == 10)       // LZMA_BUF_ERROR: nothing could be done
+            return COMPRESSION_STATUS_OK;
+        status = result;
+    } else if (state->algorithm == COMPRESSION_BROTLI) {
         size_t availableIn = stream->src_size, availableOut = stream->dst_size;
         const unsigned char *nextIn = stream->src_ptr;
         unsigned char *nextOut = stream->dst_ptr;
@@ -348,42 +397,11 @@ int compression_stream_process(compression_stream *stream, int flags)
         stream->dst_size = availableOut;
         if (status != COMPRESSION_STATUS_END)
             return status;
-    } else if (state->algorithm == COMPRESSION_LZMA) {
-        state->lzma.next_in = stream->src_ptr;
-        state->lzma.avail_in = stream->src_size;
-        state->lzma.next_out = stream->dst_ptr;
-        state->lzma.avail_out = stream->dst_size;
-        int action = (flags & 1) ? (state->operation == COMPRESSION_STREAM_ENCODE) * 3 : 0;
-        int result = host.lzmaCode(&state->lzma, action);
-        stream->src_ptr = (const unsigned char *)stream->src_ptr + (stream->src_size - state->lzma.avail_in);
-        stream->src_size = state->lzma.avail_in;
-        stream->dst_ptr = (unsigned char *)stream->dst_ptr + (stream->dst_size - state->lzma.avail_out);
-        stream->dst_size = state->lzma.avail_out;
-        if (result == 10)       // LZMA_BUF_ERROR: nothing could be done
-            return COMPRESSION_STATUS_OK;
-        status = result;
-    } else if (state->algorithm == COMPRESSION_ZLIB) {
-        unsigned availableIn = stream->src_size > 0xfffffffe ? 0xffffffff : (unsigned)stream->src_size;
-        unsigned availableOut = stream->dst_size < 0xffffffff ? (unsigned)stream->dst_size : 0xffffffff;
-        state->zlib.next_in = stream->src_ptr;
-        state->zlib.avail_in = availableIn;
-        state->zlib.next_out = stream->dst_ptr;
-        state->zlib.avail_out = availableOut;
-        int result = state->operation == COMPRESSION_STREAM_ENCODE ? deflate(&state->zlib, (flags & 1) << 2) : inflate(&state->zlib, 0);
-        size_t used = availableIn - state->zlib.avail_in;
-        stream->src_ptr = (const unsigned char *)stream->src_ptr + used;
-        stream->src_size -= used;
-        size_t produced = availableOut - state->zlib.avail_out;
-        stream->dst_ptr = (unsigned char *)stream->dst_ptr + produced;
-        stream->dst_size -= produced;
-        if (result == -5)       // Z_BUF_ERROR
-            return COMPRESSION_STATUS_OK;
-        status = result;
     } else {
         // The algorithms that work on whole blocks: take the input in.
         if (!state->finalized) {
             if (stream->src_size)
-                appendBuffer(&state->input, stream->src_ptr, stream->src_size);
+                appendInline(&state->input, stream->src_ptr, stream->src_size);
             stream->src_ptr = (const unsigned char *)stream->src_ptr + stream->src_size;
             stream->src_size = 0;
         }
@@ -410,7 +428,8 @@ int compression_stream_process(compression_stream *stream, int flags)
                         offset = state->input.length;
                     }
                     state->inputOffset = offset;
-                    appendBuffer(&state->output, "bv4$", 4);
+                    uint32_t end = 0x24347662;      // "bv4$"
+                    appendBuffer(&state->output, &end, 4);
                     state->finalized = 1;
                 }
             } else if ((flags & 1) && !state->finalized) {
@@ -419,7 +438,7 @@ int compression_stream_process(compression_stream *stream, int flags)
                     if (size > 0x7e000000)
                         return COMPRESSION_STATUS_ERROR;
                     int bound = host.lz4Bound((int)size);
-                    if (!reserve(&state->output, bound))
+                    if (!reserveInline(&state->output, bound))
                         return COMPRESSION_STATUS_ERROR;
                     int packed = host.lz4CompressDefault(state->input.data, state->output.data + state->output.length, (int)size, bound);
                     if (packed < 0 || (packed == 0 && size != 0))
@@ -431,7 +450,7 @@ int compression_stream_process(compression_stream *stream, int flags)
                     void *scratch = malloc(lzfse_encode_scratch_size());
                     size_t packed;
                     do {
-                        if (!reserve(&state->output, room)) {
+                        if (!reserveInline(&state->output, room)) {
                             free(scratch);
                             return COMPRESSION_STATUS_ERROR;
                         }
@@ -516,8 +535,8 @@ int compression_stream_process(compression_stream *stream, int flags)
                         if (available < position + 8 + size)
                             break;
                         if (size) {
-                            appendBuffer(&state->output, block + 8, size);
-                            appendBuffer(&state->history, block + 8, size);
+                            appendInline(&state->output, block + 8, size);
+                            appendInline(&state->history, block + 8, size);
                         }
                         if (state->history.length > 0x20000) {
                             memmove(state->history.data, state->history.data + (state->history.length - 0x10000), 0x10000);
@@ -532,7 +551,7 @@ int compression_stream_process(compression_stream *stream, int flags)
                         if (available < position + 12 + packed)
                             break;
                         memcpy(&raw, block + 4, 4);
-                        if (!reserve(&state->output, raw))
+                        if (!reserveInline(&state->output, raw))
                             return COMPRESSION_STATUS_ERROR;
                         size_t dictionary = state->history.length < 0x10000 ? state->history.length : 0x10000;
                         int result = host.lz4DecompressDict(block + 12, state->output.data + state->output.length, (int)packed, (int)raw,
@@ -540,7 +559,7 @@ int compression_stream_process(compression_stream *stream, int flags)
                         if ((uint32_t)result != raw)
                             return COMPRESSION_STATUS_ERROR;
                         if (raw) {
-                            appendBuffer(&state->history, state->output.data + state->output.length, raw);
+                            appendInline(&state->history, state->output.data + state->output.length, raw);
                             if (state->history.length > 0x20000) {
                                 memmove(state->history.data, state->history.data + (state->history.length - 0x10000), 0x10000);
                                 state->history.length = 0x10000;
