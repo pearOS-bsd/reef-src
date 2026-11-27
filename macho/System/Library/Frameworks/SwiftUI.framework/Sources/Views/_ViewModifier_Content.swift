@@ -18,7 +18,7 @@ import Metal
 import os
 
 public struct _ViewModifier_Content<A> where A: SwiftUI.ViewModifier {
-    init() { _skeleton() }
+    init() {}
 }
 
 extension SwiftUI._ViewModifier_Content: SwiftUI.View {
@@ -26,5 +26,9 @@ extension SwiftUI._ViewModifier_Content: SwiftUI.View {
 }
 
 extension SwiftUI._ViewModifier_Content: SwiftUI.PrimitiveView {
-    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
+    /// the content the modifier's body wraps: what ViewBuild.apply put into the context for modifier A
+    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] {
+        guard let content = a0.modifierContents[ObjectIdentifier(A.self)] else { return [] }
+        return content(a0)
+    }
 }

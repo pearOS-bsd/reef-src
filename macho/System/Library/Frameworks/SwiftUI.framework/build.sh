@@ -29,7 +29,7 @@ onone|release)
  -emit-module -emit-module-interface -no-verify-emitted-module-interface -emit-module-path lib/SwiftUI.swiftmodule -o lib/SwiftUI \
  -Xlinker -install_name -Xlinker $INSTALL -Xlinker -current_version -Xlinker 1.0.0 -Xlinker -compatibility_version -Xlinker 1.0.0 \
  -Xlinker -alias_list -Xlinker Sources/Support/aliases.txt \
- @files.txt > errors.txt 2>&1; echo exit \$?; ls -la lib/SwiftUI 2>/dev/null && nm -gU lib/SwiftUI | awk '{print \$3}' > lib/exports.txt" ;;
+ @files.txt > errors.txt 2>&1; echo exit \$?; ls -la lib/SwiftUI 2>/dev/null && nm -gU lib/SwiftUI | awk '{print \$3}' > lib/exports.txt; true" ;;
 esac
 $SSH "cat $R/errors.txt" > "$OUT/errors.txt"
 rm -rf "$OUT/lib"; $SSH "cd $R && tar cf - lib 2>/dev/null" | tar -C "$OUT" -xf - 2>/dev/null || true

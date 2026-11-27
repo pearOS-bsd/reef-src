@@ -18,10 +18,11 @@ import Metal
 import os
 
 public enum PreviewLayout {}
-/// what a dynamic property installs itself with: the body node that owns the view and the property's slot
-/// (the binary has one more word between them, not known yet)
+/// what a dynamic property installs itself with: the body node that owns the view, the environment of the view and
+/// the property's slot (its byte offset in the view)
 struct PropertyInstallContext {
     var node: SwiftUI.BodyNode
+    var environment: SwiftUI.EnvironmentValues
     var index: Swift.Int
 }
 struct RenderContext {}

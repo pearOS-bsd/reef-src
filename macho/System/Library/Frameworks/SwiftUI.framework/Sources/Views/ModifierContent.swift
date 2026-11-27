@@ -20,5 +20,12 @@ import os
 struct ModifierContent {
     let build: (SwiftUI.BuildContext) -> [SwiftUI.Element]
     let context: SwiftUI.BuildContext
-    func callAsFunction(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
+    /// build the content in its own context, under an index of the caller's path, with the caller's environment and canvas
+    func callAsFunction(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] {
+        var context = self.context
+        context.path.append(AnyHashable(a0.path.count))
+        context.environment = a0.environment
+        context.canvas = a0.canvas
+        return build(context)
+    }
 }

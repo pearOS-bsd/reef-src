@@ -22,9 +22,9 @@ struct TypeKey {
 }
 
 extension SwiftUI.TypeKey: Swift.Equatable {
-    static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    static func == (a0: Self, a1: Self) -> Swift.Bool { a0.type == a1.type }
 }
 
 extension SwiftUI.TypeKey: Swift.Hashable {
-    func hash(into a0: inout Swift.Hasher) { _skeleton() }
+    func hash(into a0: inout Swift.Hasher) { a0.combine(ObjectIdentifier(type)) }
 }
