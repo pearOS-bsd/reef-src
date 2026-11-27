@@ -73,7 +73,25 @@ public struct Color {
         public func hash(into a0: inout Swift.Hasher) { _skeleton() }
         public var hashValue: Swift.Int { _skeleton() }
         public func resolve(`in` a0: SwiftUI.EnvironmentValues) -> SwiftUI.Color.Resolved { _skeleton() }
-        init(_ a0: NSColor, colorScheme a1: SwiftUI.ColorScheme) { _skeleton() }
+        init(_ a0: NSColor, colorScheme a1: SwiftUI.ColorScheme) {
+            // the components in sRGB (else device RGB, else black) under the scheme's appearance, made linear
+            var red: CoreGraphics.CGFloat = 0, green: CoreGraphics.CGFloat = 0, blue: CoreGraphics.CGFloat = 0
+            var alpha: CoreGraphics.CGFloat = 1
+            let read = {
+                let rgb = a0.usingColorSpace(.sRGB) ?? a0.usingColorSpace(.deviceRGB) ?? NSColor.black
+                rgb.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            }
+            if let appearance = a1 == .dark ? SwiftUI.SchemeAppearance.dark : SwiftUI.SchemeAppearance.light {
+                appearance.performAsCurrentDrawingAppearance(read)
+            } else {
+                read()
+            }
+            func linear(_ c: Swift.Float) -> Swift.Float { c <= 0.04045 ? c / 12.92 : powf((c + 0.055) / 1.055, 2.4) }
+            linearRed = linear(Float(red))
+            linearGreen = linear(Float(green))
+            linearBlue = linear(Float(blue))
+            opacity = Float(alpha)
+        }
     }
     public enum RGBColorSpace {
         case sRGB

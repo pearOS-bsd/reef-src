@@ -69,6 +69,7 @@ func selftestBuild() {
     let third = SwiftUI.ViewBuild.build(SelfTestCounter(), context())
     print("rebuild", third[0] === first[0], third[0].sizeThatFits(.unspecified), "runs", node.bodyRuns)
     selftestStacks(host)
+    selftestFonts()
 }
 
 /// a leaf as wide as 10, or 20 when enabled
@@ -113,4 +114,23 @@ func selftestStacks(_ host: SwiftUI.ViewHost) {
             print(" ", type(of: child), child.frame, child.children.map { $0.frame })
         }
     }
+}
+
+func selftestFonts() {
+    func traits(_ font: SwiftUI.Font) -> SwiftUI.FontTraits {
+        var t = SwiftUI.FontTraits(size: 13, weight: nil, italic: false, design: nil, monospaced: false, monospacedDigit: false,
+                                   name: nil, width: nil, leading: nil)
+        font.provider.apply(to: &t)
+        return t
+    }
+    for (label, font) in [("body", SwiftUI.Font.body), ("headline", .headline), ("largeTitle.italic", .largeTitle.italic()),
+                          ("system20.weight", .system(size: 20, weight: nil, design: .monospaced).weight(.light)),
+                          ("custom", .custom("Menlo", size: 0))] {
+        let t = traits(font)
+        print("font", label, t.size, t.weight?.value as Any, t.italic, t.design as Any, t.name as Any)
+    }
+    print("font equal", SwiftUI.Font.body == .body, SwiftUI.Font.body == .headline, SwiftUI.Font.body.bold() == .body.bold())
+    print("line", [10, 13, 17, 20, 26].map { SwiftUI.FontResolver.lineHeight($0) }, [10, 15, 20].map { SwiftUI.FontResolver.lineAdvance($0) })
+    let ns = SwiftUI.FontResolver.nsFont(traits(.headline))
+    print("nsfont", ns.pointSize, ns.fontDescriptor.symbolicTraits.contains(.bold))
 }

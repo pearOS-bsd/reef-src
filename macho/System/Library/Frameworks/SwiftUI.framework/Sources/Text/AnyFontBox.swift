@@ -18,9 +18,11 @@ import Metal
 import os
 
 open class AnyFontBox {
-    func isEqual(to a0: SwiftUI.AnyFontBox) -> Swift.Bool { _skeleton() }
-    func hash(into a0: inout Swift.Hasher) { _skeleton() }
-    func apply(to a0: inout SwiftUI.FontTraits) { _skeleton() }
-    init() { _skeleton() }
+    func isEqual(to a0: SwiftUI.AnyFontBox) -> Swift.Bool { self === a0 }
+    func hash(into a0: inout Swift.Hasher) { a0.combine(ObjectIdentifier(self)) }
+    func apply(to a0: inout SwiftUI.FontTraits) {
+    }
+    init() {
+    }
     deinit {}
 }

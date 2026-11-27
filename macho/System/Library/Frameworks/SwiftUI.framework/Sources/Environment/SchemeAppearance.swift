@@ -7,6 +7,10 @@
 import AppKit
 
 enum SchemeAppearance {
+    /// the appearances colours are resolved under (by their name strings)
+    static var light: NSAppearance? = NSAppearance(named: NSAppearance.Name("NSAppearanceNameAqua"))
+    static var dark: NSAppearance? = NSAppearance(named: NSAppearance.Name("NSAppearanceNameDarkAqua"))
+
     static func scheme(of appearance: NSAppearance?) -> SwiftUI.ColorScheme {
         let name = appearance?.value(forKey: "name") as? String ?? ""
         return name.contains("Dark") ? .dark : .light

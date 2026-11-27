@@ -18,10 +18,16 @@ import Metal
 import os
 
 class FontBox<A>: SwiftUI.AnyFontBox where A: SwiftUI.FontProvider {
-    let base: A = _skeletonValue()
-    override func isEqual(to a0: SwiftUI.AnyFontBox) -> Swift.Bool { _skeleton() }
-    override func hash(into a0: inout Swift.Hasher) { _skeleton() }
-    override func apply(to a0: inout SwiftUI.FontTraits) { _skeleton() }
-    init(_ a0: A) { _skeleton() }
+    let base: A
+    override func isEqual(to a0: SwiftUI.AnyFontBox) -> Swift.Bool {
+        guard let other = a0 as? FontBox<A> else { return false }
+        return other === self || other.base == base
+    }
+    override func hash(into a0: inout Swift.Hasher) { base.hash(into: &a0) }
+    override func apply(to a0: inout SwiftUI.FontTraits) { base.apply(to: &a0) }
+    init(_ a0: A) {
+        base = a0
+        super.init()
+    }
     deinit {}
 }
