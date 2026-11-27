@@ -20,14 +20,25 @@ import os
 @frozen public enum Axis {
     case horizontal
     case vertical
-    public var rawValue: Swift.Int8 { _skeleton() }
-    public static var allCases: [SwiftUI.Axis] { _skeleton() }
-    public init?(rawValue a0: Swift.Int8) { _skeleton() }
+    public var rawValue: Swift.Int8 {
+        switch self {
+        case .horizontal: return 0
+        case .vertical: return 1
+        }
+    }
+    public static var allCases: [SwiftUI.Axis] { [.horizontal, .vertical] }
+    public init?(rawValue a0: Swift.Int8) {
+        switch a0 {
+        case 0: self = .horizontal
+        case 1: self = .vertical
+        default: return nil
+        }
+    }
     public struct Set {
         public let rawValue: Swift.Int8
-        public static var horizontal: SwiftUI.Axis.Set { _skeleton() }
-        public static var vertical: SwiftUI.Axis.Set { _skeleton() }
-        public init(rawValue a0: Swift.Int8) { _skeleton() }
+        public static var horizontal: SwiftUI.Axis.Set { SwiftUI.Axis.Set(rawValue: 1) }
+        public static var vertical: SwiftUI.Axis.Set { SwiftUI.Axis.Set(rawValue: 2) }
+        public init(rawValue a0: Swift.Int8) { rawValue = a0 }
     }
 }
 
@@ -43,7 +54,7 @@ extension SwiftUI.Axis.Set: Swift.RawRepresentable {
 }
 
 extension SwiftUI.Axis.Set: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.Axis.Set: Swift.ExpressibleByArrayLiteral {

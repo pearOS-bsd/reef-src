@@ -19,7 +19,7 @@ import os
 
 public struct MatchedGeometryProperties {
     public let rawValue: Swift.UInt32
-    public init(rawValue a0: Swift.UInt32) { _skeleton() }
+    public init(rawValue a0: Swift.UInt32) { rawValue = a0 }
     public static var position: SwiftUI.MatchedGeometryProperties { _skeleton() }
     public static var size: SwiftUI.MatchedGeometryProperties { _skeleton() }
     public static var frame: SwiftUI.MatchedGeometryProperties { _skeleton() }
@@ -37,7 +37,7 @@ extension SwiftUI.MatchedGeometryProperties: Swift.RawRepresentable {
 }
 
 extension SwiftUI.MatchedGeometryProperties: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.MatchedGeometryProperties: Swift.ExpressibleByArrayLiteral {

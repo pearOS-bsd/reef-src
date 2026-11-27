@@ -19,7 +19,7 @@ import os
 
 public struct PinnedScrollableViews {
     public let rawValue: Swift.UInt32
-    public init(rawValue a0: Swift.UInt32) { _skeleton() }
+    public init(rawValue a0: Swift.UInt32) { rawValue = a0 }
     public static var sectionHeaders: SwiftUI.PinnedScrollableViews { _skeleton() }
     public static var sectionFooters: SwiftUI.PinnedScrollableViews { _skeleton() }
 }
@@ -36,7 +36,7 @@ extension SwiftUI.PinnedScrollableViews: Swift.RawRepresentable {
 }
 
 extension SwiftUI.PinnedScrollableViews: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.PinnedScrollableViews: Swift.ExpressibleByArrayLiteral {

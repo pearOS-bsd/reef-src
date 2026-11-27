@@ -19,7 +19,7 @@ import os
 
 public struct RedactionReasons {
     public let rawValue: Swift.Int
-    public init(rawValue a0: Swift.Int) { _skeleton() }
+    public init(rawValue a0: Swift.Int) { rawValue = a0 }
     public static var placeholder: SwiftUI.RedactionReasons { _skeleton() }
     public static var privacy: SwiftUI.RedactionReasons { _skeleton() }
     public static var invalidated: SwiftUI.RedactionReasons { _skeleton() }
@@ -37,7 +37,7 @@ extension SwiftUI.RedactionReasons: Swift.RawRepresentable {
 }
 
 extension SwiftUI.RedactionReasons: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.RedactionReasons: Swift.ExpressibleByArrayLiteral {

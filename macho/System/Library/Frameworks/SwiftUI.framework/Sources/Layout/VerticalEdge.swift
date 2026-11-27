@@ -25,7 +25,7 @@ import os
     public var rawValue: Swift.Int8 { _skeleton() }
     public struct Set {
         public let rawValue: Swift.Int8
-        public init(rawValue a0: Swift.Int8) { _skeleton() }
+        public init(rawValue a0: Swift.Int8) { rawValue = a0 }
         public static var top: SwiftUI.VerticalEdge.Set { _skeleton() }
         public static var bottom: SwiftUI.VerticalEdge.Set { _skeleton() }
         public static var all: SwiftUI.VerticalEdge.Set { _skeleton() }
@@ -44,7 +44,7 @@ extension SwiftUI.VerticalEdge.Set: Swift.RawRepresentable {
 }
 
 extension SwiftUI.VerticalEdge.Set: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.VerticalEdge.Set: Swift.ExpressibleByArrayLiteral {

@@ -27,7 +27,7 @@ import os
     public static var allCases: [SwiftUI.Edge] { _skeleton() }
     public struct Set {
         public let rawValue: Swift.Int8
-        public init(rawValue a0: Swift.Int8) { _skeleton() }
+        public init(rawValue a0: Swift.Int8) { rawValue = a0 }
         public init(_ a0: SwiftUI.Edge) { _skeleton() }
         public static var top: SwiftUI.Edge.Set { _skeleton() }
         public static var leading: SwiftUI.Edge.Set { _skeleton() }
@@ -71,7 +71,7 @@ extension SwiftUI.Edge.Set: Swift.RawRepresentable {
 }
 
 extension SwiftUI.Edge.Set: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.Edge.Set: Swift.ExpressibleByArrayLiteral {

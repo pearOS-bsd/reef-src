@@ -19,7 +19,7 @@ import os
 
 public struct FileDialogBrowserOptions {
     public let rawValue: Swift.Int
-    public init(rawValue a0: Swift.Int) { _skeleton() }
+    public init(rawValue a0: Swift.Int) { rawValue = a0 }
     public static var enumeratePackages: SwiftUI.FileDialogBrowserOptions { _skeleton() }
     public static var includeHiddenFiles: SwiftUI.FileDialogBrowserOptions { _skeleton() }
     public static var displayFileExtensions: SwiftUI.FileDialogBrowserOptions { _skeleton() }
@@ -37,7 +37,7 @@ extension SwiftUI.FileDialogBrowserOptions: Swift.RawRepresentable {
 }
 
 extension SwiftUI.FileDialogBrowserOptions: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.FileDialogBrowserOptions: Swift.ExpressibleByArrayLiteral {

@@ -27,7 +27,7 @@ public enum FrameResizeDirection {
         public static var inward: SwiftUI.FrameResizeDirection.Set { _skeleton() }
         public static var outward: SwiftUI.FrameResizeDirection.Set { _skeleton() }
         public static var all: SwiftUI.FrameResizeDirection.Set { _skeleton() }
-        public init(rawValue a0: Swift.Int8) { _skeleton() }
+        public init(rawValue a0: Swift.Int8) { rawValue = a0 }
     }
 }
 
@@ -47,7 +47,7 @@ extension SwiftUI.FrameResizeDirection.Set: Swift.RawRepresentable {
 }
 
 extension SwiftUI.FrameResizeDirection.Set: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.FrameResizeDirection.Set: Swift.ExpressibleByArrayLiteral {

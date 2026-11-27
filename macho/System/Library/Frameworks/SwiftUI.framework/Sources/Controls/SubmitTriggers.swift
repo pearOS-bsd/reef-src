@@ -19,7 +19,7 @@ import os
 
 public struct SubmitTriggers {
     public let rawValue: Swift.Int
-    public init(rawValue a0: Swift.Int) { _skeleton() }
+    public init(rawValue a0: Swift.Int) { rawValue = a0 }
     public static var text: SwiftUI.SubmitTriggers { _skeleton() }
     public static var search: SwiftUI.SubmitTriggers { _skeleton() }
 }
@@ -36,7 +36,7 @@ extension SwiftUI.SubmitTriggers: Swift.RawRepresentable {
 }
 
 extension SwiftUI.SubmitTriggers: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.SubmitTriggers: Swift.ExpressibleByArrayLiteral {

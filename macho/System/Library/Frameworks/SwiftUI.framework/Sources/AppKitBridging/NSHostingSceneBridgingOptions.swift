@@ -20,7 +20,7 @@ import os
 public struct NSHostingSceneBridgingOptions {
     public let rawValue: Swift.Int
     public static var all: SwiftUI.NSHostingSceneBridgingOptions { _skeleton() }
-    public init(rawValue a0: Swift.Int) { _skeleton() }
+    public init(rawValue a0: Swift.Int) { rawValue = a0 }
     public static var title: SwiftUI.NSHostingSceneBridgingOptions { _skeleton() }
     public static var toolbars: SwiftUI.NSHostingSceneBridgingOptions { _skeleton() }
 }
@@ -37,7 +37,7 @@ extension SwiftUI.NSHostingSceneBridgingOptions: Swift.RawRepresentable {
 }
 
 extension SwiftUI.NSHostingSceneBridgingOptions: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.NSHostingSceneBridgingOptions: Swift.ExpressibleByArrayLiteral {

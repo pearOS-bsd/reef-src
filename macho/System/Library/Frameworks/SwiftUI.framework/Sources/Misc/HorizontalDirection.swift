@@ -25,7 +25,7 @@ import os
     public init?(rawValue a0: Swift.Int8) { _skeleton() }
     public struct Set {
         public let rawValue: Swift.Int8
-        public init(rawValue a0: Swift.Int8) { _skeleton() }
+        public init(rawValue a0: Swift.Int8) { rawValue = a0 }
         public static var leading: SwiftUI.HorizontalDirection.Set { _skeleton() }
         public static var trailing: SwiftUI.HorizontalDirection.Set { _skeleton() }
         public static var all: SwiftUI.HorizontalDirection.Set { _skeleton() }
@@ -49,7 +49,7 @@ extension SwiftUI.HorizontalDirection.Set: Swift.RawRepresentable {
 }
 
 extension SwiftUI.HorizontalDirection.Set: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.HorizontalDirection.Set: Swift.ExpressibleByArrayLiteral {

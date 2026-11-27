@@ -22,7 +22,7 @@ public struct DatePickerComponents {
     public static var hourAndMinute: SwiftUI.DatePickerComponents { _skeleton() }
     public static var date: SwiftUI.DatePickerComponents { _skeleton() }
     public static var hourMinuteAndSecond: SwiftUI.DatePickerComponents { _skeleton() }
-    public init(rawValue a0: Swift.UInt) { _skeleton() }
+    public init(rawValue a0: Swift.UInt) { rawValue = a0 }
 }
 
 extension SwiftUI.DatePickerComponents: Swift.OptionSet {
@@ -37,7 +37,7 @@ extension SwiftUI.DatePickerComponents: Swift.RawRepresentable {
 }
 
 extension SwiftUI.DatePickerComponents: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.DatePickerComponents: Swift.ExpressibleByArrayLiteral {

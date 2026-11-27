@@ -26,7 +26,7 @@ extension SwiftUI.AccessibilityTechnologySet: Swift.ExpressibleByArrayLiteral {
 }
 
 extension SwiftUI.AccessibilityTechnologySet: Swift.Equatable {
-    static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.AccessibilityTechnologySet: Swift.RawRepresentable {

@@ -19,7 +19,7 @@ import os
 
 public struct _PlatformViewRepresentableLayoutOptions {
     public let rawValue: Swift.Int
-    public init(rawValue a0: Swift.Int) { _skeleton() }
+    public init(rawValue a0: Swift.Int) { rawValue = a0 }
 }
 
 extension SwiftUI._PlatformViewRepresentableLayoutOptions: Swift.OptionSet {
@@ -34,7 +34,7 @@ extension SwiftUI._PlatformViewRepresentableLayoutOptions: Swift.RawRepresentabl
 }
 
 extension SwiftUI._PlatformViewRepresentableLayoutOptions: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI._PlatformViewRepresentableLayoutOptions: Swift.ExpressibleByArrayLiteral {

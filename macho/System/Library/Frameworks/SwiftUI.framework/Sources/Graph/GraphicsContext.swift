@@ -152,7 +152,7 @@ extension SwiftUI.GraphicsContext.GradientOptions: Swift.RawRepresentable {
 }
 
 extension SwiftUI.GraphicsContext.GradientOptions: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.GraphicsContext.GradientOptions: Swift.ExpressibleByArrayLiteral {
@@ -171,7 +171,7 @@ extension SwiftUI.GraphicsContext.ClipOptions: Swift.RawRepresentable {
 }
 
 extension SwiftUI.GraphicsContext.ClipOptions: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.GraphicsContext.ClipOptions: Swift.ExpressibleByArrayLiteral {
@@ -198,7 +198,7 @@ extension SwiftUI.GraphicsContext.BlurOptions: Swift.RawRepresentable {
 }
 
 extension SwiftUI.GraphicsContext.BlurOptions: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.GraphicsContext.BlurOptions: Swift.ExpressibleByArrayLiteral {
@@ -217,7 +217,7 @@ extension SwiftUI.GraphicsContext.ShadowOptions: Swift.RawRepresentable {
 }
 
 extension SwiftUI.GraphicsContext.ShadowOptions: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.GraphicsContext.ShadowOptions: Swift.ExpressibleByArrayLiteral {
@@ -236,7 +236,7 @@ extension SwiftUI.GraphicsContext.FilterOptions: Swift.RawRepresentable {
 }
 
 extension SwiftUI.GraphicsContext.FilterOptions: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.GraphicsContext.FilterOptions: Swift.ExpressibleByArrayLiteral {

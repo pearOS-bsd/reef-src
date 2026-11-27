@@ -20,7 +20,7 @@ import os
 public struct GestureMask {
     public let rawValue: Swift.UInt32
     public static var all: SwiftUI.GestureMask { _skeleton() }
-    public init(rawValue a0: Swift.UInt32) { _skeleton() }
+    public init(rawValue a0: Swift.UInt32) { rawValue = a0 }
     public static var none: SwiftUI.GestureMask { _skeleton() }
     public static var gesture: SwiftUI.GestureMask { _skeleton() }
     public static var subviews: SwiftUI.GestureMask { _skeleton() }
@@ -38,7 +38,7 @@ extension SwiftUI.GestureMask: Swift.RawRepresentable {
 }
 
 extension SwiftUI.GestureMask: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.GestureMask: Swift.ExpressibleByArrayLiteral {

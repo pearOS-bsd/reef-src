@@ -19,7 +19,7 @@ import os
 
 public struct ContentShapeKinds {
     public let rawValue: Swift.Int
-    public init(rawValue a0: Swift.Int) { _skeleton() }
+    public init(rawValue a0: Swift.Int) { rawValue = a0 }
     public static var interaction: SwiftUI.ContentShapeKinds { _skeleton() }
     public static var dragPreview: SwiftUI.ContentShapeKinds { _skeleton() }
     public static var contextMenuPreview: SwiftUI.ContentShapeKinds { _skeleton() }
@@ -40,7 +40,7 @@ extension SwiftUI.ContentShapeKinds: Swift.RawRepresentable {
 }
 
 extension SwiftUI.ContentShapeKinds: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.ContentShapeKinds: Swift.ExpressibleByArrayLiteral {

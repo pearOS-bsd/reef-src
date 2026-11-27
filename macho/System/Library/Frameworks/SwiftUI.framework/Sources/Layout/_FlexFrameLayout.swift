@@ -26,7 +26,15 @@ public struct _FlexFrameLayout {
     public let maxHeight: CoreGraphics.CGFloat?
     public let alignment: SwiftUI.Alignment
     func _apply(_ a0: SwiftUI.BuildContext, content a1: @escaping (SwiftUI.BuildContext) -> [SwiftUI.Element]) -> [SwiftUI.Element] { _skeleton() }
-    public init(minWidth a0: CoreGraphics.CGFloat?, idealWidth a1: CoreGraphics.CGFloat?, maxWidth a2: CoreGraphics.CGFloat?, minHeight a3: CoreGraphics.CGFloat?, idealHeight a4: CoreGraphics.CGFloat?, maxHeight a5: CoreGraphics.CGFloat?, alignment a6: SwiftUI.Alignment) { _skeleton() }
+    public init(minWidth a0: CoreGraphics.CGFloat?, idealWidth a1: CoreGraphics.CGFloat?, maxWidth a2: CoreGraphics.CGFloat?, minHeight a3: CoreGraphics.CGFloat?, idealHeight a4: CoreGraphics.CGFloat?, maxHeight a5: CoreGraphics.CGFloat?, alignment a6: SwiftUI.Alignment) {
+        minWidth = a0
+        idealWidth = a1
+        maxWidth = a2
+        minHeight = a3
+        idealHeight = a4
+        maxHeight = a5
+        alignment = a6
+    }
 }
 
 extension SwiftUI._FlexFrameLayout: SwiftUI.PrimitiveModifier {

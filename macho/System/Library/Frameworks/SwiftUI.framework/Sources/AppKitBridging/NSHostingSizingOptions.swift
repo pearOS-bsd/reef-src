@@ -20,7 +20,7 @@ import os
 public struct NSHostingSizingOptions {
     public let rawValue: Swift.Int
     public static var standardBounds: SwiftUI.NSHostingSizingOptions { _skeleton() }
-    public init(rawValue a0: Swift.Int) { _skeleton() }
+    public init(rawValue a0: Swift.Int) { rawValue = a0 }
     public static var minSize: SwiftUI.NSHostingSizingOptions { _skeleton() }
     public static var intrinsicContentSize: SwiftUI.NSHostingSizingOptions { _skeleton() }
     public static var maxSize: SwiftUI.NSHostingSizingOptions { _skeleton() }
@@ -39,7 +39,7 @@ extension SwiftUI.NSHostingSizingOptions: Swift.RawRepresentable {
 }
 
 extension SwiftUI.NSHostingSizingOptions: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.NSHostingSizingOptions: Swift.ExpressibleByArrayLiteral {

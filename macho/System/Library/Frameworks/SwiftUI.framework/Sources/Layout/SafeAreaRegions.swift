@@ -20,7 +20,7 @@ import os
 public struct SafeAreaRegions {
     public let rawValue: Swift.UInt
     public static var all: SwiftUI.SafeAreaRegions { _skeleton() }
-    public init(rawValue a0: Swift.UInt) { _skeleton() }
+    public init(rawValue a0: Swift.UInt) { rawValue = a0 }
     public static var container: SwiftUI.SafeAreaRegions { _skeleton() }
     public static var keyboard: SwiftUI.SafeAreaRegions { _skeleton() }
 }
@@ -37,7 +37,7 @@ extension SwiftUI.SafeAreaRegions: Swift.RawRepresentable {
 }
 
 extension SwiftUI.SafeAreaRegions: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.SafeAreaRegions: Swift.ExpressibleByArrayLiteral {

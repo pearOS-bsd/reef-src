@@ -19,7 +19,7 @@ import os
 
 public struct EventModifiers {
     public let rawValue: Swift.Int
-    public init(rawValue a0: Swift.Int) { _skeleton() }
+    public init(rawValue a0: Swift.Int) { rawValue = a0 }
     public static var capsLock: SwiftUI.EventModifiers { _skeleton() }
     public static var shift: SwiftUI.EventModifiers { _skeleton() }
     public static var control: SwiftUI.EventModifiers { _skeleton() }
@@ -46,7 +46,7 @@ extension SwiftUI.EventModifiers: Swift.RawRepresentable {
 }
 
 extension SwiftUI.EventModifiers: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.EventModifiers: Swift.ExpressibleByArrayLiteral {

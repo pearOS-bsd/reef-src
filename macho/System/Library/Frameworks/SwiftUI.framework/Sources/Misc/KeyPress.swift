@@ -57,7 +57,7 @@ extension SwiftUI.KeyPress.Phases: Swift.RawRepresentable {
 }
 
 extension SwiftUI.KeyPress.Phases: Swift.Equatable {
-    public static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
+    public static func == (a0: Self, a1: Self) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.KeyPress.Phases: Swift.ExpressibleByArrayLiteral {
