@@ -384,3 +384,52 @@ int os_workgroup_interval_finish(void *wg, void *data) {
     (void)data;
     return wg && !isCancelled(wg) ? 0 : EINVAL;
 }
+
+// dlsym as Reef's libSystem does it (the loader's image symbol service), except that an address no image contains
+// is not a symbol: under `reef --stub-missing` the loader answers a missing name with a stub, and a program that
+// probes for an optional symbol (GarageBand: "modinfo" of its control surface plug-ins) would write into it.
+#include <dlfcn.h>
+extern void *reef_host;   // the loader's services (Reef's libSystem)
+
+void *dlsym(void *handle, const char *name) {
+    char *services = *(char **)&reef_host;
+    void *(*imageSymbol)(void *, const char *) = *(void *(**)(void *, const char *))(services + 0x218);
+    const void *(*image)(uint32_t) = *(const void *(**)(uint32_t))(services + 0x210);
+    void *h = handle;
+    if ((intptr_t)h >= -3 && (intptr_t)h < 0)
+        h = NULL;   // RTLD_NEXT, RTLD_DEFAULT, RTLD_SELF: every image
+    else if ((intptr_t)h == -5) {   // RTLD_MAIN_ONLY
+        const void *const *main = image(0);
+        h = main ? (void *)*main : NULL;
+    }
+    void *p = imageSymbol(h, name);
+    Dl_info info;
+    if (p && (!dladdr(p, &info) || !info.dli_fbase))
+        p = NULL;
+    return p;
+}
+
+// The default malloc zone lives in a page of its own, as libmalloc's does: programs that patch the zone's
+// functions (GarageBand's memory tracker) make that page read-only again afterwards, which in Reef's libSystem
+// would also freeze the data around the zone. The zone handed out is a copy in its own page.
+#include <sys/mman.h>
+void *malloc_default_zone(void) {
+    static void *zone;
+    if (!zone) {
+        Dl_info info;
+        void *(*original)(void) = NULL;
+        if (dladdr((const void *)malloc, &info))
+            original = (void *(*)(void))dlsym(info.dli_fbase, "malloc_default_zone");
+        void *real = original ? original() : NULL;
+        if (!real)
+            return NULL;
+        void *page = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+        if (page == MAP_FAILED)
+            return real;
+        // malloc_zone_t: the version 13 structure is 0xa8 bytes; the rest of the page is copied as far as it goes
+        size_t size = 4096 - ((uintptr_t)real & 4095);
+        memcpy(page, real, size < 512 ? size : 512);
+        zone = page;
+    }
+    return zone;
+}
