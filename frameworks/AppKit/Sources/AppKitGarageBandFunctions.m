@@ -65,7 +65,7 @@ static void ReefPressLater(NSString *title, double seconds, int tries) {
         if ([done containsObject:key]) return;
         [done addObject:key];
         for (NSWindow *w in NSApp.windows) {
-            NSButton *b = w.visible ? ReefFindButton(w.contentView, title) : nil;
+            NSButton *b = w.visible ? ReefFindButton(w.contentView.superview ?: w.contentView, title) : nil;
             if (b) {
                 fprintf(stderr, "press: '%s' in '%s'\n", title.UTF8String, w.title.UTF8String);
                 [b performClick:nil];
@@ -87,7 +87,10 @@ __attribute__((constructor)) static void ReefPressButtons(void) {
             done = YES;
             for (NSWindow *w in NSApp.windows) {
                 fprintf(stderr, "window '%s' %s visible=%d key=%d\n", w.title.UTF8String, NSStringFromRect(w.frame).UTF8String, w.visible, w.keyWindow);
-                ReefListButtons(w.contentView, 1);
+                ReefListButtons(w.contentView.superview ?: w.contentView, 1);
+                for (NSToolbarItem *item in w.toolbar.items)
+                    fprintf(stderr, "  toolbar item '%s' label '%s' action=%s view=%s\n", item.itemIdentifier.UTF8String, item.label.UTF8String,
+                            sel_getName(item.action), object_getClassName(item.view));
             }
         });
     }
