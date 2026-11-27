@@ -38,3 +38,9 @@
 
 // Spotlight attribute key (MDItem.h); the value is the name.
 const CFStringRef kMDItemTextContent = CFSTR("kMDItemTextContent");
+
+// Launch Services and Spotlight pieces of the recent-documents code (QuickTime Player).
+CFStringRef _kLSSharedFileListRecentItemsMaxAmount = CFSTR("com.apple.LSSharedFileList.RecentItemsMaxAmount");
+LSSharedFileListItemRef _kLSSharedFileListItemBeforeFirst = (LSSharedFileListItemRef)1;
+Boolean _CSDeviceSupportsAirDrop(void) { return false; }
+void _MDItemMarkAsUsedWithURL(CFURLRef url) {}
