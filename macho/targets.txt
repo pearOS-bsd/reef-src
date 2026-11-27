@@ -73,3 +73,4 @@ System/Library/Frameworks/CoreHaptics.framework
 System/Library/Frameworks/PhotosUI.framework
 System/Library/Frameworks/MetricKit.framework
 System/Library/Frameworks/SecurityInterface.framework
+usr/libexec/icon-thumbnailer

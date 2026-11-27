@@ -7,7 +7,8 @@ usage: macho.py REEF ORIGINAL_ROOT BUILD_DIR [FOLDER...]
 REEF           bin/reef of the original package (the loader is the same for both runs)
 ORIGINAL_ROOT  its lib/cutefish-reef;  BUILD_DIR  where tools/build-macho.py put the files;  FOLDER  under macho/ (default: macho/targets.txt)
 target.conf may set  testlibs = paths under the root the tests link (default: the file itself and libSystem),  testflags = compiler flags,
-testargs = arguments after the directory the program gets as first argument."""
+testargs = arguments after the directory the program gets as first argument.
+For `type = executable` there are no test sources: testruns = `;`-separated argument lists, the program itself is run once for each (the first, empty one is a run without arguments)."""
 import os, re, shutil, subprocess, sys, tempfile, glob
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'tools'))
 import importlib.util
@@ -48,6 +49,25 @@ a, b = make_root('a'), make_root('b')
 for folder in folders:
     conf = bm.conf(folder)
     sources = sorted(glob.glob(os.path.join(bm.SRC, folder, 'tests', '*.[cm]')) + glob.glob(os.path.join(bm.SRC, folder, 'tests', '*.cpp')))
+    if conf.get('type') == 'executable':
+        # A program: it is run itself, once for every `;`-separated entry of testruns (its arguments), by the original and by ours.
+        ours = os.path.join(built, conf['install'])
+        swap(b, conf['install'], ours)
+        for arguments in conf.get('testruns', '').split(';'):
+            total += 1
+            results = []
+            for loader in (a, b):
+                directory = os.path.join(work, 'run'); shutil.rmtree(directory, ignore_errors=True); os.mkdir(directory)
+                program = os.path.join(os.path.dirname(loader), '..', 'lib', 'cutefish-reef', conf['install'])
+                run = subprocess.run([loader, program] + arguments.split(), capture_output=True, timeout=120, cwd=directory, stdin=subprocess.DEVNULL)
+                results.append((run.returncode, run.stdout, frame.sub(b'', run.stderr)))
+            if results[0] == results[1]:
+                print('%s [%s]: same, exit %d, %d bytes of output' % (folder, arguments, results[0][0], len(results[0][1]) + len(results[0][2])))
+            else:
+                failed += 1
+                print('%s [%s]: differs, exit %d and %d' % (folder, arguments, results[0][0], results[1][0]))
+        swap(b, conf['install'], os.path.join(root, conf['install']))
+        continue
     if not sources:
         print('%s: no tests' % folder); failed += 1; continue
     ours = os.path.join(built, conf['install'])
