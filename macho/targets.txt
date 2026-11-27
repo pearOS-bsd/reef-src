@@ -59,3 +59,4 @@ System/Library/Frameworks/LocalAuthenticationEmbeddedUI.framework
 System/Library/Frameworks/CoreTelephony.framework
 System/Library/Frameworks/CallKit.framework
 System/Library/Frameworks/ExceptionHandling.framework
+System/Library/Frameworks/FinderSync.framework
