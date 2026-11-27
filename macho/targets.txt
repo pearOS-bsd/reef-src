@@ -68,3 +68,4 @@ System/Library/Frameworks/OSLog.framework
 System/Library/Frameworks/Accessibility.framework
 System/Library/Frameworks/ContactsUI.framework
 System/Library/Frameworks/GameplayKit.framework
+System/Library/Frameworks/IOBluetooth.framework
