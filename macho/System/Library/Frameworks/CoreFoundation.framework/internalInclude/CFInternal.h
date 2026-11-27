@@ -20,11 +20,12 @@ extern void _CFAutoreleasePoolPop(uintptr_t pool);
 #include <Foundation/NSDispatch.h>
 #endif
 
+extern int __CFConstantStringClassReference[];
 CF_INLINE int __CFIsObjC(CFTypeID typeID, const void *obj) {
     if ((uintptr_t)obj & 1) return 1;
     uintptr_t isa = (uintptr_t)((CFRuntimeBase *)obj)->_cfisa;
     if (isa == 0 || isa == __CFISAForTypeID(typeID)) return 0;
-    if (typeID == _kCFRuntimeIDCFString && isa == (uintptr_t)__CFConstantStringClassReferencePtr) return 0;
+    if (typeID == _kCFRuntimeIDCFString && isa == (uintptr_t)__CFConstantStringClassReference) return 0;
     return 1;
 }
 
