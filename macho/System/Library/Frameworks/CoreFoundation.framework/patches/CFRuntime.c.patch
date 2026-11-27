@@ -3,7 +3,34 @@
 # Written from the published binary. SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 --- CFRuntime.c
 +++ CFRuntime.c
-@@ -1165,19 +1165,14 @@
+@@ -269,22 +269,10 @@
+ // The constant string class reference is set at link time to _NSCFConstantString
+ void *__CFConstantStringClassReferencePtr = &_CF_CONSTANT_STRING_SWIFT_CLASS;
+ #else
+-#ifndef __CONSTANT_CFSTRINGS__
+-// Compiler uses this symbol name; must match compiler built-in decl, so we use 'int'
+-#if TARGET_RT_64_BIT
+-int __CFConstantStringClassReference[24] = {0};
+-#else
+-int __CFConstantStringClassReference[12] = {0};
+-#endif
+-#endif
+-
+-#if TARGET_RT_64_BIT
+-int __CFConstantStringClassReference[24] = {0};
+-#else
+-int __CFConstantStringClassReference[12] = {0};
+-#endif
+-
+-void *__CFConstantStringClassReferencePtr = NULL;
++// Reef: the compiler's reference to the class of the constant strings is the class __NSCFConstantString itself (NSClasses.m gives the
++// class that second name), and the pointer is its address.
++extern int __CFConstantStringClassReference[];
++void *__CFConstantStringClassReferencePtr = __CFConstantStringClassReference;
+ #endif
+ 
+ Boolean _CFIsObjC(CFTypeID typeID, void *obj) {
+@@ -1165,19 +1153,14 @@
  
  CF_PRIVATE os_unfair_recursive_lock CFPlugInGlobalDataLock;
  

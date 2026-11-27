@@ -74,3 +74,4 @@ System/Library/Frameworks/PhotosUI.framework
 System/Library/Frameworks/MetricKit.framework
 System/Library/Frameworks/SecurityInterface.framework
 usr/libexec/icon-thumbnailer
+System/Library/Frameworks/CoreFoundation.framework

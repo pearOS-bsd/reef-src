@@ -5973,3 +5973,6 @@ NSString *const reefConstant_NSURLKeysOfUnsetValuesKey __asm__("_NSURLKeysOfUnse
 NSString *const reefConstant_kCFURLKeysOfUnsetValuesKey __asm__("_kCFURLKeysOfUnsetValuesKey") = @"NSURLKeysOfUnsetValuesKey";
 NSString *const reefConstant_NSURLVolumeTypeNameKey __asm__("_NSURLVolumeTypeNameKey") = @"NSURLVolumeTypeNameKey";
 NSString *const reefConstant_kCFURLVolumeTypeNameKey __asm__("_kCFURLVolumeTypeNameKey") = @"NSURLVolumeTypeNameKey";
+
+// The compiler's name for the class of the constant strings is the class itself (the object of a constant string has it as its isa).
+__asm__(".globl ___CFConstantStringClassReference\n\t.set ___CFConstantStringClassReference, _OBJC_CLASS_$___NSCFConstantString");
