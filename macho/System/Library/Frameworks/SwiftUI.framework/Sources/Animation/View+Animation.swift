@@ -19,7 +19,7 @@ import os
 
 extension SwiftUI.View {
     public func animation<A1>(_ a0: SwiftUI.Animation?, value a1: A1) -> some SwiftUI.View where A1: Swift.Equatable { self }
-    public func contentTransition(_ a0: SwiftUI.ContentTransition) -> some SwiftUI.View { self }
+    public func contentTransition(_ a0: SwiftUI.ContentTransition) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.contentTransition, value: a0)) }
     public func keyframeAnimator<A1, B1, C1, D1>(initialValue a0: A1, trigger a1: B1, content a2: @escaping @Sendable (SwiftUI.PlaceholderContentView<Self>, A1) -> C1, keyframes a3: @escaping (A1) -> D1) -> some SwiftUI.View where A1 == D1.Value, B1: Swift.Equatable, C1: SwiftUI.View, D1: SwiftUI.Keyframes { self }
     public func keyframeAnimator<A1, B1, C1>(initialValue a0: A1, repeating a1: Swift.Bool, content a2: @escaping @Sendable (SwiftUI.PlaceholderContentView<Self>, A1) -> B1, keyframes a3: @escaping (A1) -> C1) -> some SwiftUI.View where A1 == C1.Value, B1: SwiftUI.View, C1: SwiftUI.Keyframes { self }
     public func transition(_ a0: SwiftUI.AnyTransition) -> some SwiftUI.View { self }

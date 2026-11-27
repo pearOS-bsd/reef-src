@@ -68,7 +68,7 @@ extension SwiftUI.View {
     public func navigationDestination<A1>(isPresented a0: SwiftUI.Binding<Swift.Bool>, destination a1: () -> A1) -> some SwiftUI.View where A1: SwiftUI.View { self }
     public func contextMenu<A1>(menuItems a0: () -> A1) -> some SwiftUI.View where A1: SwiftUI.View { self }
     public func contextMenu<A1, B1>(forSelectionType a0: A1.Type, menu a1: @escaping (Swift.Set<A1>) -> B1, primaryAction a2: ((Swift.Set<A1>) -> ())?) -> some SwiftUI.View where A1: Swift.Hashable, B1: SwiftUI.View { self }
-    public func menuOrder(_ a0: SwiftUI.MenuOrder) -> some SwiftUI.View { self }
+    public func menuOrder(_ a0: SwiftUI.MenuOrder) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.menuOrder, value: a0)) }
     public func onCommand(_ a0: ObjectiveC.Selector, perform a1: (() -> ())?) -> some SwiftUI.View { self }
     public func onExitCommand(perform a0: (() -> ())?) -> some SwiftUI.View { self }
     public func onMoveCommand(perform a0: ((SwiftUI.MoveCommandDirection) -> ())?) -> some SwiftUI.View { self }

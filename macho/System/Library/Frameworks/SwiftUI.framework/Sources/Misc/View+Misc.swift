@@ -33,7 +33,7 @@ extension SwiftUI.View {
     public func _trait<A1>(_ a0: A1.Type, _ a1: A1.Value) -> some SwiftUI.View where A1: SwiftUI._ViewTraitKey { self }
     public func _untagged() -> some SwiftUI.View { self }
     public func zIndex(_ a0: Swift.Double) -> some SwiftUI.View { self }
-    public func minimumScaleFactor(_ a0: CoreGraphics.CGFloat) -> some SwiftUI.View { self }
+    public func minimumScaleFactor(_ a0: CoreGraphics.CGFloat) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.minimumScaleFactor, value: a0)) }
     public func underline(_ a0: Swift.Bool, pattern a1: SwiftUI.Text.LineStyle.Pattern, color a2: SwiftUI.Color?) -> some SwiftUI.View { self }
     public func border<A1>(_ a0: A1, width a1: CoreGraphics.CGFloat) -> some SwiftUI.View where A1: SwiftUI.ShapeStyle { self }
     public func cornerRadius(_ a0: CoreGraphics.CGFloat, antialiased a1: Swift.Bool) -> some SwiftUI.View { self }
@@ -45,7 +45,7 @@ extension SwiftUI.View {
     public func onChange<A1>(of a0: A1, initial a1: Swift.Bool, _ a2: @escaping (A1, A1) -> ()) -> some SwiftUI.View where A1: Swift.Equatable { self }
     public func italic(_ a0: Swift.Bool) -> some SwiftUI.View { self }
     public func strikethrough(_ a0: Swift.Bool, pattern a1: SwiftUI.Text.LineStyle.Pattern, color a2: SwiftUI.Color?) -> some SwiftUI.View { self }
-    public func allowsTightening(_ a0: Swift.Bool) -> some SwiftUI.View { self }
+    public func allowsTightening(_ a0: Swift.Bool) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.allowsTightening, value: a0)) }
     public func monospacedDigit() -> some SwiftUI.View { self }
     public func monospaced(_ a0: Swift.Bool) -> some SwiftUI.View { self }
     public func task(name a0: Swift.String, executorPreference a1: (any Swift.TaskExecutor)?, priority a2: Swift.TaskPriority, _ a3: __owned @escaping @isolated(any) () async -> ()) -> some SwiftUI.View { self }

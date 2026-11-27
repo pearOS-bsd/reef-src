@@ -74,6 +74,7 @@ func selftestBuild() {
     selftestTextLayout(host)
     selftestLocalized()
     selftestForEach(host)
+    selftestTextEnvironment(host)
 }
 
 /// a leaf as wide as 10, or 20 when enabled
@@ -217,4 +218,23 @@ func selftestForEach(_ host: SwiftUI.ViewHost) {
     let size = root.sizeThatFits(SwiftUI.ProposedViewSize(width: nil, height: nil))
     root.place(in: CGRect(origin: .zero, size: size))
     print("foreach", size, root.children.map { $0.frame.width }, root.children.map { $0.explicitID.map { "\($0.base)" } ?? "-" })
+}
+
+struct SelfTestTextEnvironment: SwiftUI.View {
+    var body: some SwiftUI.View {
+        SwiftUI.Text(verbatim: "A longer line of text that has to wrap")
+            .lineLimit(1).truncationMode(.middle).multilineTextAlignment(.trailing).lineSpacing(4).font(.headline)
+    }
+}
+
+func selftestTextEnvironment(_ host: SwiftUI.ViewHost) {
+    let context = SwiftUI.BuildContext(host: host, scope: host.root, path: [], environment: SwiftUI.EnvironmentValues(),
+        canvas: nil, modifierContents: [:], styleLabels: [:], stackAxis: nil, container: .none, scrollAxes: [])
+    var element = SwiftUI.ViewBuild.build(SelfTestTextEnvironment(), context)[0]
+    while !(element is SwiftUI.TextElement), let child = element.children.first { element = child }
+    guard let text = element as? SwiftUI.TextElement else { print("text environment: no text"); return }
+    let paragraph = text.string.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
+    print("text environment", text.lineLimit as Any, text.lineSpacing, paragraph?.lineBreakMode.rawValue as Any,
+          paragraph?.alignment.rawValue as Any, text.style.traits.weight?.value as Any,
+          text.measure(SwiftUI.ProposedViewSize(width: 100, height: nil)))
 }

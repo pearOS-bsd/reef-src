@@ -19,7 +19,7 @@ import os
 
 extension SwiftUI.View {
     public func symbolRenderingMode(_ a0: SwiftUI.SymbolRenderingMode?) -> some SwiftUI.View { self }
-    public func imageScale(_ a0: SwiftUI.Image.Scale) -> some SwiftUI.View { self }
+    public func imageScale(_ a0: SwiftUI.Image.Scale) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.imageScale, value: a0)) }
     public func symbolVariant(_ a0: SwiftUI.SymbolVariants) -> some SwiftUI.View { self }
     public func symbolEffectsRemoved(_ a0: Swift.Bool) -> some SwiftUI.View { self }
 }

@@ -27,7 +27,7 @@ extension SwiftUI.View {
     public func preferredColorScheme(_ a0: SwiftUI.ColorScheme?) -> some SwiftUI.View { self }
     public func preference<A1>(key a0: A1.Type, value a1: A1.Value) -> some SwiftUI.View where A1: SwiftUI.PreferenceKey { self }
     public func onPreferenceChange<A1>(_ a0: A1.Type, perform a1: @escaping (A1.Value) -> ()) -> some SwiftUI.View where A1: SwiftUI.PreferenceKey, A1.Value: Swift.Equatable { self }
-    public func controlSize(_ a0: SwiftUI.ControlSize) -> some SwiftUI.View { self }
+    public func controlSize(_ a0: SwiftUI.ControlSize) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.controlSize, value: a0)) }
     public func environment<A1>(_ a0: A1?) -> some SwiftUI.View where A1: AnyObject, A1: Observation.Observable { self }
     public func transformPreference<A1>(_ a0: A1.Type, _ a1: @escaping (inout A1.Value) -> ()) -> some SwiftUI.View where A1: SwiftUI.PreferenceKey { self }
     public func overlayPreferenceValue<A1, B1>(_ a0: A1.Type, alignment a1: SwiftUI.Alignment, _ a2: @escaping (A1.Value) -> B1) -> some SwiftUI.View where A1: SwiftUI.PreferenceKey, B1: SwiftUI.View { self }

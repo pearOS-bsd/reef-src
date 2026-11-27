@@ -51,7 +51,7 @@ extension SwiftUI.View {
     public func glassEffect<A1>(_ a0: SwiftUI.Glass, `in` a1: A1) -> some SwiftUI.View where A1: SwiftUI.Shape { self }
     public func foregroundStyle<A1>(_ a0: A1) -> some SwiftUI.View where A1: SwiftUI.ShapeStyle { self }
     public func visualEffect<A1>(_ a0: @escaping @Sendable (SwiftUI.EmptyVisualEffect, SwiftUI.GeometryProxy) -> A1) -> some SwiftUI.View where A1: SwiftUI.VisualEffect { self }
-    public func accentColor(_ a0: SwiftUI.Color?) -> some SwiftUI.View { self }
+    public func accentColor(_ a0: SwiftUI.Color?) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.accentColor, value: a0)) }
     public func colorEffect(_ a0: SwiftUI.Shader, isEnabled a1: Swift.Bool) -> some SwiftUI.View { self }
     public func distortionEffect(_ a0: SwiftUI.Shader, maxSampleOffset a1: CGSize, isEnabled a2: Swift.Bool) -> some SwiftUI.View { self }
     public func layerEffect(_ a0: SwiftUI.Shader, maxSampleOffset a1: CGSize, isEnabled a2: Swift.Bool) -> some SwiftUI.View { self }

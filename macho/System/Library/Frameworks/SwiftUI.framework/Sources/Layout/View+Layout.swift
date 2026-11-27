@@ -36,8 +36,8 @@ extension SwiftUI.View {
         modifier(SwiftUI._FrameLayout(width: a0, height: a1, alignment: a2))
     }
     public func alignmentGuide(_ a0: SwiftUI.VerticalAlignment, computeValue a1: @escaping (SwiftUI.ViewDimensions) -> CoreGraphics.CGFloat) -> some SwiftUI.View { self }
-    public func multilineTextAlignment(_ a0: SwiftUI.TextAlignment) -> some SwiftUI.View { self }
-    public func lineSpacing(_ a0: CoreGraphics.CGFloat) -> some SwiftUI.View { self }
+    public func multilineTextAlignment(_ a0: SwiftUI.TextAlignment) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.multilineTextAlignment, value: a0)) }
+    public func lineSpacing(_ a0: CoreGraphics.CGFloat) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.lineSpacing, value: a0)) }
     public func baselineOffset(_ a0: CoreGraphics.CGFloat) -> some SwiftUI.View { self }
     public func ignoresSafeArea(_ a0: SwiftUI.SafeAreaRegions, edges a1: SwiftUI.Edge.Set) -> some SwiftUI.View { self }
     public func edgesIgnoringSafeArea(_ a0: SwiftUI.Edge.Set) -> some SwiftUI.View { self }
