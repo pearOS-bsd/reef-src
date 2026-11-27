@@ -4,6 +4,7 @@
 // Reconstructed from the published binary.
 // Small functions of Reef's CoreFoundation: the uncaught exception handler slot, forced preferences (none), weak reference flag.
 #include "CFInternal.h"
+#include "ReefForwarding.h"
 #include <objc/runtime.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +14,7 @@ typedef void NSUncaughtExceptionHandler(void *exception);
 extern NSString *const NSGenericException, *const NSInvalidArgumentException, *const NSRangeException, *const NSInternalInconsistencyException;
 extern const char *object_getClassName(id object);
 extern const char *sel_getName(SEL selector);
+extern void objc_setForwardHandler(void *forward, void *forwardStret);
 extern void objc_setEnumerationMutationHandler(void (*handler)(id));
 extern void objc_setExceptionPreprocessor(id (*preprocessor)(id));
 extern void objc_setUncaughtExceptionHandler(void (*handler)(id));
@@ -123,6 +125,7 @@ CF_PRIVATE void __reefRaiseIndex(id object, SEL selector, unsigned long index, u
 
 // The forward handler of the runtime (NSInvocation based forwarding of unknown messages) is installed here once its entries are written.
 static void __CFForwardingInitialize(void) {
+    objc_setForwardHandler((void *)reefForwardingEntry, (void *)reefForwardingEntryStret);
 }
 
 // Connects the type identifiers of the Core Foundation types to the Objective-C classes of their objects (the class an object of the type

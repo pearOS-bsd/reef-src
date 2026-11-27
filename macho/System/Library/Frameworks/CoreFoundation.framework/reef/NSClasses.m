@@ -125,6 +125,10 @@ extern void objc_release(id);
 #include <stdarg.h>
 #include <dlfcn.h>
 #include <string.h>
+#include <stdlib.h>
+#include "ReefForwarding.h"
+extern void *_Block_copy(const void *);
+extern void _Block_release(const void *);
 #include <pthread.h>
 extern void *pthread_get_stackaddr_np(pthread_t);
 extern void objc_exception_throw(id) __attribute__((noreturn));
@@ -1819,8 +1823,12 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 
 - (id)keyEnumerator
 {
-    // unresolved
-    return nil;
+    // The original hands the enumerator the static ___NSArray0__struct, whose isa nothing ever sets (the first message to it would crash);
+    // an enumerator over an empty array is what it is meant to be.
+    CFArrayRef keys = CFArrayCreate(kCFAllocatorSystemDefault, NULL, 0, &kCFTypeArrayCallBacks);
+    id enumerator = objc_autorelease([[__NSCFSnapshotEnumerator alloc] initWithSnapshot:(id)keys]);
+    CFRelease(keys);
+    return enumerator;
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
@@ -2982,6 +2990,9 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 
 @end
 
+// The end of a stream error as the CFStreamError the Core Foundation stream functions return (domain 1 is POSIX).
+typedef struct { long domain; int error; } ReefStreamError;
+
 @interface NSStream : NSObject
 + (void)getStreamsToHostWithName:(id)a0 port:(long)a1 inputStream:(id *)a2 outputStream:(id *)a3;
 + (void)getStreamsToHost:(id)a0 port:(long)a1 inputStream:(id *)a2 outputStream:(id *)a3;
@@ -2996,7 +3007,7 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 - (void)removeFromRunLoop:(id)a0 forMode:(id)a1;
 - (unsigned long)streamStatus;
 - (id)streamError;
-- (void *)_cfStreamError;
+- (ReefStreamError)_cfStreamError;
 @end
 
 @implementation NSStream
@@ -3078,10 +3089,15 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
     return nil;
 }
 
-- (void *)_cfStreamError
+- (ReefStreamError)_cfStreamError
 {
-    // unresolved
-    return (void *){0};
+    id error = [self streamError];
+    ReefStreamError result = {0, 0};
+    if (error) {
+        result.domain = 1;
+        result.error = (int)[error code];
+    }
+    return result;
 }
 
 @end
@@ -3620,6 +3636,60 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 
 @end
 
+// The beginning, end and end of the contents of the line or paragraph around a range of a string, from its characters (any NSString subclass).
+static unsigned short reefCharacterAt(id string, long length, long index) {
+    return index < 0 || index >= length ? 0 : CFStringGetCharacterAtIndex((CFStringRef)string, index);
+}
+
+static int reefIsLineSeparator(unsigned short ch, BOOL lineEndings) {
+    if (ch > 0x0d && ch < 0x85) return 0;
+    return ch == 0x0a || ch == 0x0d || ch == 0x2029 || (lineEndings && (ch == 0x85 || ch == 0x2028));
+}
+
+static void reefLineBounds(id string, long location, long length, long *start, long *end, unsigned long *contentsEnd, BOOL lineEndings) {
+    long count = (long)[string length];
+    if (start) {
+        long first;
+        if (location == 0) first = 0;
+        else {
+            long index = location;
+            unsigned short ch = reefCharacterAt(string, count, index);
+            index--;
+            if (ch == 0x0a && reefCharacterAt(string, count, index) == 0x0d) index--;
+            for (;;) {
+                if (index < 0) { first = 0; break; }
+                if (reefIsLineSeparator(reefCharacterAt(string, count, index), lineEndings)) { first = index + 1; break; }
+                index--;
+            }
+        }
+        *start = first;
+    }
+    if (end || contentsEnd) {
+        long endOfContents, separatorLength = 1;
+        long index = location + length - (length ? 1 : 0);
+        unsigned short ch = reefCharacterAt(string, count, index);
+        if (ch == 0x0a) {
+            endOfContents = index;
+            index--;
+            if (reefCharacterAt(string, count, index) == 0x0d) { separatorLength = 2; endOfContents--; }
+        } else {
+            for (;;) {
+                if (reefIsLineSeparator(ch, lineEndings)) {
+                    endOfContents = index;
+                    index++;
+                    if (ch == 0x0d && reefCharacterAt(string, count, index) == 0x0a) separatorLength = 2;
+                    break;
+                }
+                if (index >= count) { endOfContents = count; separatorLength = 0; break; }
+                index++;
+                ch = reefCharacterAt(string, count, index);
+            }
+        }
+        if (contentsEnd) *contentsEnd = endOfContents;
+        if (end) *end = endOfContents + separatorLength;
+    }
+}
+
 @interface NSString : NSObject
 - (unsigned long)length;
 - (unsigned short)characterAtIndex:(unsigned long)a0;
@@ -3753,14 +3823,12 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 
 - (void)getLineStart:(unsigned long *)a0 end:(unsigned long *)a1 contentsEnd:(unsigned long *)a2 forRange:(NSRange)a3
 {
-    // unresolved
-
+    reefLineBounds(self, a3.location, a3.length, (long *)a0, (long *)a1, (unsigned long *)a2, YES);
 }
 
 - (void)getParagraphStart:(unsigned long *)a0 end:(unsigned long *)a1 contentsEnd:(unsigned long *)a2 forRange:(NSRange)a3
 {
-    // unresolved
-
+    reefLineBounds(self, a3.location, a3.length, (long *)a0, (long *)a1, (unsigned long *)a2, NO);
 }
 
 @end
@@ -4850,14 +4918,35 @@ static ReefNumberValue reefNumberValue(id number) {
 
 - (long)_cfNumberType
 {
-    // unresolved
-    return 0;
+    const char *type = [self objCType];
+    if (type) {
+        switch (*type) {
+        case 'B': case 'C': case 'c': return 7;
+        case 'S': case 's': return 8;
+        case 'I': case 'i': return 9;
+        case 'L': case 'l': return 10;
+        case 'f': return 12;
+        case 'd': return 13;
+        }
+    }
+    return 11;
 }
 
 - (BOOL)_getValue:(void *)a0 forType:(long)a1
 {
-    // unresolved
-    return NO;
+    if (a1 < 1 || a1 > 6) return NO;
+    ReefNumberValue v = reefNumberValue(self);
+    long long integer = v.kind == 2 ? (long long)v.value.d : v.value.s;
+    double real = v.kind == 1 ? (double)v.value.u : v.kind == 2 ? v.value.d : (double)v.value.s;
+    switch (a1) {
+    case 1: *(char *)a0 = integer; break;
+    case 2: *(short *)a0 = integer; break;
+    case 3: *(int *)a0 = integer; break;
+    case 4: *(long long *)a0 = integer; break;
+    case 5: *(float *)a0 = (float)real; break;
+    case 6: *(double *)a0 = real; break;
+    }
+    return YES;
 }
 
 - (long)compare:(id)a0
@@ -5838,74 +5927,82 @@ static ReefNumberValue reefNumberValue(id number) {
 @implementation NSMethodSignature
 + (id)signatureWithObjCTypes:(char *)a0
 {
-    // unresolved
+    struct ReefSignature *signature = reefSignatureCreate(a0);
+    if (signature) {
+        NSMethodSignature *object = [[self alloc] init];
+        object->_signature = signature;
+        return [object autorelease];
+    }
+    [NSException raise:NSInvalidArgumentException format:CFSTR("+[NSMethodSignature signatureWithObjCTypes:]: unsupported type encoding spec '%s'"), a0 ? a0 : "(null)"];
     return nil;
 }
 
 - (void)dealloc
 {
-    // unresolved
-
+    reefSignatureDestroy(_signature);
+    [super dealloc];
 }
 
 - (struct ReefSignature *)_reefSignature
 {
-    // unresolved
-    return 0;
+    return _signature;
 }
 
 - (unsigned long)numberOfArguments
 {
-    // unresolved
-    return 0;
+    return _signature->argumentCount;
 }
 
 - (char *)getArgumentTypeAtIndex:(unsigned long)a0
 {
-    // unresolved
-    return 0;
+    if (a0 >= _signature->argumentCount) {
+        [NSException raise:NSInvalidArgumentException format:CFSTR("-[NSMethodSignature getArgumentTypeAtIndex:]: index (%lu) out of bounds [0, %u]"), a0, _signature->argumentCount ? _signature->argumentCount - 1 : 0];
+    }
+    return _signature->arguments[a0].type;
 }
 
 - (unsigned long)frameLength
 {
-    // unresolved
-    return 0;
+    return _signature->frameLength + 0x110;
 }
 
 - (BOOL)isOneway
 {
-    // unresolved
-    return NO;
+    return (_signature->result.qualifiers >> 6) & 1;
 }
 
 - (char *)methodReturnType
 {
-    // unresolved
-    return 0;
+    return _signature->result.type;
 }
 
 - (unsigned long)methodReturnLength
 {
-    // unresolved
-    return 0;
+    return _signature->result.size;
 }
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == self) return YES;
+    if (![a0 isKindOfClass:[NSMethodSignature class]]) return NO;
+    struct ReefSignature *other = ((NSMethodSignature *)a0)->_signature;
+    if (other->argumentCount != _signature->argumentCount) return NO;
+    if (strcmp(other->result.type, _signature->result.type) != 0) return NO;
+    for (unsigned i = 0; i < other->argumentCount; i++) {
+        if (strcmp(other->arguments[i].type, _signature->arguments[i].type) != 0) return NO;
+    }
+    return YES;
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return ((unsigned long)_signature->result.size << 8) ^ _signature->argumentCount;
 }
 
 - (id)description
 {
-    // unresolved
-    return nil;
+    CFStringRef string = CFStringCreateWithFormat(0, 0, CFSTR("<NSMethodSignature: %p> %s"), self, _signature->types);
+    return string ? [(id)string autorelease] : nil;
 }
 
 @end
@@ -5941,83 +6038,160 @@ static ReefNumberValue reefNumberValue(id number) {
 - (id)description;
 @end
 
+extern void objc_msgSend_stret(void);
+extern id objc_msgSend(id, SEL, ...);
+
 @implementation NSInvocation
 + (id)invocationWithMethodSignature:(id)a0
 {
-    // unresolved
-    return nil;
+    if (a0 == nil) {
+        [NSException raise:NSInvalidArgumentException format:CFSTR("+[NSInvocation invocationWithMethodSignature:]: method signature argument cannot be nil")];
+    }
+    return [[[self alloc] _initWithMethodSignature:a0 frame:NULL] autorelease];
 }
 
 - (id)_initWithMethodSignature:(id)a0 frame:(struct ReefFrame *)a1
 {
-    // unresolved
-    return nil;
+    self = [super init];
+    if (self == nil) return nil;
+    _signature = [a0 retain];
+    struct ReefSignature *layout = [a0 _reefSignature];
+    posix_memalign((void **)&_frame, 16, sizeof(struct ReefFrame));
+    memset(_frame, 0, sizeof(struct ReefFrame));
+    _frame->stack = calloc(1, layout->frameLength + 0x10);
+    _indirect = calloc(layout->argumentCount + 1, 8);
+    if (layout->result.size != 0) {
+        posix_memalign(&_result, 16, layout->result.size + 0x10);
+        memset(_result, 0, layout->result.size + 0x10);
+    }
+    if (a1 == NULL) {
+        _frame->vectorCount = 8;
+    } else {
+        memcpy(_frame->integers, a1->integers, sizeof a1->integers);
+        _frame->vectorCount = a1->vectorCount;
+        memcpy(_frame->vectors, a1->vectors, sizeof a1->vectors);
+        memcpy(_frame->stack, a1->stack, layout->frameLength);
+    }
+    if (layout->resultKind == 1) _frame->integers[0] = (unsigned long)_result;
+    for (unsigned i = 0; i < layout->argumentCount; i++) {
+        struct ReefValue *argument = &layout->arguments[i];
+        if (argument->indirect == 1) {
+            _indirect[i] = calloc(1, argument->size);
+            if (a1 != NULL) reefFrameGetValue(a1, argument, _indirect[i]);
+            if (argument->pieces[0].where == 0) _frame->integers[argument->pieces[0].index] = (unsigned long)_indirect[i];
+            else *(void **)(_frame->stack + argument->pieces[0].index) = _indirect[i];
+        }
+    }
+    return self;
 }
 
 - (void)dealloc
 {
-    // unresolved
-
+    struct ReefSignature *layout = [_signature _reefSignature];
+    if (_retained) {
+        for (unsigned i = 0; i < layout->argumentCount; i++) {
+            const char *type = layout->arguments[i].type;
+            void *value = NULL;
+            if (type[0] == '@' || type[0] == '*') {
+                reefFrameGetValue(_frame, &layout->arguments[i], &value);
+                if (type[0] == '*') free(value);
+                else if (type[1] == '?') _Block_release(value);
+                else objc_release(value);
+            }
+        }
+    }
+    for (unsigned i = 0; i < layout->argumentCount; i++) free(_indirect[i]);
+    free(_indirect);
+    free(_frame->stack);
+    free(_frame);
+    free(_result);
+    [_signature release];
+    [super dealloc];
 }
 
 - (id)methodSignature
 {
-    // unresolved
-    return nil;
+    return _signature;
 }
 
 - (void)_checkIndex:(long)a0
 {
-    // unresolved
-
+    struct ReefSignature *layout = [_signature _reefSignature];
+    if (a0 < 0 || layout->argumentCount <= a0) {
+        [NSException raise:NSInvalidArgumentException format:CFSTR("-[NSInvocation getArgument:atIndex:]: index (%ld) out of bounds [-1, %u]"), a0, layout->argumentCount - 1];
+    }
 }
 
 - (void)getArgument:(void *)a0 atIndex:(long)a1
 {
-    // unresolved
-
+    if (a1 == -1) {
+        [self getReturnValue:a0];
+        return;
+    }
+    [self _checkIndex:a1];
+    reefFrameGetValue(_frame, &[_signature _reefSignature]->arguments[a1], a0);
 }
 
 - (void)setArgument:(void *)a0 atIndex:(long)a1
 {
-    // unresolved
-
+    if (a1 == -1) {
+        [self setReturnValue:a0];
+        return;
+    }
+    [self _checkIndex:a1];
+    struct ReefValue *argument = &[_signature _reefSignature]->arguments[a1];
+    if (!_retained || (argument->type[0] != '@' && argument->type[0] != '*')) {
+        reefFrameSetValue(_frame, argument, a0);
+        return;
+    }
+    void *old = NULL;
+    reefFrameGetValue(_frame, argument, &old);
+    char *new = *(char **)a0;
+    if (argument->type[0] == '*') {
+        new = new ? strdup(new) : NULL;
+        free(old);
+    } else if (argument->type[1] == '?') {
+        new = _Block_copy(new);
+        _Block_release(old);
+    } else {
+        objc_retain(new);
+        objc_release(old);
+    }
+    reefFrameSetValue(_frame, argument, &new);
 }
 
 - (id)target
 {
-    // unresolved
-    return nil;
+    id target = nil;
+    [self getArgument:&target atIndex:0];
+    return target;
 }
 
 - (void)setTarget:(id)a0
 {
-    // unresolved
-
+    [self setArgument:&a0 atIndex:0];
 }
 
 - (SEL)selector
 {
-    // unresolved
-    return 0;
+    SEL selector = 0;
+    [self getArgument:&selector atIndex:1];
+    return selector;
 }
 
 - (void)setSelector:(SEL)a0
 {
-    // unresolved
-
+    [self setArgument:&a0 atIndex:1];
 }
 
 - (void)getReturnValue:(void *)a0
 {
-    // unresolved
-
+    reefFrameGetResult(_frame, [_signature _reefSignature], a0);
 }
 
 - (void)setReturnValue:(void *)a0
 {
-    // unresolved
-
+    reefFrameSetResult(_frame, [_signature _reefSignature], a0);
 }
 
 - (BOOL)argumentsRetained
@@ -6027,20 +6201,31 @@ static ReefNumberValue reefNumberValue(id number) {
 
 - (void)retainArguments
 {
-    // unresolved
-
+    if (_retained) return;
+    struct ReefSignature *layout = [_signature _reefSignature];
+    for (unsigned i = 0; i < layout->argumentCount; i++) {
+        struct ReefValue *argument = &layout->arguments[i];
+        if (argument->type[0] == '@' || argument->type[0] == '*') {
+            char *value = NULL;
+            reefFrameGetValue(_frame, argument, &value);
+            if (argument->type[0] == '*') value = value ? strdup(value) : NULL;
+            else if (argument->type[1] == '?') value = _Block_copy(value);
+            else objc_retain(value);
+            reefFrameSetValue(_frame, argument, &value);
+        }
+    }
+    _retained = YES;
 }
 
 - (void)invoke
 {
-    // unresolved
-
+    [self _invokeUsingIMP:NULL];
 }
 
 - (void)invokeWithTarget:(id)a0
 {
-    // unresolved
-
+    [self setTarget:a0];
+    [self invoke];
 }
 
 - (void)invokeUsingIMP:(void * *)a0
@@ -6050,20 +6235,41 @@ static ReefNumberValue reefNumberValue(id number) {
 
 - (void)_invokeUsingIMP:(void * *)a0
 {
-    // unresolved
-
+    struct ReefSignature *layout = [_signature _reefSignature];
+    if (layout->argumentCount < (a0 == NULL) + 1) {
+        [NSException raise:NSInvalidArgumentException format:CFSTR("-[NSInvocation invoke]: the method signature has no target and selector")];
+    }
+    if ([self target] == nil) {
+        if (layout->result.size == 0) return;
+        void *zero = calloc(1, layout->result.size);
+        [self setReturnValue:zero];
+        free(zero);
+        return;
+    }
+    void *function = layout->resultKind == 1 ? (void *)objc_msgSend_stret : (void *)objc_msgSend;
+    if (a0 != NULL) function = a0;
+    reefFrameCall(_frame, layout->frameLength, function, layout->resultKind);
 }
 
 - (void)_storeResultInFrame:(struct ReefFrame *)a0
 {
-    // unresolved
-
+    struct ReefSignature *layout = [_signature _reefSignature];
+    if (layout->resultKind == 2) {
+        memcpy(a0->resultX87, _frame->resultX87, 10);
+        a0->x87 = 2;
+    } else if (layout->resultKind == 1) {
+        a0->resultIntegers[0] = a0->integers[0];
+        memcpy((void *)a0->integers[0], _result, layout->result.size);
+    } else {
+        memcpy(a0->resultIntegers, _frame->resultIntegers, sizeof a0->resultIntegers);
+        memcpy(a0->resultVectors, _frame->resultVectors, sizeof a0->resultVectors);
+    }
 }
 
 - (id)description
 {
-    // unresolved
-    return nil;
+    CFStringRef string = CFStringCreateWithFormat(0, 0, CFSTR("<NSInvocation: %p>"), self);
+    return string ? [(id)string autorelease] : nil;
 }
 
 @end
