@@ -3371,8 +3371,7 @@ extern NSString *const NSRangeException;
 
 - (void)getCharacters:(unsigned short *)a0 range:(NSRange)a1
 {
-    // unresolved
-
+    for (unsigned long idx = 0; idx < a1.length; idx++) a0[idx] = [self characterAtIndex:a1.location + idx];
 }
 
 - (id)description
@@ -3382,8 +3381,11 @@ extern NSString *const NSRangeException;
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    CFAllocatorRef allocator = kCFAllocatorSystemDefault;
+    CFMutableStringRef mutableCopy = CFStringCreateMutableCopy(allocator, 0, (CFStringRef)self);
+    CFStringRef copy = CFStringCreateCopy(allocator, mutableCopy);
+    CFRelease(mutableCopy);
+    return (id)copy;
 }
 
 - (id)mutableCopyWithZone:(struct _NSZone *)a0
@@ -3393,14 +3395,21 @@ extern NSString *const NSRangeException;
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == self) return 1;
+    if (a0 == nil) return 0;
+    if (![a0 isKindOfClass:[NSString class]]) return 0;
+    return CFStringCompare((CFStringRef)self, (CFStringRef)a0, 0) == 0;
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    CFAllocatorRef allocator = kCFAllocatorSystemDefault;
+    CFMutableStringRef mutableCopy = CFStringCreateMutableCopy(allocator, 0, (CFStringRef)self);
+    CFStringRef copy = CFStringCreateCopy(allocator, mutableCopy);
+    CFRelease(mutableCopy);
+    unsigned long hash = CFHash(copy);
+    CFRelease(copy);
+    return hash;
 }
 
 - (unsigned long)_cfTypeID
@@ -3425,26 +3434,36 @@ extern NSString *const NSRangeException;
 
 - (unsigned int)_smallestEncodingInCFStringEncoding
 {
-    // unresolved
-    return 0;
+    unsigned long length = [self length];
+    for (unsigned long idx = 0; idx < length; idx++) {
+        if ([self characterAtIndex:idx] >= 0x80) return 0x100;
+    }
+    return 0x600;
 }
 
 - (BOOL)_encodingCantBeStoredInEightBitCFString
 {
-    // unresolved
-    return NO;
+    return [self _smallestEncodingInCFStringEncoding] != 0x600;
 }
 
 - (BOOL)_getCString:(char *)a0 maxLength:(unsigned long)a1 encoding:(unsigned int)a2
 {
-    // unresolved
-    return NO;
+    CFAllocatorRef allocator = kCFAllocatorSystemDefault;
+    CFMutableStringRef mutableCopy = CFStringCreateMutableCopy(allocator, 0, (CFStringRef)self);
+    CFStringRef copy = CFStringCreateCopy(allocator, mutableCopy);
+    CFRelease(mutableCopy);
+    Boolean result = CFStringGetCString(copy, a0, a1 + 1, a2);
+    CFRelease(copy);
+    return result;
 }
 
 - (struct __CFString *)_createSubstringWithRange:(NSRange)a0
 {
-    // unresolved
-    return 0;
+    unichar *buffer = malloc(a0.length * 2 + 1);
+    [self getCharacters:buffer range:a0];
+    CFStringRef substring = CFStringCreateWithCharacters(kCFAllocatorSystemDefault, buffer, a0.length);
+    free(buffer);
+    return (id)substring;
 }
 
 - (void)getLineStart:(unsigned long *)a0 end:(unsigned long *)a1 contentsEnd:(unsigned long *)a2 forRange:(NSRange)a3
