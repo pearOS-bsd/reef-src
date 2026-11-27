@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // Reconstructed from the published binary.
-// EnvironmentBox (Environment).
+// EnvironmentBox: one value of EnvironmentValues, with whether its key is the app's own.
 
 import Foundation
 import AppKit
@@ -18,10 +18,16 @@ import Metal
 import os
 
 class EnvironmentBox<A> {
-    let value: A = _skeletonValue()
-    let isCustom: Swift.Bool = _skeletonValue()
-    init(_ a0: A, isCustom a1: Swift.Bool) { _skeleton() }
-    final func sameValue(`as` a0: Any) -> Swift.Bool { _skeleton() }
+    let value: A
+    let isCustom: Swift.Bool
+    init(_ a0: A, isCustom a1: Swift.Bool) {
+        value = a0
+        isCustom = a1
+    }
+    final func sameValue(`as` a0: Any) -> Swift.Bool {
+        guard let other = a0 as? SwiftUI.EnvironmentBox<A> else { return false }
+        return SwiftUI.GraphCompare.equal(value, other.value)
+    }
     deinit {}
 }
 
