@@ -40,3 +40,4 @@ System/Library/Frameworks/Tcl.framework
 usr/lib/libbz2.1.0
 usr/lib/libffi
 usr/lib/libiconv.2
+usr/lib/libenchant-2.2
