@@ -72,3 +72,4 @@ System/Library/Frameworks/IOBluetooth.framework
 System/Library/Frameworks/CoreHaptics.framework
 System/Library/Frameworks/PhotosUI.framework
 System/Library/Frameworks/MetricKit.framework
+System/Library/Frameworks/SecurityInterface.framework
