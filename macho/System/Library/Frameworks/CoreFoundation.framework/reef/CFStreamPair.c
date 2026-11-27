@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-CFErrorRef _CFErrorCreateWithStreamError(CFAllocatorRef allocator, CFStreamError *streamError) {
+CFErrorRef __CFErrorCreateWithStreamError(CFAllocatorRef allocator, CFStreamError *streamError) {
     CFStringRef domain = kCFErrorDomainPOSIX;
     if (streamError->domain != kCFStreamErrorDomainPOSIX) {
         domain = streamError->domain == kCFStreamErrorDomainMacOSStatus ? kCFErrorDomainOSStatus : CFSTR("kCFErrorDomainCFNetwork");
@@ -18,7 +18,7 @@ CFErrorRef _CFErrorCreateWithStreamError(CFAllocatorRef allocator, CFStreamError
     return CFErrorCreate(allocator, domain, (CFIndex)(int)streamError->error, NULL);
 }
 
-CFStreamError _CFStreamErrorFromCFError(CFErrorRef error) {
+CFStreamError __CFStreamErrorFromCFError(CFErrorRef error) {
     CFStreamError result = { -1, 0 };
     if (error) {
         CFStringRef domain = CFErrorGetDomain(error);

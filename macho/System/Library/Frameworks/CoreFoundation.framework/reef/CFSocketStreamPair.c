@@ -567,7 +567,7 @@ static const CFWriteStreamCallBacks writeCallBacks = {
     writeCopyProperty, writeSetProperty, NULL, writeSchedule, writeUnschedule,
 };
 
-void _CFSocketStreamCreatePair(CFAllocatorRef alloc, CFStringRef host, UInt32 port, CFSocketNativeHandle sock, const CFSocketSignature *sig, CFReadStreamRef *readStream, CFWriteStreamRef *writeStream) {
+void __CFSocketStreamCreatePair(CFAllocatorRef alloc, CFStringRef host, UInt32 port, CFSocketNativeHandle sock, const CFSocketSignature *sig, CFReadStreamRef *readStream, CFWriteStreamRef *writeStream) {
     Pair *p = (Pair *)calloc(1, sizeof(Pair));
     pthread_mutex_init(&p->lock, NULL);
     p->references = 1;
