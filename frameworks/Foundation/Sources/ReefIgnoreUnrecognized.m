@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 #import <objc/runtime.h>
 #import <stdlib.h>
+#import <string.h>
 
 // Zero in every result register
 __asm__(".text\n.p2align 4\n_ReefZeroResult:\n xorl %eax, %eax\n xorl %edx, %edx\n xorps %xmm0, %xmm0\n xorps %xmm1, %xmm1\n retq\n");
@@ -31,9 +32,11 @@ static IMP baseForwardInvocation;
 static id targetFor(id self, SEL sel, BOOL isClass) {
     Class cls = object_getClass(self);
     isClass = class_isMetaClass(cls);
-    // Receivers that forward on their own keep doing so
-    if (!isClass && class_getMethodImplementation(cls, @selector(forwardInvocation:)) != baseForwardInvocation)
-        return nil;
+    // the class that key-value observing made for an observed object stands for its superclass
+    Class own = cls;
+    if (!isClass && !strncmp(class_getName(cls), "NSKVONotifying_", 15)) own = class_getSuperclass(cls);
+    // Receivers that can forward the message (they have its signature) keep doing so
+    (void)own;
     if (!isClass && [self methodSignatureForSelector:sel])
         return nil;
     static NSMutableSet *printed;
