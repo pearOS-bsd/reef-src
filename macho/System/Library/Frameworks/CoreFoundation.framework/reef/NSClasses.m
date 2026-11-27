@@ -5,6 +5,7 @@
 // CoreFoundation.
 
 #import "NSBase.h"
+#include "CFAttributedString.h"
 
 // The info word of a Core Foundation object (the second word): the lowest bits tell mutable from immutable collections and strings.
 #define REEF_INFO(object) (__c11_atomic_load((_Atomic(unsigned long) *)((char *)(object) + 8), __ATOMIC_RELAXED))
@@ -150,10 +151,15 @@ static void writeCallback(CFWriteStreamRef stream, CFStreamEventType event, void
     if ([delegate respondsToSelector:@selector(stream:handleEvent:)]) [delegate stream:(id)stream handleEvent:event];
 }
 extern long _CFNumberGetType2(CFNumberRef);
-extern void *CFAttributedStringCreateCopy(CFAllocatorRef, void *);
-extern void *CFAttributedStringCreateMutableCopy(CFAllocatorRef, CFIndex, void *);
 extern const char *object_getClassName(id);
 extern NSString *const NSRangeException;
+extern Class objc_lookUpClass(const char *);
+extern const char *sel_getName(SEL);
+static void reefOutOfBounds(id object, SEL selector) __attribute__((noreturn));
+static void reefOutOfBounds(id object, SEL selector) {
+    [NSException raise:NSRangeException format:CFSTR("%s %s: Out of bounds"), object_getClassName(object), sel_getName(selector)];
+    __builtin_trap();
+}
 
 
 @interface __NSCFType : NSObject
@@ -3885,14 +3891,14 @@ extern NSString *const NSRangeException;
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == self) return 1;
+    if (![a0 isKindOfClass:objc_lookUpClass("NSAttributedString")]) return 0;
+    return [self isEqualToAttributedString:a0] != 0;
 }
 
 - (Class)classForCoder
 {
-    // unresolved
-    return nil;
+    return objc_lookUpClass(REEF_INFO(self) & 1 ? "NSAttributedString" : "NSMutableAttributedString");
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
@@ -3917,68 +3923,98 @@ extern NSString *const NSRangeException;
 
 - (id)attributesAtIndex:(unsigned long)a0 effectiveRange:(NSRange *)a1
 {
-    // unresolved
-    return nil;
+    if (CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) <= a0) reefOutOfBounds(self, _cmd);
+    CFRange range;
+    CFDictionaryRef attributes = CFAttributedStringGetAttributes((CFAttributedStringRef)(void *)self, a0, &range);
+    if (a1) *(CFRange *)a1 = range;
+    return (id)attributes;
 }
 
 - (id)attribute:(id)a0 atIndex:(unsigned long)a1 effectiveRange:(NSRange *)a2
 {
-    // unresolved
-    return nil;
+    if (CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) <= a1) reefOutOfBounds(self, _cmd);
+    CFRange range;
+    CFTypeRef value = CFAttributedStringGetAttribute((CFAttributedStringRef)(void *)self, a1, (CFStringRef)a0, &range);
+    if (a2) *(CFRange *)a2 = range;
+    return (id)value;
 }
 
 - (id)attributesAtIndex:(unsigned long)a0 longestEffectiveRange:(NSRange *)a1 inRange:(NSRange)a2
 {
-    // unresolved
-    return nil;
+    if (CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) <= a0) reefOutOfBounds(self, _cmd);
+    if (CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) < a2.location || CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) - a2.location < a2.length) reefOutOfBounds(self, _cmd);
+    CFRange range;
+    CFDictionaryRef attributes = CFAttributedStringGetAttributesAndLongestEffectiveRange((CFAttributedStringRef)(void *)self, a0, CFRangeMake(a2.location, a2.length), &range);
+    if (a1) *(CFRange *)a1 = range;
+    return (id)attributes;
 }
 
 - (id)attribute:(id)a0 atIndex:(unsigned long)a1 longestEffectiveRange:(NSRange *)a2 inRange:(NSRange)a3
 {
-    // unresolved
-    return nil;
+    if (CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) <= a1) reefOutOfBounds(self, _cmd);
+    if (CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) < a3.location || CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) - a3.location < a3.length) reefOutOfBounds(self, _cmd);
+    CFRange range;
+    CFTypeRef value = CFAttributedStringGetAttributeAndLongestEffectiveRange((CFAttributedStringRef)(void *)self, a1, (CFStringRef)a0, CFRangeMake(a3.location, a3.length), &range);
+    if (a2) *(CFRange *)a2 = range;
+    return (id)value;
 }
 
 - (struct __CFAttributedString *)_createAttributedSubstringWithRange:(NSRange)a0
 {
-    // unresolved
-    return 0;
+    if (CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) < a0.location || CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) - a0.location < a0.length) reefOutOfBounds(self, _cmd);
+    return (id)CFAttributedStringCreateWithSubstring(kCFAllocatorSystemDefault, (CFAttributedStringRef)(void *)self, CFRangeMake(a0.location, a0.length));
 }
 
 - (void)replaceCharactersInRange:(NSRange)a0 withString:(id)a1
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 1) __reefRaiseImmutable(self, _cmd);
+    if (CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) < a0.location || CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) - a0.location < a0.length) reefOutOfBounds(self, _cmd);
+    if (a1 == nil) __reefRaiseNil(self, _cmd, "string");
+    CFAttributedStringReplaceString((CFMutableAttributedStringRef)(void *)self, CFRangeMake(a0.location, a0.length), (CFStringRef)a1);
 }
 
 - (void)replaceCharactersInRange:(NSRange)a0 withAttributedString:(id)a1
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 1) __reefRaiseImmutable(self, _cmd);
+    if (CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) < a0.location || CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) - a0.location < a0.length) reefOutOfBounds(self, _cmd);
+    if (a1 == nil) __reefRaiseNil(self, _cmd, "attributed string");
+    CFAttributedStringReplaceAttributedString((CFMutableAttributedStringRef)(void *)self, CFRangeMake(a0.location, a0.length), (CFAttributedStringRef)(void *)a1);
 }
 
 - (void)setAttributes:(id)a0 range:(NSRange)a1
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 1) __reefRaiseImmutable(self, _cmd);
+    if (CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) < a1.location || CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) - a1.location < a1.length) reefOutOfBounds(self, _cmd);
+    if (a0) {
+        CFAttributedStringSetAttributes((CFMutableAttributedStringRef)(void *)self, CFRangeMake(a1.location, a1.length), (CFDictionaryRef)a0, true);
+    } else {
+        CFDictionaryRef empty = CFDictionaryCreate(kCFAllocatorSystemDefault, NULL, NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+        CFAttributedStringSetAttributes((CFMutableAttributedStringRef)(void *)self, CFRangeMake(a1.location, a1.length), empty, true);
+        if (empty) CFRelease(empty);
+    }
 }
 
 - (void)addAttributes:(id)a0 range:(NSRange)a1
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 1) __reefRaiseImmutable(self, _cmd);
+    if (CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) < a1.location || CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) - a1.location < a1.length) reefOutOfBounds(self, _cmd);
+    if (a0 == nil) __reefRaiseNil(self, _cmd, "attributes");
+    CFAttributedStringSetAttributes((CFMutableAttributedStringRef)(void *)self, CFRangeMake(a1.location, a1.length), (CFDictionaryRef)a0, false);
 }
 
 - (void)addAttribute:(id)a0 value:(id)a1 range:(NSRange)a2
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 1) __reefRaiseImmutable(self, _cmd);
+    if (CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) < a2.location || CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) - a2.location < a2.length) reefOutOfBounds(self, _cmd);
+    if (a1 == nil) __reefRaiseNil(self, _cmd, "value");
+    CFAttributedStringSetAttribute((CFMutableAttributedStringRef)(void *)self, CFRangeMake(a2.location, a2.length), (CFStringRef)a0, (CFTypeRef)a1);
 }
 
 - (void)removeAttribute:(id)a0 range:(NSRange)a1
 {
-    // unresolved
-
+    if (REEF_INFO(self) & 1) __reefRaiseImmutable(self, _cmd);
+    if (CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) < a1.location || CFAttributedStringGetLength((CFAttributedStringRef)(void *)self) - a1.location < a1.length) reefOutOfBounds(self, _cmd);
+    CFAttributedStringRemoveAttribute((CFMutableAttributedStringRef)(void *)self, CFRangeMake(a1.location, a1.length), (CFStringRef)a0);
 }
 
 - (void)beginEditing
@@ -3998,8 +4034,7 @@ extern NSString *const NSRangeException;
 
 - (void)_endHoldingEdits
 {
-    // unresolved
-
+    
 }
 
 @end
