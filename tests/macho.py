@@ -16,7 +16,7 @@ bm = importlib.util.module_from_spec(spec); spec.loader.exec_module(bm)
 
 reef, root, built = sys.argv[1], os.path.abspath(sys.argv[2]), os.path.abspath(sys.argv[3])
 folders = sys.argv[4:] or [l.split('#')[0].strip() for l in open(os.path.join(bm.SRC, 'targets.txt')) if l.split('#')[0].strip()]
-frame = re.compile(rb'  #\d+  0x[0-9a-f]{16} reef .*\n')
+frame = re.compile(rb'  #\d+  0x[0-9a-f]{16} reef .*\n' if not os.environ.get('MACHO_FRAMES') else rb'\A\Z')
 work = tempfile.mkdtemp()
 
 def make_root(name):
@@ -71,6 +71,7 @@ for folder in folders:
             print('%s/%s: same, exit %d, %d lines' % (folder, name, results[0][0], results[0][1].count(b'\n')))
         else:
             failed += 1
+            if os.environ.get('MACHO_FRAMES'): print(results[1][2].decode(errors='replace')[-3000:])
             print('%s/%s: differs, exit %d and %d' % (folder, name, results[0][0], results[1][0]))
             for stream in (1, 2):
                 x, y = (results[i][stream].decode(errors='replace').splitlines() for i in (0, 1))
