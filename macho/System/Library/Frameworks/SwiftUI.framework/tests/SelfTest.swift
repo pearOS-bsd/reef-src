@@ -71,6 +71,7 @@ func selftestBuild() {
     selftestStacks(host)
     selftestFonts()
     selftestTextBuilder()
+    selftestTextLayout(host)
 }
 
 /// a leaf as wide as 10, or 20 when enabled
@@ -149,4 +150,27 @@ func selftestTextBuilder() {
     env.multilineTextAlignment = .center
     let (upper, _) = SwiftUI.TextBuilder.string(SwiftUI.Text(verbatim: "ab") + SwiftUI.Text(verbatim: "c"), env)
     print("text case", upper.string, (upper.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle)?.alignment.rawValue as Any)
+}
+
+struct SelfTestText: SwiftUI.View {
+    var body: some SwiftUI.View {
+        SwiftUI.VStack(alignment: .leading, spacing: nil) {
+            SwiftUI.Text(verbatim: "Hello")
+            SwiftUI.Text(verbatim: "A longer line of text that has to wrap")
+        }
+    }
+}
+
+func selftestTextLayout(_ host: SwiftUI.ViewHost) {
+    let context = SwiftUI.BuildContext(host: host, scope: host.root, path: [], environment: SwiftUI.EnvironmentValues(),
+        canvas: nil, modifierContents: [:], styleLabels: [:], stackAxis: nil, container: .none, scrollAxes: [])
+    let root = SwiftUI.ViewBuild.build(SelfTestText(), context)[0]
+    for width in [nil, 100 as CoreGraphics.CGFloat] {
+        let size = root.sizeThatFits(SwiftUI.ProposedViewSize(width: width, height: nil))
+        root.place(in: CGRect(origin: .zero, size: size))
+        print("text layout", width as Any, size.height, root.children.map { $0.frame.height }, root.children.map { $0.frame.minY })
+    }
+    let text = root.children[0]
+    print("text baseline", text.explicitAlignment(SwiftUI.VerticalAlignment.firstTextBaseline.key, size: text.frame.size) as Any,
+          text.spacingKind)
 }

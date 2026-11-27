@@ -29,7 +29,14 @@ public struct Text {
         storage = .verbatim(a0)
         modifiers = []
     }
-    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
+    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] {
+        let element = SwiftUI.TextElement(text: self, environment: a0.environment)
+        if a0.environment.textSelectable {
+            // (selectable text: a selection kept under path + "textSelection", not written yet)
+            SwiftUI.ViewBuild.reportUnhandled(SwiftUI.TextSelectableKey.self, "selectable text")
+        }
+        return [element]
+    }
     public static func + (_ a0: SwiftUI.Text, _ a1: SwiftUI.Text) -> SwiftUI.Text {
         // two plain unmodified texts join into one string, others into a concatenated storage
         if case .verbatim(let s0) = a0.storage, case .verbatim(let s1) = a1.storage, a0.modifiers.isEmpty, a1.modifiers.isEmpty {

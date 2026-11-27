@@ -28,3 +28,6 @@ nsfont 13.0 true
 text Hello, world 12 Optional(13.0) 13.0 Optional(16.0) Optional(0) Optional(0)
 text paint true
 text case ABC Optional(2)
+text layout nil 32.0 [16.0, 16.0] [0.0, 16.0]
+text layout Optional(100.0) 64.0 [16.0, 48.0] [0.0, 16.0]
+text baseline Optional(12.9130859375) text(13.0)
