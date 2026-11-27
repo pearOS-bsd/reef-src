@@ -107,6 +107,7 @@ enum { MaxFrames = 24, FullFrames = 8 };
     // sound
     void *output;
     BOOL flushOutput;
+    long long written; // sample frames given to the output
     float volume;
     BOOL muted;
     __weak id<ReefEngineOwner> owner;
@@ -300,7 +301,9 @@ static double ClockLocked(ReefPlaybackEngine *e)
         pthread_cond_broadcast(&changed);
     }
     double end = source.duration;
-    if (rate > 0 && ((end > 0 && t >= end - 0.001) || (eof && frameCount == 0 && ringCount == 0 && (!hasShown || t >= shownTime + shownDuration))))
+    // the end: the clock reached the duration, or everything decoded has been shown and heard
+    double lastMedia = MAX(hasShown ? shownTime + shownDuration : 0, ring ? ringTime : 0);
+    if (rate > 0 && ((end > 0 && t >= end - 0.001) || (eof && frameCount == 0 && ringCount == 0 && t >= lastMedia)))
         *ended = YES;
     pthread_mutex_unlock(&lock);
     return pick;
@@ -439,6 +442,7 @@ static void *WriteThread(void *argument)
         e->ringCount -= n;
         e->ringTime += (double)n / e->sampleRate;
         pthread_cond_broadcast(&e->changed);
+        e->written += n;
         pthread_mutex_unlock(&e->lock);
         HostAudio.write(e->output, buffer, n);
         pthread_mutex_lock(&e->lock);
@@ -1203,7 +1207,7 @@ static ReefItemState *SetUpItem(AVPlayerItem *item, AVAsset *asset)
         ended = YES;
     if (ended && !item->reachedEnd) {
         item->reachedEnd = YES;
-        ReefLog(@"item reached its end at %.3f", t);
+        ReefLog(@"item reached its end at %.3f (sound written: %.3f s)", t, engine->sampleRate ? (double)engine->written / engine->sampleRate : 0.0);
         AVPlayerItem *current = state->item;
         if (state->actionAtItemEnd == AVPlayerActionAtItemEndPause || state->actionAtItemEnd == AVPlayerActionAtItemEndNone) {
             [self willChangeValueForKey:@"timeControlStatus"];

@@ -541,7 +541,9 @@ static ReefPlayerViewState *ViewState(AVPlayerView *view)
 // The floating bar: play/pause, elapsed time, scrubber, remaining time.
 @interface ReefPlayerControlsView : NSView
 @property (nonatomic, weak) AVPlayerView *playerView;
+@property (nonatomic, weak) AVPlayer *player;
 - (void)update;
+- (void)togglePlayback:(id)sender;
 @end
 
 @implementation ReefPlayerControlsView {
@@ -593,11 +595,6 @@ static NSTextField *Label(NSRect frame)
 {
     [[NSColor colorWithWhite:0.12 alpha:0.78] setFill];
     [[NSBezierPath bezierPathWithRoundedRect:self.bounds xRadius:12 yRadius:12] fill];
-}
-
-- (AVPlayer *)player
-{
-    return ViewState(self.playerView)->player;
 }
 
 - (void)togglePlayback:(id)sender
@@ -687,8 +684,10 @@ static void SetUpView(AVPlayerView *view)
     s->controls.autoresizingMask = NSViewMinXMargin | NSViewMaxXMargin | NSViewMaxYMargin;
     [view addSubview:s->controls];
     LayOut(view);
-    if (s->player)
+    if (s->player) {
         s->playerLayer.player = s->player;
+        s->controls.player = s->player;
+    }
 }
 
 static IMP originalInitWithFrame, originalInitWithCoder;
@@ -755,6 +754,7 @@ __attribute__((constructor)) static void ReefInstallPlayerView(void)
         [self didChangeValueForKey:@"playerController"];
     }
     s->playerLayer.player = player;
+    s->controls.player = player;
     if (player) {
         [player addObserver:self forKeyPath:@"rate" options:0 context:kViewContext];
         [player addObserver:self forKeyPath:@"currentItem.status" options:0 context:kViewContext];
@@ -944,4 +944,117 @@ __attribute__((constructor)) static void ReefInstallPlayerView(void)
     [super keyDown:event];
 }
 
+@end
+
+#pragma mark - AVAudioView
+
+// AVKit's view for sound only: the playback controls on a dark background, across the view.
+@interface AVAudioView : NSView
+@property (nonatomic, strong) AVPlayer *player;
+@property (nonatomic, strong) id playerController;
+@property (nonatomic) BOOL showsTimecodes, showsSharingServiceButton, showsDurationInsteadOfRemainingTime;
+@end
+
+@implementation AVAudioView {
+    ReefPlayerControlsView *_controls;
+    id _timeObserver;
+}
+
+- (void)reefSetUp
+{
+    if (_controls)
+        return;
+    _controls = [[ReefPlayerControlsView alloc] initWithFrame:NSMakeRect(8, 8, MAX(self.bounds.size.width - 16, 200), 44)];
+    _controls.autoresizingMask = NSViewWidthSizable | NSViewMaxYMargin;
+    [self addSubview:_controls];
+}
+
+- (instancetype)initWithFrame:(NSRect)frame
+{
+    if ((self = [super initWithFrame:frame]))
+        [self reefSetUp];
+    return self;
+}
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+    if ((self = [super initWithCoder:coder]))
+        [self reefSetUp];
+    return self;
+}
+
+- (void)dealloc
+{
+    if (_timeObserver)
+        [_player removeTimeObserver:_timeObserver];
+}
+
+- (void)drawRect:(NSRect)dirty
+{
+    [[NSColor colorWithWhite:0.1 alpha:1] setFill];
+    NSRectFill(dirty);
+}
+
+- (void)setFrameSize:(NSSize)size
+{
+    [super setFrameSize:size];
+    _controls.frame = NSMakeRect(8, MAX((size.height - 44) / 2, 4), MAX(size.width - 16, 120), 44);
+}
+
+- (void)setPlayer:(AVPlayer *)player
+{
+    if (_player == player)
+        return;
+    if (_timeObserver)
+        [_player removeTimeObserver:_timeObserver];
+    _timeObserver = nil;
+    [self willChangeValueForKey:@"player"];
+    _player = player;
+    [self didChangeValueForKey:@"player"];
+    _controls.player = player;
+    if (player) {
+        __weak ReefPlayerControlsView *controls = _controls;
+        _timeObserver = [player addPeriodicTimeObserverForInterval:CMTimeMake(1, 10) queue:dispatch_get_main_queue() usingBlock:^(CMTime t) {
+            [controls update];
+        }];
+    }
+    [_controls update];
+}
+
+- (void)setPlayerController:(id)controller
+{
+    if (_playerController == controller)
+        return;
+    [self willChangeValueForKey:@"playerController"];
+    _playerController = controller;
+    [self didChangeValueForKey:@"playerController"];
+    self.player = [controller player];
+}
+
+- (BOOL)acceptsFirstResponder { return YES; }
+- (BOOL)isOpaque { return YES; }
+- (void)keyDown:(NSEvent *)event
+{
+    if ([event.charactersIgnoringModifiers isEqualToString:@" "])
+        [_controls togglePlayback:self];
+    else
+        [super keyDown:event];
+}
+- (BOOL)showsAlternateMediaTrackPreview { return NO; }
+- (void)setShowsAlternateMediaTrackPreview:(BOOL)b {}
+- (BOOL)canBeginTrimming { return NO; }
+- (BOOL)isTrimming { return NO; }
+- (BOOL)isEditing { return NO; }
+- (BOOL)showsControlsPane { return NO; }
+- (CMTimeRange)slowMotionTimeRange { return kCMTimeRangeInvalid; }
+- (id)trimControlsViewController { return nil; }
+- (id)playbackSpeedCollection { return nil; }
+- (NSMenu *)actionPopUpButtonMenu { return nil; }
+- (void)setActionPopUpButtonMenu:(NSMenu *)menu {}
+- (void)beginTrimmingWithMaximumDuration:(CMTime)max completionHandler:(void (^)(NSInteger))handler { if (handler) handler(1); }
+- (void)showEditControlsViewController:(id)vc withCompletionHandler:(void (^)(void))handler { if (handler) handler(); }
+- (void)showEditControlsViewController:(id)vc shouldPausePlayback:(BOOL)pause withCompletionHandler:(void (^)(void))handler { if (handler) handler(); }
+- (void)hideEditControlsViewControllerWithCompletionHandler:(void (^)(void))handler { if (handler) handler(); }
+- (void)volumeControlViewDidChangeMutedState:(id)sender {}
+- (void)volumeControlViewDidChangeVolume:(id)sender {}
 @end
