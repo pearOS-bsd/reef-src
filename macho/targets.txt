@@ -56,3 +56,4 @@ usr/lib/libresolv.9
 usr/lib/libcompression
 System/Library/PrivateFrameworks/SkyLight.framework
 System/Library/Frameworks/LocalAuthenticationEmbeddedUI.framework
+System/Library/Frameworks/CoreTelephony.framework
