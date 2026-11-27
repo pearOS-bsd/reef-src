@@ -89,11 +89,11 @@ Stage 3 (links, two behaviour tests pass: `tests/cf.c` strings, tokenizer, notif
   bundle discovery from the loaded images), CFBundle_Resources (case-folded query table lookup), CFBundle_Locale (fallback languages without ICU), CFLocale/CFCalendar (autoupdating, host locale), CFRunLoop
   (`_CFRunLoopWatchDescriptor`), CFUtilities (version dictionary), CFStringEncodingDatabase (known encodings), CFError (typographic apostrophe).
 - `reef/NSClasses.m`: the 61 Objective-C classes (`__NSCF*`, `NS*` that CF itself defines) with their ivars and methods, from the metadata (`tools/macho-gen-objc.py` draft) and written from the binary: the thin methods
-  (one call of a CF function) are generated from the disassembly, the others by hand; the methods still marked `// unresolved` are stubs (NSInvocation/NSMethodSignature and the forwarding entries, streams, NSRunLoop,
-  NSCache, NSURL, NSString/NSMutableString/NSNumber base methods, attributed string). `reef/CFReefMisc.c`: `__CFBridgeInitialize` (1024 type slots = `__NSCFType`, then the classes by type id), exception handlers.
+  (one call of a CF function) are generated from the disassembly, the others by hand; the methods still marked `// unresolved` are stubs: NSMethodSignature and NSInvocation with the forwarding handler
+  (`__CFForwardingInitialize` is empty), a few NSNumber, NSDictionary and NSString methods. `reef/CFReefMisc.c`: `__CFBridgeInitialize` (1024 type slots = `__NSCFType`, then the classes by type id), exception handlers.
 - Per-file flags of the files in `reef/` are required (`cflags.reef/NAME.c`, one key per file): without them the constant strings take the Swift class.
 - Still to do: the stubs above, the locale name tables and `__reef*` functions (`___reefLocaleNamesData`, 214 KB, ICU resource lookup), the encoding tables (`_MacJapaneseEntries` ... 700 KB) with `__reefTableConverter`, the `_os_log_fmt`
-  statics of `os_log`, the forwarding handler (`__CFForwardingInitialize` is empty), libdispatch.
+  statics of `os_log`, NSInvocation and the forwarding handler, libdispatch.
 
 ## libdispatch: what was found
 `usr/lib/system/libdispatch.dylib` (636 functions) is built as `__APPLE__` (the Apple branch of `internal.h`: `os/availability.h`, `mach/*`, `mach_msg`, `mach_port_*`) with the epoll backend of
