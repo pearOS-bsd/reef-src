@@ -20,7 +20,21 @@ import os
 public struct Text {
     public var storage: SwiftUI.Text.Storage
     public var modifiers: [SwiftUI.Text.Modifier]
-    public init(_ a0: SwiftUI.LocalizedStringKey, tableName a1: Swift.String?, bundle a2: Bundle?, comment a3: Swift.StaticString?) { _skeleton() }
+    public init(_ a0: SwiftUI.LocalizedStringKey, tableName a1: Swift.String?, bundle a2: Bundle?, comment a3: Swift.StaticString?) {
+        // keys with text arguments resolve to concatenated texts; others to their translation with the inflection
+        // markup applied, parsed as inline markdown when it has markup characters
+        if a0.arguments.contains(where: { $0.text != nil }) {
+            self = a0.resolvedText(tableName: a1, bundle: a2)
+            return
+        }
+        let string = SwiftUI.Inflection.applyingExtendedAttributes(a0.resolved(tableName: a1, bundle: a2))
+        if let storage = Text.markdownStorage(string) {
+            self.init(verbatim: "")
+            self.storage = storage
+        } else {
+            self.init(verbatim: string)
+        }
+    }
     public init<A>(_ a0: A) where A: Swift.StringProtocol {
         storage = .verbatim(Swift.String(a0))
         modifiers = []
@@ -79,7 +93,15 @@ public struct Text {
     public func fontWidth(_ a0: SwiftUI.Font.Width?) -> SwiftUI.Text { _skeleton() }
     public func baselineOffset(_ a0: CoreGraphics.CGFloat) -> SwiftUI.Text { _skeleton() }
     public func bold(_ a0: Swift.Bool) -> SwiftUI.Text { _skeleton() }
-    static func markdownStorage(_ a0: Swift.String) -> SwiftUI.Text.Storage? { _skeleton() }
+    static func markdownStorage(_ a0: Swift.String) -> SwiftUI.Text.Storage? {
+        // only strings with markdown characters, parsed inline (whitespace kept); nil when parsing fails or changes nothing
+        guard a0.contains(where: { "*_`~\\".contains($0) }) else { return nil }
+        let options = AttributedString.MarkdownParsingOptions(allowsExtendedAttributes: false,
+            interpretedSyntax: .inlineOnlyPreservingWhitespace, failurePolicy: .throwError, languageCode: nil)
+        guard let attributed = try? AttributedString(markdown: a0, options: options, baseURL: nil) else { return nil }
+        if Swift.String(attributed.characters) == a0 { return nil }
+        return .anyTextStorage(SwiftUI.AttributedTextStorage(attributed))
+    }
     public func accessibilityHeading(_ a0: SwiftUI.AccessibilityHeadingLevel) -> SwiftUI.Text { _skeleton() }
     public func speechAlwaysIncludesPunctuation(_ a0: Swift.Bool) -> SwiftUI.Text { _skeleton() }
     public struct LineStyle {

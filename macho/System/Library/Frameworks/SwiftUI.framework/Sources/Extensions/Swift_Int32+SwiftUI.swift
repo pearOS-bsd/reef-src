@@ -18,8 +18,8 @@ import Metal
 import os
 
 extension Swift.Int32 {
-    public var _arg: Swift.Int32 { _skeleton() }
-    public var _specifier: Swift.String { _skeleton() }
+    public var _arg: Swift.Int32 { self }
+    public var _specifier: Swift.String { "%d" }
 }
 
 extension Swift.Int32: SwiftUI._FormatSpecifiable {

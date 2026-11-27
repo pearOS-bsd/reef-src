@@ -6,8 +6,8 @@
 
 
 extension Swift.Int8 {
-    public var _arg: Swift.Int8 { _skeleton() }
-    public var _specifier: Swift.String { _skeleton() }
+    public var _arg: Swift.Int8 { self }
+    public var _specifier: Swift.String { "%d" }
 }
 
 extension Swift.Int8: SwiftUI._FormatSpecifiable {

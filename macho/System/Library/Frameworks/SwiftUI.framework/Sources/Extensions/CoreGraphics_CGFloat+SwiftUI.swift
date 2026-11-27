@@ -22,8 +22,8 @@ extension CoreGraphics.CGFloat {
         get { _skeleton() }
         set { _skeleton() }
     }
-    public var _arg: CoreGraphics.CGFloat { _skeleton() }
-    public var _specifier: Swift.String { _skeleton() }
+    public var _arg: CoreGraphics.CGFloat { self }
+    public var _specifier: Swift.String { "%lf" }
     public func scale(by a0: Swift.Double) { _skeleton() }
     public var magnitudeSquared: Swift.Double { _skeleton() }
 }

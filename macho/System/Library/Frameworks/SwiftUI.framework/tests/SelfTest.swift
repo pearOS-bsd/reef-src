@@ -72,6 +72,7 @@ func selftestBuild() {
     selftestFonts()
     selftestTextBuilder()
     selftestTextLayout(host)
+    selftestLocalized()
 }
 
 /// a leaf as wide as 10, or 20 when enabled
@@ -173,4 +174,19 @@ func selftestTextLayout(_ host: SwiftUI.ViewHost) {
     let text = root.children[0]
     print("text baseline", text.explicitAlignment(SwiftUI.VerticalAlignment.firstTextBaseline.key, size: text.frame.size) as Any,
           text.spacingKind)
+}
+
+func selftestLocalized() {
+    func plain(_ text: SwiftUI.Text) -> Swift.String {
+        SwiftUI.TextBuilder.string(text, SwiftUI.EnvironmentValues()).0.string
+    }
+    let count = 3
+    let name = "Ana"
+    let key: SwiftUI.LocalizedStringKey = "Hello \(name), \(count) items at 100%"
+    print("localized", key.key, key.hasFormatting, key.arguments.count)
+    func text(_ k: SwiftUI.LocalizedStringKey) -> SwiftUI.Text { SwiftUI.Text(k, tableName: nil, bundle: nil, comment: nil) }
+    print("localized text", plain(text("Plain key")), plain(text(key)), plain(text("\(2.5) x")))
+    if case .anyTextStorage(let storage) = text("Some **bold** word").storage {
+        print("markdown", type(of: storage), storage.plainString)
+    }
 }

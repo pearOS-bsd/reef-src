@@ -6,8 +6,8 @@
 
 
 extension Swift.UInt8 {
-    public var _arg: Swift.UInt8 { _skeleton() }
-    public var _specifier: Swift.String { _skeleton() }
+    public var _arg: Swift.UInt8 { self }
+    public var _specifier: Swift.String { "%u" }
 }
 
 extension Swift.UInt8: SwiftUI._FormatSpecifiable {

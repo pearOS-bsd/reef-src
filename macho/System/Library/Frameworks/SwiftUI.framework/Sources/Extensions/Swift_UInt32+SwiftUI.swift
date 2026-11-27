@@ -18,8 +18,8 @@ import Metal
 import os
 
 extension Swift.UInt32 {
-    public var _arg: Swift.UInt32 { _skeleton() }
-    public var _specifier: Swift.String { _skeleton() }
+    public var _arg: Swift.UInt32 { self }
+    public var _specifier: Swift.String { "%u" }
 }
 
 extension Swift.UInt32: SwiftUI._FormatSpecifiable {

@@ -6,8 +6,8 @@
 
 
 extension Swift.Int {
-    public var _arg: Swift.Int { _skeleton() }
-    public var _specifier: Swift.String { _skeleton() }
+    public var _arg: Swift.Int { self }
+    public var _specifier: Swift.String { "%lld" }
 }
 
 extension Swift.Int: SwiftUI._FormatSpecifiable {

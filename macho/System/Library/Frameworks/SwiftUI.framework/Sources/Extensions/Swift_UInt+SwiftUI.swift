@@ -6,8 +6,8 @@
 
 
 extension Swift.UInt {
-    public var _arg: Swift.UInt { _skeleton() }
-    public var _specifier: Swift.String { _skeleton() }
+    public var _arg: Swift.UInt { self }
+    public var _specifier: Swift.String { "%llu" }
 }
 
 extension Swift.UInt: SwiftUI._FormatSpecifiable {

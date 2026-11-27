@@ -6,8 +6,8 @@
 
 
 extension Swift.Int16 {
-    public var _arg: Swift.Int16 { _skeleton() }
-    public var _specifier: Swift.String { _skeleton() }
+    public var _arg: Swift.Int16 { self }
+    public var _specifier: Swift.String { "%d" }
 }
 
 extension Swift.Int16: SwiftUI._FormatSpecifiable {

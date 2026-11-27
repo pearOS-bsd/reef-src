@@ -18,8 +18,8 @@ import Metal
 import os
 
 extension Swift.Int64 {
-    public var _arg: Swift.Int64 { _skeleton() }
-    public var _specifier: Swift.String { _skeleton() }
+    public var _arg: Swift.Int64 { self }
+    public var _specifier: Swift.String { "%lld" }
 }
 
 extension Swift.Int64: SwiftUI._FormatSpecifiable {

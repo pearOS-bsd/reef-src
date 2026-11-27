@@ -22,8 +22,8 @@ extension Swift.Float {
         get { _skeleton() }
         set { _skeleton() }
     }
-    public var _arg: Swift.Float { _skeleton() }
-    public var _specifier: Swift.String { _skeleton() }
+    public var _arg: Swift.Float { self }
+    public var _specifier: Swift.String { "%f" }
     public func scale(by a0: Swift.Double) { _skeleton() }
     public var magnitudeSquared: Swift.Double { _skeleton() }
 }
