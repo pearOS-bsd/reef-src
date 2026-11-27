@@ -148,25 +148,28 @@ int main(void)
     Delegate *delegate = [Delegate new];
     recognizer.delegate = delegate;
     printf("delegate %d\n", recognizer.delegate == delegate);
-    SFSpeechRecognitionTask *t1 = [recognizer recognitionTaskWithRequest:url resultHandler:^(SFSpeechRecognitionResult *r, NSError *e) {
-        printf("handler %d %s %ld\n", r == nil, [e.domain UTF8String], (long)e.code);
-        arrived++;
-    }];
-    printf("task1 %d %ld\n", t1 != nil, t1.state);
-    SFSpeechRecognitionTask *t2 = [recognizer recognitionTaskWithRequest:url resultHandler:nil];
-    printf("task2 %d\n", t2 != nil);
-    SFSpeechRecognitionTask *t3 = [recognizer recognitionTaskWithRequest:url delegate:delegate];
-    printf("task3 %d\n", t3 != nil);
-    SFSpeechRecognitionTask *t4 = [recognizer recognitionTaskWithRequest:url delegate:[Plain new]];
-    printf("task4 %d\n", t4 != nil);
+    [SFSpeechRecognizer requestAuthorization:nil];
     [SFSpeechRecognizer requestAuthorization:^(long status) {
         printf("authorization %ld\n", status);
         arrived++;
     }];
-    [SFSpeechRecognizer requestAuthorization:nil];
-    for (int i = 0; i < 100 && arrived < 3; i++) {
+    for (int i = 0; i < 100 && arrived < 1; i++)
         usleep(20000);
-    }
+    SFSpeechRecognitionTask *t1 = [recognizer recognitionTaskWithRequest:url resultHandler:^(SFSpeechRecognitionResult *r, NSError *e) {
+        printf("handler %d %s %ld\n", r == nil, [e.domain UTF8String], (long)e.code);
+        arrived++;
+    }];
+    for (int i = 0; i < 100 && arrived < 2; i++)
+        usleep(20000);
+    printf("task1 %d %ld\n", t1 != nil, t1.state);
+    SFSpeechRecognitionTask *t2 = [recognizer recognitionTaskWithRequest:url resultHandler:nil];
+    printf("task2 %d\n", t2 != nil);
+    SFSpeechRecognitionTask *t4 = [recognizer recognitionTaskWithRequest:url delegate:[Plain new]];
+    printf("task4 %d\n", t4 != nil);
+    SFSpeechRecognitionTask *t3 = [recognizer recognitionTaskWithRequest:url delegate:delegate];
+    for (int i = 0; i < 100 && arrived < 3; i++)
+        usleep(20000);
+    printf("task3 %d\n", t3 != nil);
     printf("arrived %d\n", arrived);
     return 0;
 }
