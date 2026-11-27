@@ -1,0 +1,84 @@
+// SPDX-FileCopyrightText: 2026 Reion Wong <reionwong@gmail.com>
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// Reconstructed from the published binary.
+// The functions of libcurl, in the order of the table that the host fills in.
+
+#define SYMBOLS(X) \
+    X(0, curl_easy_escape) \
+    X(1, curl_easy_header) \
+    X(2, curl_easy_nextheader) \
+    X(3, curl_easy_option_by_id) \
+    X(4, curl_easy_option_by_name) \
+    X(5, curl_easy_option_next) \
+    X(6, curl_easy_pause) \
+    X(7, curl_easy_perform) \
+    X(8, curl_easy_recv) \
+    X(9, curl_easy_send) \
+    X(10, curl_easy_ssls_export) \
+    X(11, curl_easy_ssls_import) \
+    X(12, curl_easy_strerror) \
+    X(13, curl_easy_unescape) \
+    X(14, curl_easy_upkeep) \
+    X(15, curl_escape) \
+    X(16, curl_formfree) \
+    X(17, curl_formget) \
+    X(18, curl_free) \
+    X(19, curl_getdate) \
+    X(20, curl_getenv) \
+    X(21, curl_global_cleanup) \
+    X(22, curl_global_init) \
+    X(23, curl_global_init_mem) \
+    X(24, curl_global_sslset) \
+    X(25, curl_global_trace) \
+    X(26, curl_mime_addpart) \
+    X(27, curl_mime_data) \
+    X(28, curl_mime_data_cb) \
+    X(29, curl_mime_encoder) \
+    X(30, curl_mime_filedata) \
+    X(31, curl_mime_filename) \
+    X(32, curl_mime_free) \
+    X(33, curl_mime_headers) \
+    X(34, curl_mime_init) \
+    X(35, curl_mime_name) \
+    X(36, curl_mime_subparts) \
+    X(37, curl_mime_type) \
+    X(38, curl_multi_add_handle) \
+    X(39, curl_multi_assign) \
+    X(40, curl_multi_cleanup) \
+    X(41, curl_multi_fdset) \
+    X(42, curl_multi_get_handles) \
+    X(43, curl_multi_info_read) \
+    X(44, curl_multi_init) \
+    X(45, curl_multi_perform) \
+    X(46, curl_multi_poll) \
+    X(47, curl_multi_remove_handle) \
+    X(48, curl_multi_socket) \
+    X(49, curl_multi_socket_action) \
+    X(50, curl_multi_socket_all) \
+    X(51, curl_multi_strerror) \
+    X(52, curl_multi_timeout) \
+    X(53, curl_multi_wait) \
+    X(54, curl_multi_waitfds) \
+    X(55, curl_multi_wakeup) \
+    X(56, curl_pushheader_byname) \
+    X(57, curl_pushheader_bynum) \
+    X(58, curl_share_cleanup) \
+    X(59, curl_share_init) \
+    X(60, curl_share_strerror) \
+    X(61, curl_slist_append) \
+    X(62, curl_slist_free_all) \
+    X(63, curl_strequal) \
+    X(64, curl_strnequal) \
+    X(65, curl_unescape) \
+    X(66, curl_url) \
+    X(67, curl_url_cleanup) \
+    X(68, curl_url_dup) \
+    X(69, curl_url_get) \
+    X(70, curl_url_set) \
+    X(71, curl_url_strerror) \
+    X(72, curl_version) \
+    X(73, curl_version_info) \
+    X(74, curl_ws_meta) \
+    X(75, curl_ws_recv) \
+    X(76, curl_ws_send)
