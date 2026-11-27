@@ -1,0 +1,35 @@
+# Reef's changes to CFCalendar.c of CoreFoundation (swift-corelibs-foundation swift-6.0-RELEASE).
+# The patched file is a derived work: Apache License v2.0 with Runtime Library Exception, see upstream/corefoundation/LICENSE.
+# Written from the published binary. SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+--- CFCalendar.c
++++ CFCalendar.c
+@@ -719,6 +719,29 @@
+     return NULL;
+ }
+ 
++// The shared calendar that follows the current locale (NSCalendar autoupdatingCurrentCalendar); created on first use.
++static CFCalendarRef __CFCalendarAutoupdating = NULL;
++
++CF_EXPORT CFCalendarRef _CFCalendarGetAutoupdatingCurrent(void) {
++    if (__CFCalendarAutoupdating) return __CFCalendarAutoupdating;
++    CFCalendarRef calendar = CFCalendarCopyCurrent();
++    if (!__sync_bool_compare_and_swap(&__CFCalendarAutoupdating, NULL, calendar)) {
++        CFRelease(calendar);
++        return __CFCalendarAutoupdating;
++    }
++    return calendar;
++}
++
++// Called when the current locale changes: the shared calendar takes the new locale and its user settings.
++CF_PRIVATE void __CFCalendarCurrentLocaleChanged(void) {
++    CFCalendarRef calendar = __CFCalendarAutoupdating;
++    if (!calendar) return;
++    CFLocaleRef locale = CFLocaleCopyCurrent();
++    CFCalendarSetLocale(calendar, locale);
++    __CFCalendarApplyUserSettingsFromLocale(calendar, locale);
++    CFRelease(locale);
++}
++
+ CFCalendarRef CFCalendarCreateWithIdentifier(CFAllocatorRef allocator, CFStringRef identifier) {
+     return _CFCalendarCreate(allocator, identifier, NULL, NULL, kCFNotFound, kCFNotFound, NULL);
+ }

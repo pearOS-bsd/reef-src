@@ -21,6 +21,9 @@ Each folder has a target.conf of `key = value` lines:
   cflags    flags for every source, ldflags for the link, libs: dependencies as paths under the root, in load command order
             (`reexport:PATH` links it with -reexport_library)
   minos     deployment target, default 11.0
+patches/NAME.patch in a target folder is a unified diff (`patch -p0`, paths ignored) of the upstream source NAME: the build applies it to a copy of the
+file, which keeps its place for `#include "..."` (the upstream folder is a -iquote path) and in assert paths (the file prefix map is repeated for the copy).
+The patch keeps the licence notice of the upstream file (Apache-2.0 with Runtime Library Exception) in its header: the patched file is a derived work.
 Compiler: -O2 with no stack protector and no NDEBUG is what the original was built with (docs/MACHO.md).
 """
 import os, sys, subprocess, shlex, shutil, tempfile
@@ -59,11 +62,22 @@ def build(root, out, folder):
             o = os.path.join(work, '%d_%s.o' % (len(objects), os.path.basename(s)))
             src = os.path.join(SRC, folder, s)
             if not os.path.exists(src) and 'sourcedir' in c: src = os.path.join(REPO, c['sourcedir'], s)
-            cmd = [LLVM + '/clang', '--target=x86_64-apple-macos' + c['minos'], '-O2', '-nostdinc', '-iquote', os.path.dirname(src), '-w']
+            patch = os.path.join(SRC, folder, 'patches', os.path.basename(s) + '.patch')
+            orig_dir, extra = os.path.dirname(src), []
+            if os.path.exists(patch) and not src.startswith(os.path.join(SRC, folder)):
+                pdir = os.path.join(work, 'patched_%d' % len(objects)); os.makedirs(pdir)
+                copy = os.path.join(pdir, os.path.basename(src)); shutil.copy(src, copy)
+                run(['patch', '-s', '-p0', copy, patch])
+                extra = ['-iquote', orig_dir]      # files next to the original
+                src = copy
+            cmd = [LLVM + '/clang', '--target=x86_64-apple-macos' + c['minos'], '-O2', '-nostdinc', '-iquote', os.path.dirname(src)] + extra + ['-w']
             if s.endswith('.m'): cmd += ['-x', 'objective-c']
             if s.endswith('.cpp'): cmd += ['-x', 'c++']
             # the flags come first: libc++'s headers must be found before the C headers they wrap
             cmd += shlex.split((c['cflags'] + ' ' + c.get('cflags.' + s, '')).replace('$REPO', REPO).replace('$SRC', os.path.join(SRC, folder)))
+            if extra:       # assert paths: the copy is mapped like the original folder
+                for m in [x for x in cmd if x.startswith('-ffile-prefix-map=' + orig_dir + '=')]:
+                    cmd.insert(cmd.index(m), '-ffile-prefix-map=' + os.path.dirname(src) + '=' + m.split('=', 2)[2])
             cmd += ['-isystem', INCLUDE, '-isystem', RESOURCE, '-c', src, '-o', o]
             run(cmd); objects.append(o)
         libs = []
