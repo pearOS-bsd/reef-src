@@ -90,6 +90,10 @@ int main(void) {
     printf("nil key %p, containsKey %d, containsObject %d\n", MSG(void *, dict, "objectForKey:", 0), (int)MSG(char, dict, "containsKey:", x), (int)MSG(char, dict, "containsObject:", z));
     MSG(void, dict, "removeObjectForKey:", x);
     printf("dict count %lu\n", MSG(unsigned long, dict, "count"));
+    void *keys = MSG(void *, dict, "keyEnumerator");
+    int seen = 0;
+    while (MSG(void *, keys, "nextObject")) seen++;
+    printf("enumerated %d keys\n", seen);
     void *dictCopy = MSG(void *, dict, "mutableCopy");
     MSG(void, dict, "removeAllObjects");
     printf("dict copy count %lu, dict count %lu\n", MSG(unsigned long, dictCopy, "count"), MSG(unsigned long, dict, "count"));
@@ -125,6 +129,7 @@ int main(void) {
     printf("getValue %d\n", back);
     CFRelease(n1); CFRelease(n2); CFRelease(n3);
     CFRelease(x); CFRelease(y); CFRelease(z);
+    printf("null %d\n", MSG(void *, objc_getClass("NSNull"), "null") != 0);
     // errors
     CFStringRef domain = CFStringCreateWithCString(a, "TestDomain", 0x08000100);
     void *error = MSG(void *, objc_getClass("NSError"), "errorWithDomain:code:userInfo:", domain, 42L, 0);

@@ -128,6 +128,7 @@ extern void objc_release(id);
 extern void *pthread_get_stackaddr_np(pthread_t);
 extern void objc_exception_throw(id) __attribute__((noreturn));
 extern NSString *const NSInvalidArgumentException;
+extern const void *const kCFLocaleIdentifierKey;
 extern long _CFNumberGetType2(CFNumberRef);
 extern void *CFAttributedStringCreateCopy(CFAllocatorRef, void *);
 extern void *CFAttributedStringCreateMutableCopy(CFAllocatorRef, CFIndex, void *);
@@ -217,8 +218,15 @@ extern NSString *const NSRangeException;
 
 - (unsigned long)countByEnumeratingWithState:(NSFastEnumerationState *)a0 objects:(id *)a1 count:(unsigned long)a2
 {
-    // unresolved
-    return 0;
+    if (a0->state == 0) {
+        a0->state = 1;
+        a0->mutationsPtr = (unsigned long *)&a0->extra[0];
+    }
+    id next = [self nextObject];
+    if (next == nil) return 0;
+    *a1 = next;
+    a0->itemsPtr = a1;
+    return 1;
 }
 
 @end
@@ -236,19 +244,20 @@ extern NSString *const NSRangeException;
 @implementation __NSCFSnapshotEnumerator
 - (id)initWithSnapshot:(struct __CFArray *)a0
 {
-    // unresolved
-    return nil;
+    self = [super init];
+    if (self) _objects = (struct __CFArray *)CFRetain(a0);
+    return self;
 }
 
 - (void)dealloc
 {
-    // unresolved
-
+    CFRelease(_objects);
+    [super dealloc];
 }
 
 - (id)nextObject
 {
-    // unresolved
+    if (_next < CFArrayGetCount(_objects)) return (id)CFArrayGetValueAtIndex(_objects, _next++);
     return nil;
 }
 
@@ -272,14 +281,12 @@ extern NSString *const NSRangeException;
 @implementation NSNull
 + (id)null
 {
-    // unresolved
-    return nil;
+    return (id)kCFNull;
 }
 
 + (id)allocWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)kCFNull;
 }
 
 - (id)retain
@@ -1700,38 +1707,39 @@ extern NSString *const NSRangeException;
 @implementation NSDate
 - (double)timeIntervalSinceReferenceDate
 {
-    // unresolved
+    [self doesNotRecognizeSelector:_cmd];
     return 0;
 }
 
 - (double)timeIntervalSinceDate:(id)a0
 {
-    // unresolved
-    return 0;
+    double mine = [self timeIntervalSinceReferenceDate];
+    return mine - [a0 timeIntervalSinceReferenceDate];
 }
 
 - (long)compare:(id)a0
 {
-    // unresolved
-    return 0;
+    double mine = [self timeIntervalSinceReferenceDate];
+    double other = [a0 timeIntervalSinceReferenceDate];
+    if (mine < other) return -1;
+    return mine > other;
 }
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == self) return 1;
+    if (![a0 isKindOfClass:[NSDate class]]) return 0;
+    return [self timeIntervalSinceReferenceDate] == [a0 timeIntervalSinceReferenceDate];
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return (unsigned long)(long)[self timeIntervalSinceReferenceDate];
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return objc_retain(self);
 }
 
 - (unsigned long)_cfTypeID
@@ -2135,14 +2143,13 @@ extern NSString *const NSRangeException;
 
 - (id)localeIdentifier
 {
-    // unresolved
-    return nil;
+    return [self objectForKey:(id)kCFLocaleIdentifierKey];
 }
 
 - (struct __CFString *)_copyDisplayNameForKey:(id)a0 value:(id)a1
 {
-    // unresolved
-    return 0;
+    id name = [self displayNameForKey:a0 value:a1];
+    return name ? (id)CFRetain(name) : nil;
 }
 
 - (struct __CFDictionary *)_prefs
@@ -2162,8 +2169,7 @@ extern NSString *const NSRangeException;
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return objc_retain(self);
 }
 
 - (unsigned long)_cfTypeID
@@ -2307,8 +2313,8 @@ extern NSString *const NSRangeException;
 
 - (double)daylightSavingTimeOffsetForDate:(id)a0
 {
-    // unresolved
-    return 0;
+    if ([self isDaylightSavingTimeForDate:a0]) return 3600.0;
+    return 0.0;
 }
 
 - (id)nextDaylightSavingTimeTransitionAfterDate:(id)a0
@@ -2323,20 +2329,24 @@ extern NSString *const NSRangeException;
 
 - (double)_daylightSavingTimeOffsetForAbsoluteTime:(double)a0
 {
-    // unresolved
-    return 0;
+    CFDateRef date = CFDateCreate(kCFAllocatorSystemDefault, a0);
+    double offset = [self daylightSavingTimeOffsetForDate:(id)date];
+    CFRelease(date);
+    return offset;
 }
 
 - (double)_nextDaylightSavingTimeTransitionAfterAbsoluteTime:(double)a0
 {
-    // unresolved
-    return 0;
+    CFDateRef date = CFDateCreate(kCFAllocatorSystemDefault, a0);
+    id next = [self nextDaylightSavingTimeTransitionAfterDate:(id)date];
+    CFRelease(date);
+    if (next == nil) return 0.0;
+    return CFDateGetAbsoluteTime((CFDateRef)next);
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return objc_retain(self);
 }
 
 - (unsigned long)_cfTypeID
@@ -3922,14 +3932,12 @@ extern NSString *const NSRangeException;
 
 - (double)timeInterval
 {
-    // unresolved
-    return 0;
+    return 0.0;
 }
 
 - (double)tolerance
 {
-    // unresolved
-    return 0;
+    return 0.0;
 }
 
 - (void)setTolerance:(double)a0
@@ -3939,8 +3947,7 @@ extern NSString *const NSRangeException;
 
 - (double)_cffireTime
 {
-    // unresolved
-    return 0;
+    return [[self fireDate] timeIntervalSinceReferenceDate];
 }
 
 - (id)fireDate
@@ -5067,14 +5074,30 @@ extern NSString *const NSRangeException;
 
 - (id)localizedFailureReason
 {
-    // unresolved
-    return nil;
+    id key = (id)kCFErrorLocalizedFailureReasonKey;
+    id value = [[self userInfo] objectForKey:key];
+    if (value) return value;
+    void *block = CFErrorCopyCallBackBlockForDomain([self domain]);
+    if (block) {
+        id (^callback)(id, id) = block;
+        value = callback(self, key);
+        objc_release(block);
+    }
+    return value;
 }
 
 - (id)localizedRecoverySuggestion
 {
-    // unresolved
-    return nil;
+    id key = (id)kCFErrorLocalizedRecoverySuggestionKey;
+    id value = [[self userInfo] objectForKey:key];
+    if (value) return value;
+    void *block = CFErrorCopyCallBackBlockForDomain([self domain]);
+    if (block) {
+        id (^callback)(id, id) = block;
+        value = callback(self, key);
+        objc_release(block);
+    }
+    return value;
 }
 
 - (BOOL)isEqual:(id)a0
