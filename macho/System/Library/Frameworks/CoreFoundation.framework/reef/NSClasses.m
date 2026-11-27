@@ -1545,8 +1545,7 @@ extern NSString *const NSRangeException;
 
 - (id)objectAtIndex:(unsigned long)a0
 {
-    // unresolved
-    return nil;
+    __reefRaiseIndex(self, _cmd, a0, 0);
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
@@ -1648,14 +1647,13 @@ extern NSString *const NSRangeException;
 
 - (unsigned long)count
 {
-    // unresolved
-    return 0;
+    return _count;
 }
 
 - (id)objectAtIndex:(unsigned long)a0
 {
-    // unresolved
-    return nil;
+    if (_count <= a0) __reefRaiseIndex(self, _cmd, a0, _count);
+    return _objects[a0];
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
@@ -1710,20 +1708,24 @@ extern NSString *const NSRangeException;
 
 - (id)objectForKey:(id)a0
 {
-    // unresolved
+    if (a0 == nil) return nil;
+    for (unsigned long idx = 0; idx < _count; idx++) {
+        if (_keys[idx] == a0 || [_keys[idx] isEqual:a0]) return _objects[idx];
+    }
     return nil;
 }
 
 - (id)keyEnumerator
 {
-    // unresolved
-    return nil;
+    CFArrayRef keys = CFArrayCreate(kCFAllocatorSystemDefault, (const void **)_keys, _count, &kCFTypeArrayCallBacks);
+    id enumerator = objc_autorelease([[__NSCFSnapshotEnumerator alloc] initWithSnapshot:(id)keys]);
+    CFRelease(keys);
+    return enumerator;
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return self;
 }
 
 @end
@@ -5392,8 +5394,7 @@ extern NSString *const NSRangeException;
 
 - (char *)objCType
 {
-    // unresolved
-    return 0;
+    return _encoding;
 }
 
 - (void)getValue:(void *)a0
@@ -5445,14 +5446,12 @@ extern NSString *const NSRangeException;
 
 - (char *)objCType
 {
-    // unresolved
-    return 0;
+    return "f";
 }
 
 - (void)getValue:(void *)a0
 {
-    // unresolved
-
+    *(float *)a0 = _value;
 }
 
 @end
@@ -5498,14 +5497,12 @@ extern NSString *const NSRangeException;
 
 - (char *)objCType
 {
-    // unresolved
-    return 0;
+    return "d";
 }
 
 - (void)getValue:(void *)a0
 {
-    // unresolved
-
+    *(double *)a0 = _value;
 }
 
 @end
