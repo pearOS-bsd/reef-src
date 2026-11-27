@@ -36,3 +36,27 @@ Reef's AVFoundation has the classes but no engine. The AVFoundation wrapper adds
 (looked up at run time, never linked or shipped): assets load their tracks, items decode ahead on their own threads,
 sound goes to the AppKit host's audio output, AVPlayerLayer gets the pictures. The AVKit wrapper's AVPlayerView shows
 them with floating controls. Evidence: AVFoundation/EVIDENCE.md. Debug output: `REEF_AV_LOG=1`.
+
+## GarageBand (10.4.15) and the audio stack
+GarageBand runs on Reef up to playing its own instruments (window, project chooser, a new project with a software
+instrument track, Musical Typing sounding through PulseAudio). What it needed beyond missing symbols:
+- `libSystem` + `libobjc`: categories on Swift class stubs (`__objc_catlist2`) wait for `_objc_realizeClassFromSwift`, as in
+  Apple's libobjc; the default malloc zone has a page of its own (apps patch and re-protect it); `dlsym` answers no symbol
+  for addresses outside every image (stubs of `reef --stub-missing`).
+- `CoreAudio`: device IO. Reef's `AudioDeviceStart` is a stub; the IO procs of started devices run from an output
+  AudioQueue of Reef's AudioToolbox (buffers of >= 1024 frames in IO cycles of the device frame size, host time from the
+  sample time), stream formats and buffer sizes answered. `REEF_LOG_HAL=1` traces the property calls and the IO.
+- `CoreServices`: the Time Manager (`TMTask` has Timer.h's 2-byte packing; GarageBand's sequencer timer re-primes itself),
+  Carbon memory, Spotlight queries without an index. `CoreMIDI`: virtual endpoints; `REEF_LOG_MIDI=1`.
+- `Accelerate`: the vDSP, vForce, vImage, BLAS and LAPACK (`$NEWLAPACK$ILP64`) functions it imports.
+- `AppKit`/`Foundation`: cell numbers through NSCell's own object value, private toolkit methods, KVO old style
+  dependent keys, `NSMutableArray removeObject:` keeping its argument alive, keyed unarchiver versions.
+- `tools/apple-values`: `symvals` (Mac) tells what an exported symbol is and its value; `constants.py` writes the string
+  constants as weak definitions (several agents can define the same constant in one framework).
+
+Bring-up aids (environment, off by default): `REEF_IGNORE_UNRECOGNIZED=1` (unrecognized messages answer zero and are
+printed once; out-of-range attribute ranges are skipped); test aids of the AppKit wrapper: `REEF_PRESS="secs:Title;..."`
+(press a button by title, retried for 60 s), `REEF_PRESS_LIST=secs` (windows, buttons, targets, actions, toolbar items),
+`REEF_SEND="secs:Window title:selector"` (action to the window's controller), `REEF_KEYS="secs:cmd+k;secs:a/400"` (keys,
+held for milliseconds). GarageBand still runs with `reef --stub-missing` (its Swift imports from SwiftUI, Charts, CoreML
+and a few overlays are not written yet).
