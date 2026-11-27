@@ -122,10 +122,12 @@ int compression_stream_destroy(compression_stream *stream);
 static bool reserve(Buffer *buffer, size_t more)
 {
     size_t needed = buffer->length + more;
-    if (buffer->capacity < needed) {
-        size_t capacity = buffer->capacity ? buffer->capacity : 0x1000;
-        while (capacity < needed)
-            capacity *= 2;
+    if (needed > buffer->capacity) {
+        size_t capacity, next = buffer->capacity ? buffer->capacity : 0x1000;
+        do {
+            capacity = next;
+            next = capacity * 2;
+        } while (capacity < needed);
         unsigned char *larger = realloc(buffer->data, capacity);
         if (!larger)
             return false;
@@ -149,22 +151,44 @@ static void appendBuffer(Buffer *buffer, const void *data, size_t size)
 static bool encodeLZ4Block(State *state, const void *data, size_t size)
 {
     int bound = host.lz4Bound((int)size);
-    if (!reserve(&state->output, bound + 0x14))
-        return false;
-    unsigned char *block = state->output.data + state->output.length;
-    int packed = host.lz4CompressDefault(data, block + 12, (int)size, bound);
-    uint32_t raw = (uint32_t)size;
+    size_t length = state->output.length;
+    size_t needed = bound + length + 0x14;
+    unsigned char *base = state->output.data;
+    if (needed > state->output.capacity) {
+        size_t capacity, next = state->output.capacity ? state->output.capacity : 0x1000;
+        do {
+            capacity = next;
+            next = capacity * 2;
+        } while (capacity < needed);
+        base = realloc(state->output.data, capacity);
+        if (!base)
+            return false;
+        state->output.data = base;
+        state->output.capacity = capacity;
+        length = state->output.length;
+    }
+    uint32_t *block = (uint32_t *)(base + length);
+    unsigned packed = host.lz4CompressDefault(data, base + length + 12, (int)size, bound);
+    unsigned char *bytes = (unsigned char *)block;
     size_t written;
-    if (packed < 1 || (size_t)packed >= size) {
-        memcpy(block, "bv4-", 4);
-        memcpy(block + 4, &raw, 4);
-        memcpy(block + 8, data, size);
+    if ((int)packed < 1 || size <= packed) {
+        block[0] = 0x2d347662;                  // "bv4-"
+        bytes[4] = (unsigned char)size;
+        bytes[5] = (unsigned char)(size >> 8);
+        bytes[6] = (unsigned char)(size >> 16);
+        bytes[7] = (unsigned char)(size >> 24);
+        memcpy(block + 2, data, size);
         written = size + 8;
     } else {
-        memcpy(block, "bv41", 4);
-        memcpy(block + 4, &raw, 4);
-        uint32_t count = (uint32_t)packed;
-        memcpy(block + 8, &count, 4);
+        block[0] = 0x31347662;                  // "bv41"
+        bytes[4] = (unsigned char)size;
+        bytes[5] = (unsigned char)(size >> 8);
+        bytes[6] = (unsigned char)(size >> 16);
+        bytes[7] = (unsigned char)(size >> 24);
+        bytes[8] = (unsigned char)packed;
+        bytes[9] = (unsigned char)(packed >> 8);
+        bytes[10] = (unsigned char)(packed >> 16);
+        bytes[11] = (unsigned char)(packed >> 24);
         written = (size_t)packed + 12;
     }
     state->output.length += written;
