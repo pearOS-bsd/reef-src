@@ -4,10 +4,12 @@
 // Carbon Core and Metadata functions GarageBand imports and Reef's CoreServices lacks.
 #include <CoreFoundation/CoreFoundation.h>
 #include <dispatch/dispatch.h>
+#include <pthread.h>
 #include <mach/mach_time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdio.h>
 
 typedef char *Ptr;
 typedef char **Handle;
@@ -55,8 +57,8 @@ signed char HGetState(Handle h) { return 0; }
 void HSetState(Handle h, signed char flags) {}
 
 // The Time Manager: a task's routine runs once its time has passed (milliseconds, or microseconds if negative;
-// 0 is at once). The system field tmReserved counts primings: a task removed or primed again before its time does
-// not run for the earlier priming.
+// 0 is at once). A task removed or primed again before its time does not run for the earlier priming.
+#pragma pack(push, 2)   // as in Timer.h: the routine is at offset 10
 typedef struct TMTask {
     void *qLink;
     short qType;
@@ -65,16 +67,46 @@ typedef struct TMTask {
     long tmWakeUp;
     long tmReserved;
 } TMTask;
+#pragma pack(pop)
 
-void InsTime(TMTask *task) { task->tmReserved = 0; }
-void InsXTime(TMTask *task) { task->tmReserved = 0; }
-void RmvTime(TMTask *task) { __atomic_add_fetch(&task->tmReserved, 1, __ATOMIC_SEQ_CST); }
+// Primings are counted per task here (the task's fields are not aligned for atomic access).
+static pthread_mutex_t timeLock = PTHREAD_MUTEX_INITIALIZER;
+static struct { TMTask *task; unsigned long generation; } primings[256];
+
+static unsigned long bump(TMTask *task) {
+    pthread_mutex_lock(&timeLock);
+    unsigned long g = 0;
+    int free = -1;
+    for (int i = 0; i < 256; i++) {
+        if (primings[i].task == task) { g = ++primings[i].generation; free = -2; break; }
+        if (!primings[i].task && free == -1) free = i;
+    }
+    if (free >= 0) { primings[free].task = task; g = primings[free].generation = 1; }
+    pthread_mutex_unlock(&timeLock);
+    return g;
+}
+
+static unsigned long current(TMTask *task) {
+    unsigned long g = 0;
+    pthread_mutex_lock(&timeLock);
+    for (int i = 0; i < 256; i++) if (primings[i].task == task) { g = primings[i].generation; break; }
+    pthread_mutex_unlock(&timeLock);
+    return g;
+}
+
+void InsTime(TMTask *task) {}
+void InsXTime(TMTask *task) {}
+void RmvTime(TMTask *task) { bump(task); }
+static int logTM = -1;
 void PrimeTime(TMTask *task, long count) {
+    if (logTM < 0) logTM = getenv("REEF_LOG_TM") != NULL;
+    static unsigned long primes;
+    if (logTM && (primes++ % 1000) == 0) fprintf(stderr, "tm: PrimeTime %p %ld (%lu primings)\n", (void *)task, count, primes);
     int64_t delay = count >= 0 ? count * NSEC_PER_MSEC : -count * NSEC_PER_USEC;
-    long generation = __atomic_add_fetch(&task->tmReserved, 1, __ATOMIC_SEQ_CST);
+    unsigned long generation = bump(task);
     task->tmCount = count;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, delay), dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0), ^{
-        if (task->tmAddr && __atomic_load_n(&task->tmReserved, __ATOMIC_SEQ_CST) == generation) {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, delay), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        if (task->tmAddr && current(task) == generation) {
             task->tmCount = 0;
             task->tmAddr(task);
         }

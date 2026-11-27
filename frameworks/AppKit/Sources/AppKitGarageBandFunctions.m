@@ -339,3 +339,51 @@ __attribute__((constructor)) static void guardPlaceholderSetter(void) {
     Method m = class_getInstanceMethod([NSTextField class], @selector(setPlaceholderAttributedString:));
     if (m) originalSetPlaceholderAttributed = method_setImplementation(m, (IMP)textFieldSetPlaceholderAttributed);
 }
+
+// The numeric values of a cell come from its stored object value, as AppKit's do, not through -stringValue: Reef's
+// NSCell asked [self stringValue], which subclasses that format their number in stringValue (GarageBand's toolkit)
+// answer by asking the number again, forever.
+static id cellStoredValue(NSCell *self) {
+    static Ivar ivar;
+    if (!ivar) ivar = class_getInstanceVariable([NSCell class], "_objectValue");
+    return ivar ? object_getIvar(self, ivar) : nil;
+}
+static double cellDoubleValue(NSCell *self, SEL _cmd) {
+    id v = cellStoredValue(self);
+    return [v respondsToSelector:@selector(doubleValue)] ? [v doubleValue] : 0;
+}
+static float cellFloatValue(NSCell *self, SEL _cmd) {
+    id v = cellStoredValue(self);
+    return [v respondsToSelector:@selector(floatValue)] ? [v floatValue] : 0;
+}
+static int cellIntValue(NSCell *self, SEL _cmd) {
+    id v = cellStoredValue(self);
+    return [v respondsToSelector:@selector(intValue)] ? [v intValue] : 0;
+}
+static NSInteger cellIntegerValue(NSCell *self, SEL _cmd) {
+    id v = cellStoredValue(self);
+    return [v respondsToSelector:@selector(integerValue)] ? [v integerValue] : 0;
+}
+__attribute__((constructor)) static void cellNumbersFromObjectValue(void) {
+    if (!class_getInstanceVariable([NSCell class], "_objectValue")) return;
+    method_setImplementation(class_getInstanceMethod([NSCell class], @selector(doubleValue)), (IMP)cellDoubleValue);
+    method_setImplementation(class_getInstanceMethod([NSCell class], @selector(floatValue)), (IMP)cellFloatValue);
+    method_setImplementation(class_getInstanceMethod([NSCell class], @selector(intValue)), (IMP)cellIntValue);
+    method_setImplementation(class_getInstanceMethod([NSCell class], @selector(integerValue)), (IMP)cellIntegerValue);
+}
+
+// Setting a number stores it with NSCell's own setObjectValue:, not through the subclass's override: subclasses that
+// turn every object value into setDoubleValue: (GarageBand's toolkit) would otherwise loop.
+static IMP cellOwnSetObjectValue;
+static void cellSetDouble(NSCell *self, SEL _cmd, double v) { ((void (*)(id, SEL, id))cellOwnSetObjectValue)(self, @selector(setObjectValue:), @(v)); }
+static void cellSetFloat(NSCell *self, SEL _cmd, float v) { ((void (*)(id, SEL, id))cellOwnSetObjectValue)(self, @selector(setObjectValue:), @(v)); }
+static void cellSetInt(NSCell *self, SEL _cmd, int v) { ((void (*)(id, SEL, id))cellOwnSetObjectValue)(self, @selector(setObjectValue:), @(v)); }
+static void cellSetInteger(NSCell *self, SEL _cmd, NSInteger v) { ((void (*)(id, SEL, id))cellOwnSetObjectValue)(self, @selector(setObjectValue:), @(v)); }
+__attribute__((constructor)) static void cellNumbersToObjectValue(void) {
+    cellOwnSetObjectValue = class_getMethodImplementation([NSCell class], @selector(setObjectValue:));
+    if (!cellOwnSetObjectValue) return;
+    method_setImplementation(class_getInstanceMethod([NSCell class], @selector(setDoubleValue:)), (IMP)cellSetDouble);
+    method_setImplementation(class_getInstanceMethod([NSCell class], @selector(setFloatValue:)), (IMP)cellSetFloat);
+    method_setImplementation(class_getInstanceMethod([NSCell class], @selector(setIntValue:)), (IMP)cellSetInt);
+    method_setImplementation(class_getInstanceMethod([NSCell class], @selector(setIntegerValue:)), (IMP)cellSetInteger);
+}
