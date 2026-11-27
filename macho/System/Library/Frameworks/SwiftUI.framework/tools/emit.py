@@ -683,7 +683,9 @@ class Emitter:
                 if x.k == 'Constructor': ent['constructor'] = True
                 if x.k == 'Allocator': ent['allocator'] = True
             elif role in ('PropertyDescriptor', 'MethodDescriptor', 'DispatchThunk', 'EnumCase'):
-                if exported: ent['exp'].add(role)
+                if exported:
+                    ent['exp'].add(role)
+                    if acc and role != 'PropertyDescriptor': ent['exp'].add(acc)   # an exported setter thunk: a public setter
                 if acc: ent['acc'].add(acc)
             elif role == 'DefaultArgumentInitializer':
                 ent['defaults'].add(extra)
@@ -995,6 +997,10 @@ class Emitter:
                     acc = 'public '
                     if r['var'] and not ({'set', 'modify'} & ent['exp']): acc = 'public internal(set) '
             kw = 'var' if r['var'] or pre else 'let'
+            # a stored property of a class without vtable entries (no dispatch thunk / method descriptor) is final
+            if ti.kind == 'class' and ent is not None and ent['exp'] and not (ent['exp'] & {'MethodDescriptor', 'DispatchThunk'}) \
+                    and getattr(ti, 'open_class', False):
+                acc = acc.replace('public ', 'public final ', 1)
             init = ''
             if ti.kind == 'class': init = ' = _skeletonValue()' if not pre else ''
             out.append('%s%s%s %s: %s%s' % (acc, pre, kw, esc(nm), ty, init))
@@ -1033,11 +1039,16 @@ class Emitter:
             if sc: inherit.append(self.tracked(ti.exported, self.ty, self.g.mtype(sc), env))
             if ti.exported and (ti.key in self.subclassed or any(e['exp'] & {'MethodDescriptor', 'DispatchThunk'} for e in ti.members)):
                 acc = 'open '
+                ti.open_class = True
             elif not (ti.ctx.ksf & (1 << 15)) and ti.key not in self.subclassed:
                 attrs += 'final '
         if ti.kind == 'enum' and ti.exported and not any('EnumCase' in e['roles'] for e in ti.members) and ti.ctx.fields and ti.ctx.fields['records']:
             attrs = '@frozen ' + attrs
         reqs = self.tracked(ti.exported, self.own_reqs, ti, env)
+        # property wrappers (State, Binding, Environment ...): a `wrappedValue` instance property
+        if ti.kind in ('struct', 'class') and any(e['kind'] == 'Variable' and not e['static'] and self.name_of(e['node']) == 'wrappedValue'
+                                                  for e in ti.members):
+            attrs = '@propertyWrapper ' + attrs
         kw = {'struct': 'struct', 'enum': 'enum', 'class': 'class'}[ti.kind]
         head = '%s%s%s %s%s' % (attrs, acc, kw, esc(ti.ename), gps)
         if inherit: head += ': ' + ', '.join(inherit)
@@ -1114,7 +1125,8 @@ class Emitter:
         cinfo = dict(env=env, depth=1, kind='protocol', in_protocol=True, self_key=ti.key)
         seen = set()
         for ent in self.reqs.get(ti.key, []):
-            sg = self.member_sig(ent)
+            # (overloads differ by type only: explicitAlignment(of: HorizontalAlignment ...) / (of: VerticalAlignment ...))
+            sg = (ent['static'], ent['kind'], ent['node'].key())
             if sg in seen: continue
             seen.add(sg)
             for x in self.member_decl(ent, cinfo): L.append(ind + '    ' + x)

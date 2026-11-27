@@ -25,8 +25,8 @@ typecheck)
   $SSH "cd $R && find Sources -name '*.swift' | sort > files.txt && swiftc $COMMON -typecheck -j4 -continue-building-after-errors @files.txt > errors.txt 2>&1; echo exit \$?" ;;
 onone|release)
   OPT=-O; [ $MODE = onone ] && OPT=-Onone
-  $SSH "cd $R && find Sources -name '*.swift' | sort > files.txt && rm -rf lib && mkdir -p lib && swiftc $COMMON $OPT -wmo -emit-library \
- -emit-module -emit-module-interface -emit-module-path lib/SwiftUI.swiftmodule -o lib/SwiftUI \
+  $SSH "cd $R && find Sources -name '*.swift' | sort > files.txt && rm -rf lib && mkdir -p lib && swiftc $COMMON $OPT -wmo -autolink-force-load -module-link-name SwiftUI -emit-library \
+ -emit-module -emit-module-interface -no-verify-emitted-module-interface -emit-module-path lib/SwiftUI.swiftmodule -o lib/SwiftUI \
  -Xlinker -install_name -Xlinker $INSTALL -Xlinker -current_version -Xlinker 1.0.0 -Xlinker -compatibility_version -Xlinker 1.0.0 \
  -Xlinker -alias_list -Xlinker Sources/Support/aliases.txt \
  @files.txt > errors.txt 2>&1; echo exit \$?; ls -la lib/SwiftUI 2>/dev/null && nm -gU lib/SwiftUI | awk '{print \$3}' > lib/exports.txt" ;;
