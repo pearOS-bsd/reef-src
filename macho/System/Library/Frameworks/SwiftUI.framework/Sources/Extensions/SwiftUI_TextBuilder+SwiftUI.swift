@@ -79,5 +79,55 @@ enum TextBuilder {
         }
         return paragraph
     }
-    static func appendAttributed(_ a0: Foundation.AttributedString, style a1: SwiftUI.TextRunStyle, environment a2: SwiftUI.EnvironmentValues, into a3: NSMutableAttributedString, largest a4: inout SwiftUI.TextRunStyle?) { _skeleton() }
+    static func appendAttributed(_ a0: Foundation.AttributedString, style a1: SwiftUI.TextRunStyle, environment a2: SwiftUI.EnvironmentValues, into a3: NSMutableAttributedString, largest a4: inout SwiftUI.TextRunStyle?) {
+        // each attribute run of the bridged string on the inherited style: SwiftUI font and colour as text modifiers
+        // (an AppKit foreground colour only when there is no SwiftUI one, and only when enabled), kerning, tracking,
+        // baseline offset, underline and strikethrough styles, the inline presentation intents (strong: weight 0.4,
+        // emphasis: italic, code: monospaced, strikethrough); then the run's text is cased, appended like a plain run
+        // and given its background colour (SwiftUI's resolved, else AppKit's)
+        let bridged = NSAttributedString(a0)
+        let string = bridged.string as NSString
+        var runs: [([NSAttributedString.Key: Any], NSRange)] = []
+        bridged.enumerateAttributes(in: NSRange(location: 0, length: bridged.length), options: []) { attributes, range, _ in
+            runs.append((attributes, range))
+        }
+        func value(_ key: Swift.String, _ attributes: [NSAttributedString.Key: Any]) -> Any? { attributes[NSAttributedString.Key(key)] }
+        for (attributes, range) in runs {
+            var style = a1
+            if let font = value("SwiftUI.Font", attributes) as? SwiftUI.Font { style.apply(.font(font), environment: a2) }
+            if let color = value("SwiftUI.ForegroundColor", attributes) as? SwiftUI.Color {
+                style.apply(.color(color), environment: a2)
+            } else if let color = value("NSColor", attributes) as? NSColor, a2.isEnabled {
+                style.paint = .color(SwiftUI.Color.Resolved(color, colorScheme: a2[SwiftUI.ColorSchemeKey.self]))
+            }
+            if let kern = value("SwiftUI.Kern", attributes) as? CoreGraphics.CGFloat { style.kerning = kern }
+            if let tracking = value("SwiftUI.Tracking", attributes) as? CoreGraphics.CGFloat { style.tracking = tracking }
+            if let offset = value("SwiftUI.BaselineOffset", attributes) as? CoreGraphics.CGFloat { style.baselineOffset = offset }
+            if let line = value("SwiftUI.UnderlineStyle", attributes) as? SwiftUI.Text.LineStyle { style.underline = (true, line.color) }
+            if let line = value("SwiftUI.StrikethroughStyle", attributes) as? SwiftUI.Text.LineStyle { style.strikethrough = (true, line.color) }
+            if let number = value("NSInlinePresentationIntent", attributes) as? NSNumber {
+                let intent = Foundation.InlinePresentationIntent(rawValue: number.uintValue)
+                if intent.contains(.stronglyEmphasized) { style.traits.weight = SwiftUI.Font.Weight(value: 0.4) }
+                if intent.contains(.emphasized) { style.traits.italic = true }
+                if intent.contains(.code) { style.traits.monospaced = true }
+                if intent.contains(.strikethrough) { style.strikethrough = (true, nil) }
+            }
+            let start = a3.length
+            var text = string.substring(with: range)
+            switch a2.textCase {
+            case .uppercase?: text = text.uppercased()
+            case .lowercase?: text = text.lowercased()
+            case nil: break
+            }
+            if a4 == nil || style.traits.size > a4!.traits.size { a4 = style }
+            let paragraph = paragraph(a2, lineHeight: SwiftUI.FontResolver.lineHeight(a4!.traits.size))
+            a3.append(NSAttributedString(string: text, attributes: style.attributes(a2, paragraph: paragraph)))
+            let appended = NSRange(location: start, length: a3.length - start)
+            if let color = value("SwiftUI.BackgroundColor", attributes) as? SwiftUI.Color {
+                a3.addAttribute(NSAttributedString.Key("NSBackgroundColor"), value: color.provider.resolve(in: a2).nsColor, range: appended)
+            } else if let color = value("NSBackgroundColor", attributes) as? NSColor {
+                a3.addAttribute(NSAttributedString.Key("NSBackgroundColor"), value: color, range: appended)
+            }
+        }
+    }
 }

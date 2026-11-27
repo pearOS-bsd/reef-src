@@ -192,6 +192,15 @@ func selftestLocalized() {
     if case .anyTextStorage(let storage) = text("Some **bold** word").storage {
         print("markdown", type(of: storage), storage.plainString)
     }
+    // runs of an attributed text: strong emphasis is weight 0.4, code is monospaced, emphasis italic
+    let runs = SwiftUI.TextBuilder.string(text("A **b** `c` *d*"), SwiftUI.EnvironmentValues()).0
+    var described: [Swift.String] = []
+    runs.enumerateAttribute(.font, in: NSRange(location: 0, length: runs.length), options: []) { value, range, _ in
+        let f = value as? NSFont
+        let traits = f.map { NSFontManager.shared.traits(of: $0) } ?? []
+        described.append("\((runs.string as NSString).substring(with: range)):\(traits.contains(.boldFontMask) ? "b" : "")\(traits.contains(.italicFontMask) ? "i" : "")\(f?.isFixedPitch == true ? "m" : "")")
+    }
+    print("attributed runs", described)
     let styled = SwiftUI.Text(verbatim: "B").bold().italic().kerning(1).tracking(0.5).underline(true, color: nil)
         .font(.title).textScale(.secondary, isEnabled: true)
     let (string, style) = SwiftUI.TextBuilder.string(styled, SwiftUI.EnvironmentValues())
