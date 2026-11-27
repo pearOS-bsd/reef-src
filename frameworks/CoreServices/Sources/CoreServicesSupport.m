@@ -35,3 +35,6 @@
     return self;
 }
 @end
+
+// Spotlight attribute key (MDItem.h); the value is the name.
+const CFStringRef kMDItemTextContent = CFSTR("kMDItemTextContent");

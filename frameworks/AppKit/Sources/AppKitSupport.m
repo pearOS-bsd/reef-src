@@ -180,3 +180,6 @@ __attribute__((constructor)) static void ReefLogEvents(void) {
         }];
     });
 }
+
+// Option key of NSImage's bitmap conversion (observed on macOS 26: the value is the name).
+NSBitmapImageRepPropertyKey NSImageDitherTransparency = @"NSImageDitherTransparency";
