@@ -473,3 +473,51 @@ static void windowTrackEvents(NSWindow *self, SEL _cmd, NSEventMask mask, NSTime
 __attribute__((constructor)) static void addWindowTracking(void) {
     add([NSWindow class], "trackEventsMatchingMask:timeout:mode:handler:", (IMP)windowTrackEvents, "v@:Qd@@?");
 }
+
+// Debug aid: REEF_LOG_NOTES=text prints the notifications posted whose name contains the text ("*" for all).
+static IMP originalPostNote, originalPostNameObjectInfo;
+static const char *noteFilter;
+static void logNote(NSString *name) {
+    if (!name) return;
+    if (strcmp(noteFilter, "*") && ![name localizedCaseInsensitiveContainsString:[NSString stringWithUTF8String:noteFilter]]) return;
+    fprintf(stderr, "note: %s\n", name.UTF8String);
+}
+static void postNote(id self, SEL _cmd, NSNotification *n) { logNote(n.name); ((void (*)(id, SEL, id))originalPostNote)(self, _cmd, n); }
+static void postNameObjectInfo(id self, SEL _cmd, NSString *name, id object, NSDictionary *info) {
+    logNote(name);
+    ((void (*)(id, SEL, id, id, id))originalPostNameObjectInfo)(self, _cmd, name, object, info);
+}
+__attribute__((constructor)) static void ReefLogNotes(void) {
+    noteFilter = getenv("REEF_LOG_NOTES");
+    if (!noteFilter) return;
+    Method m = class_getInstanceMethod([NSNotificationCenter class], @selector(postNotification:));
+    if (m) originalPostNote = method_setImplementation(m, (IMP)postNote);
+    m = class_getInstanceMethod([NSNotificationCenter class], @selector(postNotificationName:object:userInfo:));
+    if (m) originalPostNameObjectInfo = method_setImplementation(m, (IMP)postNameObjectInfo);
+}
+
+// A control's target and action are its cell's, as in AppKit: a nib that connects an action to the cell (GarageBand's
+// "Download Later" button cell) left Reef's NSControl, which keeps its own copies, without one.
+static IMP originalControlAction, originalControlTarget;
+static SEL controlAction(NSControl *self, SEL _cmd) {
+    SEL a = ((SEL (*)(id, SEL))originalControlAction)(self, _cmd);
+    if (!a) {
+        NSCell *cell = self.cell;
+        if ([cell respondsToSelector:@selector(action)]) a = cell.action;
+    }
+    return a;
+}
+static id controlTarget(NSControl *self, SEL _cmd) {
+    id t = ((id (*)(id, SEL))originalControlTarget)(self, _cmd);
+    if (!t) {
+        NSCell *cell = self.cell;
+        if ([cell respondsToSelector:@selector(target)]) t = cell.target;
+    }
+    return t;
+}
+__attribute__((constructor)) static void controlActionFromCell(void) {
+    Method m = class_getInstanceMethod([NSControl class], @selector(action));
+    if (m) originalControlAction = method_setImplementation(m, (IMP)controlAction);
+    m = class_getInstanceMethod([NSControl class], @selector(target));
+    if (m) originalControlTarget = method_setImplementation(m, (IMP)controlTarget);
+}

@@ -51,7 +51,14 @@ OSStatus MusicDeviceMIDIEventList(MusicDeviceComponent unit, UInt32 offset, cons
 
 // Audio files: not supported yet (no file type is recognised)
 #define Unsupported 0x7479703f   // 'typ?' kAudioFileUnsupportedFileTypeError
-OSStatus AudioFileOpenURL(CFURLRef url, SInt8 permissions, UInt32 hint, void **file) { return Unsupported; }
+#include <stdio.h>
+static void logFile(const char *call, CFURLRef url) {
+    if (!getenv("REEF_LOG_AUDIOFILE") || !url) return;
+    char path[1024] = "";
+    CFURLGetFileSystemRepresentation(url, true, (UInt8 *)path, sizeof path);
+    fprintf(stderr, "audiofile: %s %s\n", call, path);
+}
+OSStatus AudioFileOpenURL(CFURLRef url, SInt8 permissions, UInt32 hint, void **file) { logFile("AudioFileOpenURL", url); return Unsupported; }
 OSStatus AudioFileCreateWithURL(CFURLRef url, UInt32 type, const void *format, UInt32 flags, void **file) { return Unsupported; }
 OSStatus AudioFileGetPropertyInfo(void *file, UInt32 property, UInt32 *size, UInt32 *writable) { return Unsupported; }
 OSStatus AudioFileGetProperty(void *file, UInt32 property, UInt32 *size, void *data) { return Unsupported; }
@@ -68,7 +75,7 @@ OSStatus AudioFileStreamParseBytes(void *stream, UInt32 size, const void *data, 
 OSStatus AudioFileStreamGetPropertyInfo(void *stream, UInt32 property, UInt32 *size, Boolean *writable) { return Unsupported; }
 OSStatus AudioFileStreamGetProperty(void *stream, UInt32 property, UInt32 *size, void *data) { return Unsupported; }
 OSStatus AudioFileStreamClose(void *stream) { return noErr; }
-OSStatus ExtAudioFileOpenURL(CFURLRef url, void **file) { return Unsupported; }
+OSStatus ExtAudioFileOpenURL(CFURLRef url, void **file) { logFile("ExtAudioFileOpenURL", url); return Unsupported; }
 OSStatus ExtAudioFileCreateWithURL(CFURLRef url, UInt32 type, const void *format, const void *layout, UInt32 flags, void **file) { return Unsupported; }
 OSStatus ExtAudioFileWrapAudioFileID(void *audioFile, Boolean forWriting, void **file) { return Unsupported; }
 OSStatus ExtAudioFileDispose(void *file) { return noErr; }
