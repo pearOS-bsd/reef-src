@@ -18,6 +18,8 @@ Each folder has a target.conf of `key = value` lines:
   sourcedir folder under the repository where sources not found in the target folder are (upstream code); $REPO and $SRC in cflags are
             the repository and the target folder
   cflags.NAME  extra flags for the source NAME (as in `sources`), after cflags
+  data.NAME  `IMAGE SYMBOL...`: before the compilation tools/macho-extract-data.py cuts the named data objects out of IMAGE (a path under the original root: tables that
+            are the original's data, not our code, and are never kept in the repository) and writes the assembler source gen/NAME.S, to be listed in `sources`
   cflags    flags for every source, ldflags for the link, libs: dependencies as paths under the root, in load command order
             (`reexport:PATH` links it with -reexport_library)
   minos     deployment target, default 11.0
@@ -65,10 +67,16 @@ def build(root, out, folder):
             found = [os.path.join(REPO, c['sourcedir'], d, name) for d in ('include', 'internalInclude', '.') if os.path.exists(os.path.join(REPO, c['sourcedir'], d, name))]
             shutil.copy(found[0], os.path.join(overlay, name))
             run(['patch', '-s', '-p0', os.path.join(overlay, name), os.path.join(pinc, h)])
+        gen = os.path.join(work, 'gen'); os.makedirs(gen)
+        for key, value in sorted(c.items()):
+            if key.startswith('data.'):
+                image, *symbols = value.split()
+                run([sys.executable, os.path.join(HERE, 'macho-extract-data.py'), os.path.join(root, image), os.path.join(gen, key[5:] + '.S')] + symbols)
         objects = []
         for s in c['sources'].split():
             o = os.path.join(work, '%d_%s.o' % (len(objects), os.path.basename(s)))
             src = os.path.join(SRC, folder, s)
+            if s.startswith('gen/'): src = os.path.join(work, s)
             if not os.path.exists(src) and 'sourcedir' in c: src = os.path.join(REPO, c['sourcedir'], s)
             patch = os.path.join(SRC, folder, 'patches', os.path.basename(s) + '.patch')
             orig_dir, extra = os.path.dirname(src), []
@@ -87,6 +95,7 @@ def build(root, out, folder):
             if extra:       # assert paths: the copy is mapped like the original folder
                 for m in [x for x in cmd if x.startswith('-ffile-prefix-map=' + orig_dir + '=')]:
                     cmd.insert(cmd.index(m), '-ffile-prefix-map=' + os.path.dirname(src) + '=' + m.split('=', 2)[2])
+            if s.endswith('.S'): cmd += ['-x', 'assembler']
             cmd += ['-isystem', INCLUDE, '-isystem', RESOURCE, '-c', src, '-o', o]
             run(cmd); objects.append(o)
         libs = []

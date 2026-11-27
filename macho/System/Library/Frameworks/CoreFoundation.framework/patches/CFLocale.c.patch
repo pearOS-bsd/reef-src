@@ -3,7 +3,20 @@
 # Written from the published binary. SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
 --- CFLocale.c
 +++ CFLocale.c
-@@ -300,6 +300,14 @@
+@@ -88,6 +88,12 @@
+ // Must forward decl. these functions:
+ static bool __CFLocaleCopyLocaleID(CFLocaleRef locale, bool user, CFTypeRef *cf, CFStringRef context);
+ static bool __CFLocaleSetNOP(CFMutableLocaleRef locale, CFTypeRef cf, CFStringRef context);
++// The display names of the locale data (reef/CFLocaleNames.c).
++extern int32_t __reefLocaleDisplayName(const char *locale, const char *displayLocale, UChar *result, int32_t capacity, UErrorCode *status);
++extern int32_t __reefLocaleDisplayLanguage(const char *locale, const char *displayLocale, UChar *result, int32_t capacity, UErrorCode *status);
++extern int32_t __reefLocaleDisplayScript(const char *locale, const char *displayLocale, UChar *result, int32_t capacity, UErrorCode *status);
++extern int32_t __reefLocaleDisplayCountry(const char *locale, const char *displayLocale, UChar *result, int32_t capacity, UErrorCode *status);
++extern int32_t __reefLocaleDisplayVariant(const char *locale, const char *displayLocale, UChar *result, int32_t capacity, UErrorCode *status);
+ static bool __CFLocaleFullName(const char *locale, const char *value, CFStringRef *out);
+ static bool __CFLocaleCopyCodes(CFLocaleRef locale, bool user, CFTypeRef *cf, CFStringRef context);
+ static bool __CFLocaleCountryName(const char *locale, const char *value, CFStringRef *out);
+@@ -300,6 +306,14 @@
      return locale;
  }
  
@@ -18,7 +31,7 @@
  extern CFDictionaryRef __CFXPreferencesCopyCurrentApplicationStateWithDeadlockAvoidance(Boolean * /* _Nonnull */outWouldDeadlock);
  
  static _Atomic(CFLocaleRef) _CFLocaleCurrent_ = NULL;
-@@ -570,6 +578,11 @@
+@@ -570,6 +584,11 @@
  }
  
  static CFArrayRef _CFLocaleCopyPreferredLanguagesFromPrefs(CFArrayRef languagesArray);
@@ -30,7 +43,7 @@
  
  /// Creates a new locale identifier by identifying the most preferred localization (using `availableLocalizations` and `preferredLanguages`) and then creating a locale based on the most preferred localization, while retaining any relevant attributes from `preferredLocaleID`, e.g. if `availableLocalizations` is `[ "en", "fr", "de" ]`, `preferredLanguages` is `[ "ar-AE", "en-AE" ]`, `preferredLocaleID` is `ar_AE@numbers=arab;calendar=islamic-civil`, it will return `en_AE@calendar=islamic-civil`, i.e. the language will be matched to `en` since that’s the only available localization that matches, `calendar` will be retained since it’s language-agnostic, but `numbers` will be discarded because the `arab` numbering system is not valid for `en`.
  static CFStringRef _CFLocaleCreateLocaleIdentifierForAvailableLocalizations(CFArrayRef availableLocalizations, CFArrayRef preferredLanguages, CFStringRef preferredLocaleID, CFArrayRef *outCanonicalizedPreferredLanguages) {
-@@ -658,9 +671,10 @@
+@@ -658,9 +677,10 @@
      // things which call this function thousands or millions of times in
      // a short period.
      if (!name) {
@@ -44,7 +57,7 @@
      } else {
          CFRetain(name);
      }
-@@ -708,6 +722,14 @@
+@@ -708,6 +728,14 @@
      }
      
      CFDictionaryRef prefs = NULL;
@@ -59,7 +72,7 @@
      
      struct __CFLocale *locale;
      uint32_t size = sizeof(struct __CFLocale) - sizeof(CFRuntimeBase);
-@@ -778,6 +800,66 @@
+@@ -778,6 +806,66 @@
      return _CFLocaleCopyCurrentGuts(NULL, true, NULL, false);
  }
  
@@ -126,7 +139,7 @@
  CF_PRIVATE CFDictionaryRef __CFLocaleGetPrefs(CFLocaleRef locale) {
      CF_OBJC_FUNCDISPATCHV(CFLocaleGetTypeID(), CFDictionaryRef, (NSLocale *)locale, _prefs);
      return locale->_prefs;
-@@ -1234,6 +1316,239 @@
+@@ -1234,6 +1322,239 @@
      return newArray;
  }
  
@@ -366,7 +379,7 @@
  static CFArrayRef __CFLocaleCopyPreferredLanguagesForCurrentUser(Boolean forCurrentUser) {
      CFArrayRef languagesArray = NULL;
      if (forCurrentUser) {
-@@ -1241,8 +1556,18 @@
+@@ -1241,8 +1562,18 @@
      } else {
          languagesArray = (CFArrayRef)CFPreferencesCopyAppValue(CFSTR("AppleLanguages"), kCFPreferencesCurrentApplication);
      }
@@ -387,7 +400,7 @@
      return result;
  }
  
-@@ -1581,7 +1906,7 @@
+@@ -1581,7 +1912,7 @@
      return canonLocaleCFStr ? true : false;
  }
  
@@ -396,7 +409,7 @@
  STATIC_CONST_STRING_DECL(_metricUnitsKey, "AppleMetricUnits");
  STATIC_CONST_STRING_DECL(_measurementUnitsKey, "AppleMeasurementUnits");
  STATIC_CONST_STRING_DECL(_measurementUnitsCentimeters, "Centimeters");
-@@ -1680,13 +2005,11 @@
+@@ -1680,13 +2011,11 @@
  static void __CFLocaleGetMeasurementSystemGuts(CFLocaleRef locale, bool user, UMeasurementSystem *outMeasurementSystem) {
      UMeasurementSystem output = UMS_SI;    // Default is Metric
      bool done = false;
@@ -411,7 +424,7 @@
      if (!done) {
          char localeID[ULOC_FULLNAME_CAPACITY+ULOC_KEYWORD_AND_VALUES_CAPACITY];
          if (CFStringGetCString(locale->_identifier, localeID, sizeof(localeID)/sizeof(char), kCFStringEncodingASCII)) {
-@@ -1735,12 +2058,10 @@
+@@ -1735,12 +2064,10 @@
  #if U_ICU_VERSION_MAJOR_NUM > 54
      bool celsius = true;    // Default is Celsius
      bool done = false;
@@ -425,3 +438,76 @@
  #if TARGET_OS_MAC || TARGET_OS_WIN32 || TARGET_OS_LINUX || TARGET_OS_BSD
      if (!done) {
          char localeID[ULOC_FULLNAME_CAPACITY+ULOC_KEYWORD_AND_VALUES_CAPACITY];
+@@ -1879,41 +2206,18 @@
+ #endif
+ 
+ static bool __CFLocaleFullName(const char *locale, const char *value, CFStringRef *out) {
+-#if TARGET_OS_MAC || TARGET_OS_WIN32 || TARGET_OS_LINUX || TARGET_OS_BSD
++    // The display name is made from the locale data of the package (and the names Reef adds to it), not by ICU's uloc_getDisplayName.
+     UErrorCode icuStatus = U_ZERO_ERROR;
+-    int32_t size;
+     UChar name[kMaxICUNameSize];
+-    
+-    // First, try to get the full locale.
+-    size = uloc_getDisplayName(value, locale, name, kMaxICUNameSize, &icuStatus);
+-    if (U_FAILURE(icuStatus) || size <= 0)
+-        return false;
+-
+-    // Did we wind up using a default somewhere?
+-    if (icuStatus == U_USING_DEFAULT_WARNING) {
+-        // For some locale IDs, there may be no language which has a translation for every
+-        // piece. Rather than return nothing, see if we can at least handle
+-        // the language part of the locale.
+-        UErrorCode localStatus = U_ZERO_ERROR;
+-        int32_t localSize;
+-        UChar localName[kMaxICUNameSize];
+-        localSize = uloc_getDisplayLanguage(value, locale, localName, kMaxICUNameSize, &localStatus);
+-        if (U_FAILURE(localStatus) || size <= 0 || localStatus == U_USING_DEFAULT_WARNING)
+-            return false;
+-    }
+-
+-    // This locale is OK, so use the result.
++    int32_t size = __reefLocaleDisplayName(value, locale, name, kMaxICUNameSize, &icuStatus);
++    if (icuStatus == U_USING_DEFAULT_WARNING || icuStatus > U_ZERO_ERROR || size <= 0) return false;
+     *out = CFStringCreateWithCharacters(kCFAllocatorSystemDefault, (UniChar *)name, size);
+     return (*out != NULL);
+-#else
+-    *out = CFRetain(CFSTR("(none)"));
+-    return true;
+-#endif
+ }
+ 
+ static bool __CFLocaleLanguageName(const char *locale, const char *value, CFStringRef *out) {
+ #if TARGET_OS_MAC || TARGET_OS_WIN32 || TARGET_OS_LINUX || TARGET_OS_BSD
+-    return __CFLocaleICUName(locale, value, out, uloc_getDisplayLanguage);
++    return __CFLocaleICUName(locale, value, out, __reefLocaleDisplayLanguage);
+ #else
+     *out = CFRetain(CFSTR("(none)"));
+     return true;
+@@ -1927,7 +2231,7 @@
+     if (strlen(value) < sizeof(lid) - 3) {
+ 	strlcpy(lid, "en_", sizeof(lid));
+ 	strlcat(lid, value, sizeof(lid));
+-        return __CFLocaleICUName(locale, lid, out, uloc_getDisplayCountry);
++        return __CFLocaleICUName(locale, lid, out, __reefLocaleDisplayCountry);
+     }
+     return false;
+ #else
+@@ -1944,7 +2248,7 @@
+ 	strlcpy(lid, "en_", sizeof(lid));
+ 	strlcat(lid, value, sizeof(lid));
+ 	strlcat(lid, "_US", sizeof(lid));
+-        return __CFLocaleICUName(locale, lid, out, uloc_getDisplayScript);
++        return __CFLocaleICUName(locale, lid, out, __reefLocaleDisplayScript);
+     }
+     return false;
+ #else
+@@ -1960,7 +2264,7 @@
+     if (strlen(value) < sizeof(lid) - 6) {
+ 	strlcpy(lid, "en_US_", sizeof(lid));
+ 	strlcat(lid, value, sizeof(lid));
+-        return __CFLocaleICUName(locale, lid, out, uloc_getDisplayVariant);
++        return __CFLocaleICUName(locale, lid, out, __reefLocaleDisplayVariant);
+     }
+     return false;
+ #else
