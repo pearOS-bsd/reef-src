@@ -52,3 +52,4 @@ usr/lib/libsandbox.1
 System/Library/Frameworks/CoreMIDI.framework
 System/Library/Frameworks/GSS.framework
 usr/lib/libresolv.9
+usr/lib/libcompression
