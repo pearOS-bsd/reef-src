@@ -18,9 +18,10 @@ import Metal
 import os
 
 class DeferredObservation {
-    var isWaiting: Swift.Bool = _skeletonValue()
-    var bodyRun: Swift.Int = _skeletonValue()
-    var generation: Swift.Int = _skeletonValue()
-    init() { _skeleton() }
+    var isWaiting: Swift.Bool = false
+    var bodyRun: Swift.Int = 0
+    var generation: Swift.Int = 0
+    init() {
+    }
     deinit {}
 }

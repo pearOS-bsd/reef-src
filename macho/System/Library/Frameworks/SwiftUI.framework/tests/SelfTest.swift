@@ -73,6 +73,7 @@ func selftestBuild() {
     selftestTextBuilder()
     selftestTextLayout(host)
     selftestLocalized()
+    selftestForEach(host)
 }
 
 /// a leaf as wide as 10, or 20 when enabled
@@ -196,4 +197,24 @@ func selftestLocalized() {
     print("modifiers", style.traits.size, style.traits.weight?.value as Any, style.traits.italic, style.kerning, style.tracking,
           font?.pointSize as Any, string.attribute(.kern, at: 0, effectiveRange: nil) as Any,
           string.attribute(.underlineStyle, at: 0, effectiveRange: nil) as Any)
+}
+
+struct SelfTestItem: Swift.Identifiable { let id: Swift.String; let width: CoreGraphics.CGFloat }
+
+struct SelfTestForEach: SwiftUI.View {
+    var body: some SwiftUI.View {
+        SwiftUI.VStack(alignment: .leading, spacing: 2) {
+            SwiftUI.ForEach(0..<3) { SelfTestLeaf(width: CoreGraphics.CGFloat(10 * ($0 + 1))) }
+            SwiftUI.ForEach([SelfTestItem(id: "a", width: 7), SelfTestItem(id: "b", width: 9)]) { SelfTestLeaf(width: $0.width) }
+        }
+    }
+}
+
+func selftestForEach(_ host: SwiftUI.ViewHost) {
+    let context = SwiftUI.BuildContext(host: host, scope: host.root, path: [], environment: SwiftUI.EnvironmentValues(),
+        canvas: nil, modifierContents: [:], styleLabels: [:], stackAxis: nil, container: .none, scrollAxes: [])
+    let root = SwiftUI.ViewBuild.build(SelfTestForEach(), context)[0]
+    let size = root.sizeThatFits(SwiftUI.ProposedViewSize(width: nil, height: nil))
+    root.place(in: CGRect(origin: .zero, size: size))
+    print("foreach", size, root.children.map { $0.frame.width }, root.children.map { $0.explicitID.map { "\($0.base)" } ?? "-" })
 }

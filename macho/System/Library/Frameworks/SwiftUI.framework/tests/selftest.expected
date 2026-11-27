@@ -35,3 +35,4 @@ localized Hello %@, %lld items at 100%% true 2
 localized text Plain key Hello Ana, 3 items at 100% 2.500000 x
 markdown AttributedTextStorage Some bold word
 modifiers 19.0 Optional(0.4) false 1.0 0.5 Optional(19.0) Optional(1.5) Optional(1)
+foreach (30.0, 58.0) [10.0, 20.0, 30.0, 7.0, 9.0] ["0", "1", "2", "a", "b"]
