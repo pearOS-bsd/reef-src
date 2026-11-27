@@ -61,3 +61,4 @@ System/Library/Frameworks/CallKit.framework
 System/Library/Frameworks/ExceptionHandling.framework
 System/Library/Frameworks/FinderSync.framework
 System/Library/Frameworks/LocalAuthentication.framework
+System/Library/Frameworks/AVKit.framework
