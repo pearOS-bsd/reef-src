@@ -20,8 +20,19 @@ import os
 public enum FrameResizeDirection {
     case inward
     case outward
-    public init?(rawValue a0: Swift.Int8) { _skeleton() }
-    public var rawValue: Swift.Int8 { _skeleton() }
+    public init?(rawValue a0: Swift.Int8) {
+        switch a0 {
+        case 0: self = .inward
+        case 1: self = .outward
+        default: return nil
+        }
+    }
+    public var rawValue: Swift.Int8 {
+        switch self {
+        case .inward: return 0
+        case .outward: return 1
+        }
+    }
     public struct Set {
         public let rawValue: Swift.Int8
         public static var inward: SwiftUI.FrameResizeDirection.Set { _skeleton() }

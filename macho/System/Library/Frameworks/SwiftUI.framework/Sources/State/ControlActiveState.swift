@@ -21,7 +21,7 @@ public enum ControlActiveState {
     case key
     case active
     case inactive
-    public static var allCases: [SwiftUI.ControlActiveState] { _skeleton() }
+    public static var allCases: [SwiftUI.ControlActiveState] { [.key, .active, .inactive] }
     public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
     public var hashValue: Swift.Int { _hashValue(for: self) }
     public static func == (_ a0: SwiftUI.ControlActiveState, _ a1: SwiftUI.ControlActiveState) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }

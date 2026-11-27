@@ -20,9 +20,20 @@ import os
 @frozen public enum VerticalDirection {
     case up
     case down
-    public var rawValue: Swift.Int8 { _skeleton() }
-    public static var allCases: [SwiftUI.VerticalDirection] { _skeleton() }
-    public init?(rawValue a0: Swift.Int8) { _skeleton() }
+    public var rawValue: Swift.Int8 {
+        switch self {
+        case .up: return 0
+        case .down: return 1
+        }
+    }
+    public static var allCases: [SwiftUI.VerticalDirection] { [.up, .down] }
+    public init?(rawValue a0: Swift.Int8) {
+        switch a0 {
+        case 0: self = .up
+        case 1: self = .down
+        default: return nil
+        }
+    }
     public struct Set {
         public let rawValue: Swift.Int8
         public init(rawValue a0: Swift.Int8) { rawValue = a0 }

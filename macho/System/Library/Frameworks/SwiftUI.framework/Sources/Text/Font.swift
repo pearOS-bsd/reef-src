@@ -103,7 +103,7 @@ public struct Font {
         case footnote
         case caption
         case caption2
-        public static var allCases: [SwiftUI.Font.TextStyle] { _skeleton() }
+        public static var allCases: [SwiftUI.Font.TextStyle] { [.largeTitle, .title, .title2, .title3, .headline, .subheadline, .body, .callout, .footnote, .caption, .caption2] }
         public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
         public var hashValue: Swift.Int { _hashValue(for: self) }
         public static func == (_ a0: SwiftUI.Font.TextStyle, _ a1: SwiftUI.Font.TextStyle) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }

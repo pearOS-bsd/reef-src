@@ -21,7 +21,7 @@ import os
     case leading
     case center
     case trailing
-    public static var allCases: [SwiftUI.TextAlignment] { _skeleton() }
+    public static var allCases: [SwiftUI.TextAlignment] { [.leading, .center, .trailing] }
     public static func == (_ a0: SwiftUI.TextAlignment, _ a1: SwiftUI.TextAlignment) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }
     public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
     public var hashValue: Swift.Int { _hashValue(for: self) }

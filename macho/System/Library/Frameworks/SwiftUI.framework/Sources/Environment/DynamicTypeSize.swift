@@ -30,7 +30,7 @@ public enum DynamicTypeSize {
     case accessibility3
     case accessibility4
     case accessibility5
-    public static var allCases: [SwiftUI.DynamicTypeSize] { _skeleton() }
+    public static var allCases: [SwiftUI.DynamicTypeSize] { [.xSmall, .small, .medium, .large, .xLarge, .xxLarge, .xxxLarge, .accessibility1, .accessibility2, .accessibility3, .accessibility4, .accessibility5] }
     public var isAccessibilitySize: Swift.Bool { _skeleton() }
     public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
     public var hashValue: Swift.Int { _hashValue(for: self) }

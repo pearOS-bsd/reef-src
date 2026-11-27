@@ -20,7 +20,7 @@ import os
 public enum ContentMode {
     case fit
     case fill
-    public static var allCases: [SwiftUI.ContentMode] { _skeleton() }
+    public static var allCases: [SwiftUI.ContentMode] { [.fit, .fill] }
     public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
     public var hashValue: Swift.Int { _hashValue(for: self) }
     public static func == (_ a0: SwiftUI.ContentMode, _ a1: SwiftUI.ContentMode) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }

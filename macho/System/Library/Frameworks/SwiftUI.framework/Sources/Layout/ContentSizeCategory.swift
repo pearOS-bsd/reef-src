@@ -31,7 +31,7 @@ public enum ContentSizeCategory {
     case accessibilityExtraExtraLarge
     case accessibilityExtraExtraExtraLarge
     public var isAccessibilityCategory: Swift.Bool { _skeleton() }
-    public static var allCases: [SwiftUI.ContentSizeCategory] { _skeleton() }
+    public static var allCases: [SwiftUI.ContentSizeCategory] { [.extraSmall, .small, .medium, .large, .extraLarge, .extraExtraLarge, .extraExtraExtraLarge, .accessibilityMedium, .accessibilityLarge, .accessibilityExtraLarge, .accessibilityExtraExtraLarge, .accessibilityExtraExtraExtraLarge] }
     public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
     public var hashValue: Swift.Int { _hashValue(for: self) }
     public static func == (_ a0: SwiftUI.ContentSizeCategory, _ a1: SwiftUI.ContentSizeCategory) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }

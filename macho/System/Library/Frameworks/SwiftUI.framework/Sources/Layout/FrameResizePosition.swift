@@ -26,9 +26,32 @@ import os
     case topTrailing
     case bottomLeading
     case bottomTrailing
-    public init?(rawValue a0: Swift.Int8) { _skeleton() }
-    public static var allCases: [SwiftUI.FrameResizePosition] { _skeleton() }
-    public var rawValue: Swift.Int8 { _skeleton() }
+    public init?(rawValue a0: Swift.Int8) {
+        switch a0 {
+        case 0: self = .top
+        case 1: self = .leading
+        case 2: self = .bottom
+        case 3: self = .trailing
+        case 4: self = .topLeading
+        case 5: self = .topTrailing
+        case 6: self = .bottomLeading
+        case 7: self = .bottomTrailing
+        default: return nil
+        }
+    }
+    public static var allCases: [SwiftUI.FrameResizePosition] { [.top, .leading, .bottom, .trailing, .topLeading, .topTrailing, .bottomLeading, .bottomTrailing] }
+    public var rawValue: Swift.Int8 {
+        switch self {
+        case .top: return 0
+        case .leading: return 1
+        case .bottom: return 2
+        case .trailing: return 3
+        case .topLeading: return 4
+        case .topTrailing: return 5
+        case .bottomLeading: return 6
+        case .bottomTrailing: return 7
+        }
+    }
 }
 
 extension SwiftUI.FrameResizePosition: Swift.Equatable {

@@ -20,9 +20,20 @@ import os
 @frozen public enum VerticalEdge {
     case top
     case bottom
-    public init?(rawValue a0: Swift.Int8) { _skeleton() }
-    public static var allCases: [SwiftUI.VerticalEdge] { _skeleton() }
-    public var rawValue: Swift.Int8 { _skeleton() }
+    public init?(rawValue a0: Swift.Int8) {
+        switch a0 {
+        case 0: self = .top
+        case 1: self = .bottom
+        default: return nil
+        }
+    }
+    public static var allCases: [SwiftUI.VerticalEdge] { [.top, .bottom] }
+    public var rawValue: Swift.Int8 {
+        switch self {
+        case .top: return 0
+        case .bottom: return 1
+        }
+    }
     public struct Set {
         public let rawValue: Swift.Int8
         public init(rawValue a0: Swift.Int8) { rawValue = a0 }

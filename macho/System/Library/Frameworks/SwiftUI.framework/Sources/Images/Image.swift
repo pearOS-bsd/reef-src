@@ -66,7 +66,7 @@ public struct Image {
         case right
         case rightMirrored
         public init?(rawValue a0: Swift.UInt8) { _skeleton() }
-        public static var allCases: [SwiftUI.Image.Orientation] { _skeleton() }
+        public static var allCases: [SwiftUI.Image.Orientation] { [.up, .upMirrored, .down, .downMirrored, .left, .leftMirrored, .right, .rightMirrored] }
         public var rawValue: Swift.UInt8 { _skeleton() }
     }
     public enum Interpolation {

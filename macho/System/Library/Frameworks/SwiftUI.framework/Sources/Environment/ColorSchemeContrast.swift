@@ -20,7 +20,7 @@ import os
 public enum ColorSchemeContrast {
     case standard
     case increased
-    public static var allCases: [SwiftUI.ColorSchemeContrast] { _skeleton() }
+    public static var allCases: [SwiftUI.ColorSchemeContrast] { [.standard, .increased] }
     public func hash(into a0: inout Swift.Hasher) { a0.combine(Int(unsafeBitCast(self, to: UInt8.self))) }
     public var hashValue: Swift.Int { _hashValue(for: self) }
     public static func == (_ a0: SwiftUI.ColorSchemeContrast, _ a1: SwiftUI.ColorSchemeContrast) -> Swift.Bool { unsafeBitCast(a0, to: UInt8.self) == unsafeBitCast(a1, to: UInt8.self) }

@@ -20,9 +20,20 @@ import os
 @frozen public enum HorizontalEdge {
     case leading
     case trailing
-    public static var allCases: [SwiftUI.HorizontalEdge] { _skeleton() }
-    public var rawValue: Swift.Int8 { _skeleton() }
-    public init?(rawValue a0: Swift.Int8) { _skeleton() }
+    public static var allCases: [SwiftUI.HorizontalEdge] { [.leading, .trailing] }
+    public var rawValue: Swift.Int8 {
+        switch self {
+        case .leading: return 0
+        case .trailing: return 1
+        }
+    }
+    public init?(rawValue a0: Swift.Int8) {
+        switch a0 {
+        case 0: self = .leading
+        case 1: self = .trailing
+        default: return nil
+        }
+    }
     public struct Set {
         public let rawValue: Swift.Int8
         public init(rawValue a0: Swift.Int8) { rawValue = a0 }
