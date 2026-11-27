@@ -2,3 +2,11 @@
 # compare with. tests/additions.py runs their tests (macho/<folder>/tests/*.c, golden output next to each as NAME.expected, recorded on a Mac), and
 # tools/make-deb.sh adds the files to the package.
 usr/lib/libpcre.0
+usr/lib/swift/libswiftSceneKit
+usr/lib/swift/libswiftQuickLookUI
+usr/lib/swift/libswiftDataDetection
+usr/lib/swift/libswiftCoreMediaIO
+usr/lib/swift/libswiftGLKit
+usr/lib/swift/libswiftSpriteKit
+usr/lib/swift/libswiftVideoToolbox
+usr/lib/swift/libswiftMLCompute
