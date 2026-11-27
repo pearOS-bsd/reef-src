@@ -521,3 +521,78 @@ __attribute__((constructor)) static void controlActionFromCell(void) {
     m = class_getInstanceMethod([NSControl class], @selector(target));
     if (m) originalControlTarget = method_setImplementation(m, (IMP)controlTarget);
 }
+
+// Geometry of segmented cells and slider tick marks (private and public methods Reef's AppKit lacks): segments side by
+// side, a width of 0 shares what the fixed widths leave; labels inset in their segment.
+static NSRect segmentRect(NSSegmentedCell *self, NSInteger segment, NSRect frame) {
+    NSInteger n = self.segmentCount;
+    if (n <= 0 || segment < 0 || segment >= n) return NSZeroRect;
+    CGFloat fixed = 0;
+    NSInteger flexible = 0;
+    for (NSInteger i = 0; i < n; i++) {
+        CGFloat w = [self widthForSegment:i];
+        if (w > 0) fixed += w; else flexible++;
+    }
+    CGFloat share = flexible ? MAX(0, (frame.size.width - fixed) / flexible) : 0;
+    CGFloat x = frame.origin.x;
+    for (NSInteger i = 0; i < segment; i++) {
+        CGFloat w = [self widthForSegment:i];
+        x += w > 0 ? w : share;
+    }
+    CGFloat w = [self widthForSegment:segment];
+    return NSMakeRect(x, frame.origin.y, w > 0 ? w : share, frame.size.height);
+}
+static NSRect segmentedRectForSegment(NSSegmentedCell *self, SEL _cmd, NSInteger segment, NSRect frame) { return segmentRect(self, segment, frame); }
+static NSRect segmentedLabelRect(NSSegmentedCell *self, SEL _cmd, NSInteger segment, NSRect frame, NSView *view) {
+    return NSInsetRect(segmentRect(self, segment, frame), 4, 2);
+}
+static long segmentedHighlightState(NSSegmentedCell *self, SEL _cmd, NSInteger segment) { return 0; }
+static NSRect sliderTickRect(NSSliderCell *self, SEL _cmd, NSInteger index) {
+    NSRect track = [self trackRect];
+    NSInteger n = self.numberOfTickMarks;
+    if (n <= 0) return NSZeroRect;
+    BOOL vertical = self.vertical == 1;
+    CGFloat fraction = n > 1 ? (CGFloat)index / (CGFloat)(n - 1) : 0.5;
+    if (vertical) return NSMakeRect(NSMinX(track), NSMinY(track) + fraction * NSHeight(track) - 0.5, NSWidth(track), 1);
+    return NSMakeRect(NSMinX(track) + fraction * NSWidth(track) - 0.5, NSMinY(track), 1, NSHeight(track));
+}
+static void cellCalcDrawInfo(NSCell *self, SEL _cmd, NSRect rect) {}
+
+__attribute__((constructor)) static void addCellGeometry(void) {
+    add([NSSegmentedCell class], "_rectForSegment:inFrame:", (IMP)segmentedRectForSegment, "{CGRect={CGPoint=dd}{CGSize=dd}}@:q{CGRect={CGPoint=dd}{CGSize=dd}}");
+    add([NSSegmentedCell class], "rectForSegment:inFrame:", (IMP)segmentedRectForSegment, "{CGRect={CGPoint=dd}{CGSize=dd}}@:q{CGRect={CGPoint=dd}{CGSize=dd}}");
+    add([NSSegmentedCell class], "_labelRectForSegment:inFrame:withView:", (IMP)segmentedLabelRect, "{CGRect={CGPoint=dd}{CGSize=dd}}@:q{CGRect={CGPoint=dd}{CGSize=dd}}@");
+    add([NSSegmentedCell class], "_segmentHighlightState:", (IMP)segmentedHighlightState, "q@:q");
+    add([NSSliderCell class], "rectOfTickMarkAtIndex:", (IMP)sliderTickRect, "{CGRect={CGPoint=dd}{CGSize=dd}}@:q");
+    add([NSCell class], "calcDrawInfo:", (IMP)cellCalcDrawInfo, "v@:{CGRect={CGPoint=dd}{CGSize=dd}}");
+}
+
+// Debug aid: REEF_CLASS_INFO="seconds:Class,Class" prints each class's superclasses and which of them implement
+// drawRect:, drawWithFrame:inView: and layer-related methods.
+__attribute__((constructor)) static void ReefClassInfo(void) {
+    const char *spec = getenv("REEF_CLASS_INFO");
+    if (!spec) return;
+    NSString *s = [NSString stringWithUTF8String:spec];
+    NSRange colon = [s rangeOfString:@":"];
+    double seconds = colon.location == NSNotFound ? 30 : [[s substringToIndex:colon.location] doubleValue];
+    NSArray *names = [[s substringFromIndex:colon.location == NSNotFound ? 0 : colon.location + 1] componentsSeparatedByString:@","];
+    ReefOnMain(seconds, ^{
+        static BOOL done; if (done) return; done = YES;
+        SEL sels[] = {@selector(drawRect:), @selector(drawWithFrame:inView:), @selector(drawInteriorWithFrame:inView:), @selector(updateLayer),
+                      @selector(wantsUpdateLayer), @selector(makeBackingLayer), @selector(drawLayer:inContext:), @selector(displayLayer:)};
+        for (NSString *name in names) {
+            Class c = NSClassFromString(name);
+            fprintf(stderr, "class %s:", name.UTF8String);
+            for (Class k = c; k; k = class_getSuperclass(k)) {
+                fprintf(stderr, " %s", class_getName(k));
+                unsigned n = 0;
+                Method *ms = class_copyMethodList(k, &n);
+                for (unsigned i = 0; i < n; i++)
+                    for (unsigned j = 0; j < sizeof sels / sizeof *sels; j++)
+                        if (method_getName(ms[i]) == sels[j]) fprintf(stderr, "[%s]", sel_getName(sels[j]));
+                free(ms);
+            }
+            fprintf(stderr, "\n");
+        }
+    });
+}
