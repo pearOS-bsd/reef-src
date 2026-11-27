@@ -95,7 +95,7 @@ def build(root, out, folder):
             if extra:       # assert paths: the copy is mapped like the original folder
                 for m in [x for x in cmd if x.startswith('-ffile-prefix-map=' + orig_dir + '=')]:
                     cmd.insert(cmd.index(m), '-ffile-prefix-map=' + os.path.dirname(src) + '=' + m.split('=', 2)[2])
-            if s.endswith('.S'): cmd += ['-x', 'assembler']
+            if s.endswith('.S'): cmd += ['-x', 'assembler-with-cpp']
             cmd += ['-isystem', INCLUDE, '-isystem', RESOURCE, '-c', src, '-o', o]
             run(cmd); objects.append(o)
         libs = []
