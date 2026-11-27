@@ -153,27 +153,29 @@ static char *attributeOf(Node *node, const char *name)
 }
 
 // The node at a path of names separated by slashes; created on the way when asked.
-static Node *nodeAtPath(Node *node, const char *path, char create)
+static Node *nodeAtPath(Node *node, const char *path, _Bool create)
 {
     char *copy = strdup(path);
     char *part = strtok(copy, "/");
-    while (node && part) {
-        Node *next = NULL;
-        for (size_t i = 0; i < node->childCount; i++)
-            if (strcmp(node->children[i]->name, part) == 0) {
-                next = node->children[i];
-                break;
-            }
-        if (!next && create)
-            next = newNode(part, node);
-        node = next;
-        part = strtok(NULL, "/");
+    if (!(part == NULL || node == NULL)) {
+        do {
+            Node *next = NULL;
+            for (size_t i = 0; i < node->childCount; i++)
+                if (strcmp(node->children[i]->name, part) == 0) {
+                    next = node->children[i];
+                    break;
+                }
+            if (!next && create)
+                next = newNode(part, node);
+            node = next;
+            part = strtok(NULL, "/");
+        } while (node != NULL && part != NULL);
     }
     free(copy);
     return node;
 }
 
-static void digest(const char *style, const void *data, uint32_t length, unsigned char *md, size_t *mdLength)
+static void digest(const char *style, const void *data, size_t length, unsigned char *md, size_t *mdLength)
 {
     if (strcmp(style, "md5") == 0) {
         CC_MD5(data, length, md);
@@ -481,21 +483,25 @@ static void shiftOffsets(Node *node, size_t shift)
 
 static void writeNode(Buffer *b, Node *node, int depth);
 
-static int writeAll(int fd, const void *data, size_t length)
+static _Bool writeAll(int fd, const void *data, size_t length)
 {
+    _Bool ok = 1;
     while (length) {
         ssize_t n = write(fd, data, length);
         if (n < 0) {
-            if (errno != EINTR)
-                return 0;
-            continue;
+            if (errno != EINTR) {
+                ok = 0;
+                break;
+            }
+        } else if (n == 0) {
+            ok = 0;
+            break;
+        } else {
+            data = (const char *)data + n;
+            length -= n;
         }
-        if (n == 0)
-            return 0;
-        data = (const char *)data + n;
-        length -= n;
     }
-    return 1;
+    return ok;
 }
 
 static void freeFile(File *file)
@@ -650,10 +656,11 @@ static void addData(xar_t x, File *file, const void *data, size_t length);
 
 File *xar_add_frombuffer(xar_t x, File *parent, const char *name, const char *buffer, size_t length)
 {
-    if (!x || !name || !x->writable)
-        return NULL;
-    File *file = addEntry(x, parent, name, "file", 0644);
-    addData(x, file, buffer, length);
+    File *file = NULL;
+    if (x && name && x->writable) {
+        file = addEntry(x, parent, name, "file", 0644);
+        addData(x, file, buffer, length);
+    }
     return file;
 }
 
@@ -951,13 +958,14 @@ int xar_attr_set(File *f, const char *prop, const char *key, const char *value)
     Node *node = f->node;
     if (prop)
         node = nodeAtPath(node, prop, 1);
-    if (!value || !key || !node)
-        return -1;
-    setAttribute(node, key, value);
-    return 0;
+    if (value && key && node) {
+        setAttribute(node, key, value);
+        return 0;
+    }
+    return -1;
 }
 
-static char *buildPath(File *file, char safe);
+static char *buildPath(File *file, _Bool safe);
 
 char *xar_get_path(File *f)
 {
@@ -965,7 +973,7 @@ char *xar_get_path(File *f)
 }
 
 // The path of a file: the names of its ancestors joined by slashes. With safe set a slash in a name becomes a colon and "." and ".." become "_".
-static char *buildPath(File *file, char safe)
+static char *buildPath(File *file, _Bool safe)
 {
     Node *nameNode = childNamed(file->node, "name");
     const char *text = nameNode ? nameNode->text : NULL;
@@ -978,7 +986,7 @@ static char *buildPath(File *file, char safe)
             else if (*p == 0)
                 break;
         }
-        if (name[0] == '.' && ((name[1] == '.' && name[2] == 0) || name[1] == 0)) {
+        if (name[0] == '.' && (name[1] == '.' ? name[2] == 0 : name[1] == 0)) {
             free(name);
             name = strdup("_");
         }
@@ -1293,10 +1301,11 @@ int xar_subdoc_attr_set(Subdoc *s, const char *prop, const char *key, const char
     Node *node = s->node;
     if (prop)
         node = nodeAtPath(node, prop, 1);
-    if (!value || !key || !node)
-        return -1;
-    setAttribute(node, key, value);
-    return 0;
+    if (value && key && node) {
+        setAttribute(node, key, value);
+        return 0;
+    }
+    return -1;
 }
 
 const char *xar_subdoc_attr_get(Subdoc *s, const char *prop, const char *key)
