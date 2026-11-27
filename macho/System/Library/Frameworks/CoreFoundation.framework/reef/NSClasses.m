@@ -150,6 +150,7 @@ static void writeCallback(CFWriteStreamRef stream, CFStreamEventType event, void
     if (delegate == nil) delegate = (id)stream;
     if ([delegate respondsToSelector:@selector(stream:handleEvent:)]) [delegate stream:(id)stream handleEvent:event];
 }
+extern CFHashCode _CFHashDouble(double);
 extern long _CFNumberGetType2(CFNumberRef);
 extern const char *object_getClassName(id);
 extern NSString *const NSRangeException;
@@ -4858,8 +4859,9 @@ static ReefNumberValue reefNumberValue(id number) {
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    ReefNumberValue v = reefNumberValue(self);
+    double d = v.kind == 1 ? (double)v.value.u : v.kind == 2 ? v.value.d : (double)v.value.s;
+    return _CFHashDouble(d);
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
