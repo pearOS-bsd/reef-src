@@ -38,3 +38,4 @@ usr/lib/libc++abi
 usr/lib/libc++.1
 System/Library/Frameworks/Tcl.framework
 usr/lib/libbz2.1.0
+usr/lib/libffi
