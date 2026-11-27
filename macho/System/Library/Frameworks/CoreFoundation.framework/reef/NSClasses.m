@@ -75,6 +75,9 @@ extern long reefCall_CFWriteStreamOpen(long) __asm__("_CFWriteStreamOpen");
 extern long reefCall_CFWriteStreamWrite(long, long, long) __asm__("_CFWriteStreamWrite");
 extern long reefCall__CFNumberGetType2(long) __asm__("__CFNumberGetType2");
 extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenced");
+extern long reefCall__CFIsDeallocating(long) __asm__("__CFIsDeallocating");
+extern long reefCall__CFTryRetain(long) __asm__("__CFTryRetain");
+extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 @class NSString, CacheEntry, ReefFrame, ReefSignature;
 
 
@@ -109,14 +112,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -136,8 +137,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (id)description
@@ -244,14 +245,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -271,8 +270,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (id)description
@@ -597,14 +596,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -624,8 +621,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (Class)classForCoder
@@ -946,14 +943,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -973,8 +968,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (Class)classForCoder
@@ -1271,14 +1266,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -1298,8 +1291,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (Class)classForCoder
@@ -1708,14 +1701,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -1735,8 +1726,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (Class)classForCoder
@@ -1798,14 +1789,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -1825,8 +1814,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (struct __CFURL *)_cfurl
@@ -2125,14 +2114,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -2152,8 +2139,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (Class)classForCoder
@@ -2306,14 +2293,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -2333,8 +2318,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (Class)classForCoder
@@ -2442,14 +2427,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -2469,8 +2452,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (Class)classForCoder
@@ -3002,14 +2985,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -3029,8 +3010,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (void)open
@@ -3150,14 +3131,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -3177,8 +3156,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (void)open
@@ -3527,14 +3506,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -3554,8 +3531,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (Class)classForCoder
@@ -3685,14 +3662,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -3952,14 +3927,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -3979,8 +3952,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (void)invalidate
@@ -4193,14 +4166,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -4220,8 +4191,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (Class)classForCoder
@@ -4483,14 +4454,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -4597,14 +4566,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -4828,14 +4795,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -4855,8 +4820,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (Class)classForCoder
@@ -5084,14 +5049,12 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)allowsWeakReference
 {
-    // unresolved
-    return NO;
+    return !(unsigned char)reefCall__CFIsDeallocating((long)self);
 }
 
 - (BOOL)retainWeakReference
 {
-    // unresolved
-    return NO;
+    return reefCall__CFTryRetain((long)self) != 0;
 }
 
 - (void)_setWeaklyReferenced
@@ -5111,8 +5074,8 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == 0) return 0;
+    return (BOOL)reefCall_CFEqual((long)self, (long)a0);
 }
 
 - (Class)classForCoder
