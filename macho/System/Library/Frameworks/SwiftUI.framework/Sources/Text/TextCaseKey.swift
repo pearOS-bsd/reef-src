@@ -22,5 +22,5 @@ enum TextCaseKey {
 
 extension SwiftUI.TextCaseKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.Text.Case?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

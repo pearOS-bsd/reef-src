@@ -22,5 +22,5 @@ enum HardScrollEdgesKey {
 
 extension SwiftUI.HardScrollEdgesKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.Edge.Set
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { [] }
 }

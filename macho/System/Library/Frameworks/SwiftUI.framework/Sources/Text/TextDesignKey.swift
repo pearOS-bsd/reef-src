@@ -22,5 +22,5 @@ enum TextDesignKey {
 
 extension SwiftUI.TextDesignKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.Font.Design?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

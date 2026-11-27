@@ -22,5 +22,5 @@ enum TabSearchActivationKey {
 
 extension SwiftUI.TabSearchActivationKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.TabSearchActivation
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .automatic }
 }

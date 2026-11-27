@@ -22,5 +22,5 @@ enum CalendarKey {
 
 extension SwiftUI.CalendarKey: SwiftUI.EnvironmentKey {
     typealias Value = Foundation.Calendar
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .autoupdatingCurrent }
 }

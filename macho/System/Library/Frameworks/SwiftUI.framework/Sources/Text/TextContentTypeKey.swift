@@ -22,5 +22,5 @@ enum TextContentTypeKey {
 
 extension SwiftUI.TextContentTypeKey: SwiftUI.EnvironmentKey {
     typealias Value = Swift.String?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

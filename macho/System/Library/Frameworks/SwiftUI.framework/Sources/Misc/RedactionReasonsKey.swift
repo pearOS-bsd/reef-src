@@ -22,5 +22,5 @@ enum RedactionReasonsKey {
 
 extension SwiftUI.RedactionReasonsKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.RedactionReasons
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { [] }
 }

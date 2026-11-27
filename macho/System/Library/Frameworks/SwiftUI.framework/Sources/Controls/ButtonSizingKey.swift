@@ -22,5 +22,5 @@ enum ButtonSizingKey {
 
 extension SwiftUI.ButtonSizingKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.ButtonSizing
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .automatic }
 }

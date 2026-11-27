@@ -22,5 +22,5 @@ enum FileDialogConfirmationLabelKey {
 
 extension SwiftUI.FileDialogConfirmationLabelKey: SwiftUI.EnvironmentKey {
     typealias Value = Swift.String?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

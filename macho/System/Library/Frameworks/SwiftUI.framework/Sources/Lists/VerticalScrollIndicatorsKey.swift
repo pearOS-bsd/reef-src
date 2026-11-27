@@ -22,5 +22,5 @@ enum VerticalScrollIndicatorsKey {
 
 extension SwiftUI.VerticalScrollIndicatorsKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.ScrollIndicatorVisibility
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .automatic }
 }

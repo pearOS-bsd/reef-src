@@ -22,5 +22,5 @@ enum BadgeProminenceKey {
 
 extension SwiftUI.BadgeProminenceKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.BadgeProminence
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .standard }
 }

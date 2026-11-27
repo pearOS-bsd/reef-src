@@ -22,5 +22,5 @@ enum TruncationModeKey {
 
 extension SwiftUI.TruncationModeKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.Text.TruncationMode
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .tail }
 }

@@ -22,5 +22,5 @@ enum ButtonBorderShapeKey {
 
 extension SwiftUI.ButtonBorderShapeKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.ButtonBorderShape
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .automatic }
 }

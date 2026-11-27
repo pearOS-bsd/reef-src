@@ -22,5 +22,5 @@ enum SymbolVariantsKey {
 
 extension SwiftUI.SymbolVariantsKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.SymbolVariants
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .none }
 }

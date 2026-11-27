@@ -22,5 +22,5 @@ enum ScrollTargetBehaviorKey {
 
 extension SwiftUI.ScrollTargetBehaviorKey: SwiftUI.EnvironmentKey {
     typealias Value = (any SwiftUI.ScrollTargetBehavior)?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

@@ -22,5 +22,5 @@ enum MenuOrderKey {
 
 extension SwiftUI.MenuOrderKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.MenuOrder
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .automatic }
 }

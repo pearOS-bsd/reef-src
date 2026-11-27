@@ -22,5 +22,5 @@ enum SearchTextKey {
 
 extension SwiftUI.SearchTextKey: SwiftUI.EnvironmentKey {
     typealias Value = (SwiftUI.Binding<Swift.String>)?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

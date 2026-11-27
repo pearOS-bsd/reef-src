@@ -22,5 +22,5 @@ enum ContainerShapeKey {
 
 extension SwiftUI.ContainerShapeKey: SwiftUI.EnvironmentKey {
     typealias Value = ((CGRect) -> SwiftUI.Path)?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

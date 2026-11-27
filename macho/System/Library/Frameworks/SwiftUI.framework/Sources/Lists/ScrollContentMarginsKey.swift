@@ -22,5 +22,5 @@ enum ScrollContentMarginsKey {
 
 extension SwiftUI.ScrollContentMarginsKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.EdgeInsets
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { SwiftUI.EdgeInsets() }
 }
