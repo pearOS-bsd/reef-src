@@ -10,3 +10,5 @@ usr/lib/swift/libswiftGLKit
 usr/lib/swift/libswiftSpriteKit
 usr/lib/swift/libswiftVideoToolbox
 usr/lib/swift/libswiftMLCompute
+usr/lib/libxslt.1
+usr/lib/libexslt.0

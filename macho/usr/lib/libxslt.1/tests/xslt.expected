@@ -1,0 +1,16 @@
+xslt 10135 10135, exslt 820
+write forbidden: 1
+result 224 bytes
+
+title=Reef & co
+count=4 sum=23leek:12pear:7apple:3kale:1
+fruit=2
+fmt=1.234.567,8950%
+tok=a|b|c|
+pad=ababa up=ABC
+math=1214.51024
+distinct=2
+date=2026November62026-02-28
+func=42
+gen=true sys=libxslt v=1.0
+avail=truetruefalsenot a stylesheet: rejected

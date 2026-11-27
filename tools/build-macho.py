@@ -101,7 +101,9 @@ def build(root, out, folder):
         libs = []
         for l in c['libs'].split():
             # reexport:PATH adds the library with -reexport_library (a LC_REEXPORT_DYLIB); a plain PATH is a LC_LOAD_DYLIB
-            libs += ['-reexport_library', os.path.join(root, l[9:])] if l.startswith('reexport:') else [os.path.join(root, l)]
+            # a library that the original package lacks (macho/additions.txt) is searched in the output folder, where an earlier target put it
+            where = lambda p: os.path.join(root, p) if os.path.exists(os.path.join(root, p)) or not os.path.exists(os.path.join(out, p)) else os.path.join(out, p)
+            libs += ['-reexport_library', where(l[9:])] if l.startswith('reexport:') else [where(l)]
         cmd = [LLVM + '/ld64.lld', '-arch', 'x86_64', '-platform_version', 'macos', c['minos'], c['minos'], '-syslibroot', root]
         if c['type'] == 'dylib':
             cmd += ['-dylib', '-install_name', c['id'], '-current_version', c['version'], '-compatibility_version', c['compat']]
