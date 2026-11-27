@@ -22,5 +22,6 @@ enum ColorSchemeKey {
 
 extension SwiftUI.ColorSchemeKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.ColorScheme
-    static var defaultValue: Self.Value { _skeleton() }
+    // the application's appearance
+    static var defaultValue: Self.Value { SwiftUI.SchemeAppearance.scheme(of: NSApp?.effectiveAppearance) }
 }
