@@ -20,15 +20,20 @@ import os
 public struct Group<A> {
     public var content: A
     public init<A1, B1>(subviews a0: A1, transform a1: @escaping (SwiftUI.SubviewsCollection) -> B1) where A == SwiftUI.GroupElementsOfContent<A1, B1>, A1: SwiftUI.View, B1: SwiftUI.View { _skeleton() }
-    public init(_content a0: A) { _skeleton() }
-    var contentPart: Any { _skeleton() }
+    public init(_content a0: A) { content = a0 }
+    var contentPart: Any { content }
 }
 
 extension SwiftUI.Group where A: SwiftUI.View {
-    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
+    /// the content under "group"
+    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] {
+        var context = a0
+        context.path.append(AnyHashable("group"))
+        return SwiftUI.ViewBuild.build(content, context)
+    }
     func _lazyRows(_ a0: SwiftUI.BuildContext) -> [SwiftUI.LazyRow] { _skeleton() }
     func menuEntries(_ a0: SwiftUI.EnvironmentValues) -> [SwiftUI.MenuEntry] { _skeleton() }
-    public init(content a0: () -> A) { _skeleton() }
+    public init(@SwiftUI.ViewBuilder content a0: () -> A) { content = a0() }
 }
 
 extension SwiftUI.Group where A: SwiftUI.Scene {

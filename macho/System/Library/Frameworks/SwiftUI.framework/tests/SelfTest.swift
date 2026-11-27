@@ -95,7 +95,7 @@ struct SelfTestStacks: SwiftUI.View {
                 .padding(3)
                 .frame(width: 60, height: nil, alignment: .trailing)
                 .environment(\.isEnabled, false)
-            SelfTestEnv().disabled(true).font(nil)
+            SwiftUI.Group { SelfTestEnv().disabled(true).font(nil) }
         }
         .padding(.horizontal, nil)
     }
