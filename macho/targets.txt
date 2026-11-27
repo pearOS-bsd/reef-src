@@ -71,3 +71,4 @@ System/Library/Frameworks/GameplayKit.framework
 System/Library/Frameworks/IOBluetooth.framework
 System/Library/Frameworks/CoreHaptics.framework
 System/Library/Frameworks/PhotosUI.framework
+System/Library/Frameworks/MetricKit.framework
