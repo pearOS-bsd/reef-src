@@ -18,11 +18,28 @@ import Metal
 import os
 
 class StoredLocation<A>: SwiftUI.AnyLocation<A> {
-    var value: A = _skeletonValue()
-    let signal: SwiftUI.GraphSignal = _skeletonValue()
-    final var peek: A { _skeleton() }
-    override func set(_ a0: A, transaction a1: SwiftUI.Transaction) { _skeleton() }
-    init(_ a0: A) { _skeleton() }
-    override func get() -> A { _skeleton() }
+    var value: A
+    let signal: SwiftUI.GraphSignal = SwiftUI.GraphSignal()
+    /// the value without making the reader depend on it
+    final var peek: A { value }
+    /// a new value: the rules that read the old one update (on the main thread)
+    override func set(_ a0: A, transaction a1: SwiftUI.Transaction) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { self.set(a0, transaction: a1) }
+            return
+        }
+        let same = SwiftUI.GraphCompare.equal(value, a0)
+        value = a0
+        if same { return }
+        signal.changed(a1.animation != nil ? a1 : SwiftUI.TransactionStack.current)
+    }
+    init(_ a0: A) {
+        value = a0
+        super.init()
+    }
+    override func get() -> A {
+        signal.noteRead()
+        return value
+    }
     deinit {}
 }

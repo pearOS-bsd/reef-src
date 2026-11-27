@@ -18,7 +18,7 @@ import Metal
 import os
 
 open class AnyLocationBase {
-    func isSame(`as` a0: SwiftUI.AnyLocationBase) -> Swift.Bool { _skeleton() }
-    init() { _skeleton() }
+    func isSame(`as` a0: SwiftUI.AnyLocationBase) -> Swift.Bool { self === a0 }
+    init() {}
     deinit {}
 }

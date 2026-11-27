@@ -18,7 +18,12 @@ import Metal
 import os
 
 public enum PreviewLayout {}
-struct PropertyInstallContext {}
+/// what a dynamic property installs itself with: the body node that owns the view and the property's slot
+/// (the binary has one more word between them, not known yet)
+struct PropertyInstallContext {
+    var node: SwiftUI.BodyNode
+    var index: Swift.Int
+}
 struct RenderContext {}
 enum TransferExport {}
 protocol FadeLayer {}

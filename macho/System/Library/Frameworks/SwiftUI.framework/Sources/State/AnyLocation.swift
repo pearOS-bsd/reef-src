@@ -18,8 +18,8 @@ import Metal
 import os
 
 open class AnyLocation<A>: SwiftUI.AnyLocationBase {
-    public override init() { _skeleton() }
-    func get() -> A { _skeleton() }
-    func set(_ a0: A, transaction a1: SwiftUI.Transaction) { _skeleton() }
+    public override init() { super.init() }
+    func get() -> A { fatalError("abstract location") }
+    func set(_ a0: A, transaction a1: SwiftUI.Transaction) { fatalError("abstract location") }
     deinit {}
 }

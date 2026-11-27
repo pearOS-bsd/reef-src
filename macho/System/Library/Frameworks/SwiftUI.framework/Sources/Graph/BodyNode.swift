@@ -55,7 +55,13 @@ class BodyNode: SwiftUI.GraphRule {
     final func leave(prefix a0: [Swift.AnyHashable]) { _skeleton() }
     final func leaveAll() { _skeleton() }
     final func teardownAll() { _skeleton() }
-    final func slot<A>(_ a0: Swift.Int, _ a1: () -> A) -> A where A: AnyObject { _skeleton() }
+    /// the object kept for a dynamic property in slot a0, made the first time
+    final func slot<A>(_ a0: Swift.Int, _ a1: () -> A) -> A where A: AnyObject {
+        if let object = storage[a0] as? A { return object }
+        let object = a1()
+        storage[a0] = object
+        return object
+    }
     final func sweep(_ a0: Swift.Int) { _skeleton() }
     init(type a0: Any.Type, host a1: SwiftUI.ViewHost?) { _skeleton() }
     static var sequence: Swift.Int { _skeleton() }

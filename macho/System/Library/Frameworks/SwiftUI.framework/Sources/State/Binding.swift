@@ -22,10 +22,14 @@ import os
     public var location: SwiftUI.AnyLocation<A>
     public var _value: A
     public var wrappedValue: A {
-        get { _skeleton() }
-        set { _skeleton() }
+        get { location.get() }
+        nonmutating set { location.set(newValue, transaction: transaction) }
     }
-    init(location a0: SwiftUI.AnyLocation<A>, transaction a1: SwiftUI.Transaction) { _skeleton() }
+    init(location a0: SwiftUI.AnyLocation<A>, transaction a1: SwiftUI.Transaction) {
+        transaction = a1
+        location = a0
+        _value = a0.get()
+    }
     public init(get a0: @escaping () -> A, set a1: @escaping (A) -> ()) { _skeleton() }
     static func sameBinding(_ a0: Swift.UnsafeRawPointer, _ a1: Swift.UnsafeRawPointer) -> Swift.Bool { _skeleton() }
     public init?(_ a0: SwiftUI.Binding<A?>) { _skeleton() }
