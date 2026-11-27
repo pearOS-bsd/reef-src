@@ -17,4 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+enum TabPages {
+    static func collect<A>(_ a0: A, selection a1: Any.Type) -> [SwiftUI.TabPage] where A: SwiftUI.View { _skeleton() }
+    static func walk(_ a0: Any, selection a1: Any.Type, into a2: inout [SwiftUI.TabPage]) { _skeleton() }
+}

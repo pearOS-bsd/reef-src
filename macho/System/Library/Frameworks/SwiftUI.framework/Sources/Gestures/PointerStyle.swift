@@ -47,6 +47,7 @@ public struct PointerStyle {
         case link
         case rectSelection
         func hash(into a0: inout Swift.Hasher) { _skeleton() }
+        static func == (_ a0: SwiftUI.PointerStyle.Kind, _ a1: SwiftUI.PointerStyle.Kind) -> Swift.Bool { _skeleton() }
     }
 }
 

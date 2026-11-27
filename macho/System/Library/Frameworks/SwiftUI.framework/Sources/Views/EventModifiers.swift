@@ -28,6 +28,7 @@ public struct EventModifiers {
     public static var numericPad: SwiftUI.EventModifiers { _skeleton() }
     public static var function: SwiftUI.EventModifiers { _skeleton() }
     public static var all: SwiftUI.EventModifiers { _skeleton() }
+    init(_ a0: NSEvent.ModifierFlags) { _skeleton() }
 }
 
 extension SwiftUI.EventModifiers: Swift.OptionSet {

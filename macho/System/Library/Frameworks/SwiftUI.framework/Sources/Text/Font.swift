@@ -144,6 +144,7 @@ public struct Font {
         let name: Swift.String
         let size: CoreGraphics.CGFloat
         let textStyle: SwiftUI.Font.TextStyle?
+        static func == (_ a0: SwiftUI.Font.NamedProvider, _ a1: SwiftUI.Font.NamedProvider) -> Swift.Bool { _skeleton() }
     }
     struct TextStyleProvider {
         let textStyle: SwiftUI.Font.TextStyle
@@ -152,6 +153,7 @@ public struct Font {
         func apply(to a0: inout SwiftUI.FontTraits) { _skeleton() }
         func hash(into a0: inout Swift.Hasher) { _skeleton() }
         var hashValue: Swift.Int { _skeleton() }
+        static func == (_ a0: SwiftUI.Font.TextStyleProvider, _ a1: SwiftUI.Font.TextStyleProvider) -> Swift.Bool { _skeleton() }
         static var sizes: [SwiftUI.Font.TextStyle: CoreGraphics.CGFloat] { _skeleton() }
     }
     struct SystemProvider {
@@ -160,6 +162,7 @@ public struct Font {
         let design: SwiftUI.Font.Design?
         func hash(into a0: inout Swift.Hasher) { _skeleton() }
         var hashValue: Swift.Int { _skeleton() }
+        static func == (_ a0: SwiftUI.Font.SystemProvider, _ a1: SwiftUI.Font.SystemProvider) -> Swift.Bool { _skeleton() }
     }
 }
 
@@ -204,7 +207,6 @@ extension SwiftUI.Font: Swift.Equatable {
 }
 
 extension SwiftUI.Font.SystemProvider: Swift.Equatable {
-    static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
 }
 
 extension SwiftUI.Font.SystemProvider: Swift.Hashable {
@@ -215,7 +217,6 @@ extension SwiftUI.Font.SystemProvider: SwiftUI.FontProvider {
 }
 
 extension SwiftUI.Font.TextStyleProvider: Swift.Equatable {
-    static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
 }
 
 extension SwiftUI.Font.TextStyleProvider: Swift.Hashable {
@@ -225,7 +226,6 @@ extension SwiftUI.Font.TextStyleProvider: SwiftUI.FontProvider {
 }
 
 extension SwiftUI.Font.NamedProvider: Swift.Equatable {
-    static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
 }
 
 extension SwiftUI.Font.NamedProvider: Swift.Hashable {

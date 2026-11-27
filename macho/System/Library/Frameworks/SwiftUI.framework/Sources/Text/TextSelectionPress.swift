@@ -22,12 +22,12 @@ class TextSelectionPress {
     var anchor: _NSRange = _skeletonValue()
     var clicks: Swift.Int = _skeletonValue()
     final func begin(at a0: CGPoint, event a1: NSEvent) { _skeleton() }
+    final func drag(to a0: CGPoint, inside a1: Swift.Bool, event a2: NSEvent) { _skeleton() }
     init(_ a0: SwiftUI.SelectableTextElement) { _skeleton() }
     deinit {}
 }
 
 extension SwiftUI.TextSelectionPress: SwiftUI.PressTarget {
     func contains(_ a0: CGPoint) -> Swift.Bool { _skeleton() }
-    func drag(to a0: CGPoint, inside a1: Swift.Bool, event a2: NSEvent) { _skeleton() }
     func end(at a0: CGPoint, inside a1: Swift.Bool, event a2: NSEvent) { _skeleton() }
 }

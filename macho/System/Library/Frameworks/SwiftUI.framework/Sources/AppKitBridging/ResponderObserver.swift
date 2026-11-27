@@ -20,6 +20,7 @@ import os
 class ResponderObserver: NSObject {
     weak var window: NSWindow?
     weak var host: SwiftUI.ViewHost?
+    final override func observeValue(forKeyPath a0: Swift.String?, of a1: Any?, change a2: ([NSKeyValueChangeKey: Any])?, context a3: Swift.UnsafeMutableRawPointer?) { _skeleton() }
     init(window a0: NSWindow, host a1: SwiftUI.ViewHost) { _skeleton() }
     deinit {}
 }

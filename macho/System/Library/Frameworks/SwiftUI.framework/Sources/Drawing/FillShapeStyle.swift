@@ -19,10 +19,10 @@ import os
 
 public struct FillShapeStyle {
     public init() { _skeleton() }
+    func paint(_ a0: SwiftUI.EnvironmentValues, level a1: Swift.Int) -> SwiftUI.Paint { _skeleton() }
 }
 
 extension SwiftUI.FillShapeStyle: SwiftUI.ResolvableShapeStyle {
-    func paint(_ a0: SwiftUI.EnvironmentValues, level a1: Swift.Int) -> SwiftUI.Paint { _skeleton() }
 }
 
 extension SwiftUI.FillShapeStyle: SwiftUI.ShapeStyle {

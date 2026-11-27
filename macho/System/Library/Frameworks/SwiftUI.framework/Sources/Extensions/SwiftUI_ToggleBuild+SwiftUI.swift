@@ -17,4 +17,6 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+enum ToggleBuild {
+    static func custom<A, B>(_ a0: A, toggle a1: SwiftUI.Toggle<B>, context a2: SwiftUI.BuildContext) -> [SwiftUI.Element] where A: SwiftUI.ToggleStyle, B: SwiftUI.View { _skeleton() }
+}

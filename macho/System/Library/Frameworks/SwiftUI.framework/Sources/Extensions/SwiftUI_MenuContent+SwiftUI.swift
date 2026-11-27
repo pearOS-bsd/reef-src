@@ -17,4 +17,11 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+enum MenuContent {
+    static func menu(_ a0: [SwiftUI.MenuEntry], title a1: Swift.String) -> NSMenu { _skeleton() }
+    static func entries<A>(_ a0: A, _ a1: SwiftUI.EnvironmentValues) -> [SwiftUI.MenuEntry] where A: SwiftUI.View { _skeleton() }
+    static func label<A>(_ a0: A) -> (Swift.String, NSImage?) where A: SwiftUI.View { _skeleton() }
+    static func collectLabel(_ a0: Any, texts a1: inout [Swift.String], image a2: inout NSImage?) { _skeleton() }
+    static func item(_ a0: SwiftUI.MenuEntry) -> NSMenuItem { _skeleton() }
+    static func nsImage(_ a0: SwiftUI.Image) -> NSImage? { _skeleton() }
+}

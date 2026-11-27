@@ -73,6 +73,8 @@ final class ElementCanvas: NSView {
     func validateMenuItem(_ a0: NSMenuItem) -> Swift.Bool { _skeleton() }
     override init(frame a0: CGRect) { _skeleton() }
     required init?(coder a0: NSCoder) { _skeleton() }
+    func dropItems(_ a0: any NSDraggingInfo) -> [SwiftUI.DropItem] { _skeleton() }
+    override func draw(_ a0: CGRect) { _skeleton() }
     static var skipsDrawing: Swift.Bool { _skeleton() }
     deinit {}
     class LiftedLayer {

@@ -21,8 +21,8 @@ struct InspectorColumnWidth {
     var min: CoreGraphics.CGFloat?
     var ideal: CoreGraphics.CGFloat
     var max: CoreGraphics.CGFloat?
+    static func == (_ a0: SwiftUI.InspectorColumnWidth, _ a1: SwiftUI.InspectorColumnWidth) -> Swift.Bool { _skeleton() }
 }
 
 extension SwiftUI.InspectorColumnWidth: Swift.Equatable {
-    static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
 }

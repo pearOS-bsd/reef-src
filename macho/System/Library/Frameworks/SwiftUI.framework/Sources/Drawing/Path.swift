@@ -66,6 +66,7 @@ public struct Path {
         case roundedRect(CGRect, cornerRadius: CoreGraphics.CGFloat, style: SwiftUI.RoundedCornerStyle)
         case cgPath(CGPath)
         case close
+        static func == (_ a0: SwiftUI.Path.Element, _ a1: SwiftUI.Path.Element) -> Swift.Bool { _skeleton() }
     }
 }
 

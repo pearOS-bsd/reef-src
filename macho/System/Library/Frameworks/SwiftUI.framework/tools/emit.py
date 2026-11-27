@@ -619,6 +619,12 @@ class Emitter:
         if not x.c: return None
         role = 'decl'
         extra = None
+        if x.k in ('FunctionSignatureSpecialization', 'GenericSpecialization') and len(g.c) > 1 and g.c[1].c:
+            # a specialised copy: its tree holds the original declaration (the only trace of internal functions whose
+            # unspecialised body the optimiser dropped, e.g. FontResolver.lineHeight)
+            x = g.c[1]
+            if x.k in ('Static',) and x.c and x.c[0].k in self.ACCESSORS: return None
+            if x.k in self.ACCESSORS: return None
         if x.k in ('PropertyDescriptor', 'MethodDescriptor', 'DispatchThunk', 'ObjCAttribute', 'NonObjCAttribute', 'DynamicAttribute',
                    'DefaultArgumentInitializer', 'EnumCase', 'MethodLookupFunction'):
             role = x.k
@@ -1282,9 +1288,21 @@ class Emitter:
             name = self.qualified(ti)
             depth = len(ti.depths) if ti.kind != 'protocol' else 1
             kind = ti.kind
+        elif ext is None:
+            # an internal type without metadata whose members are in the symbol table (a namespace enum such as
+            # TextBuilder or FontResolver: only static functions, dropped from the metadata by the optimiser)
+            c = b['ents'][0]['node'].c[0]
+            kw = {'Structure': 'struct', 'Class': 'final class', 'Enum': 'enum'}.get(c.k)
+            if kw is None or not c.c or c.c[0].k != 'Module' or c.c[0].t != 'SwiftUI': return []
+            self.namespaces.add(tk)
+            cinfo = dict(env=Env(), depth=0, kind=kw.split()[-1], self_key=tk, extern_class=False)
+            L = ['%s %s {' % (kw, esc(self.name_of(c)))]
+            for ent in b['ents']:
+                for x in self.member_decl(ent, cinfo): L.append('    ' + x)
+            L.append('}')
+            return L
         else:
-            base = ext.c[1] if ext is not None else None
-            if base is None: return []
+            base = ext.c[1]
             env, depth, name = self.extern_env(base)
             kind = 'extern'
             bn = base.c[0] if base.k == 'Type' and base.c else base
@@ -1327,7 +1345,7 @@ class Emitter:
         # types without metadata in the binary (internal, only passed around): declared empty, kind from the mangling
         ph = []
         for k, (n, args) in sorted(self.phantom.items()):
-            if '#' in k or k.count('.') != 1: continue
+            if '#' in k or k.count('.') != 1 or k in self.namespaces: continue
             kw = {'Structure': 'struct', 'Class': 'final class', 'Enum': 'enum'}.get(n.k)
             if kw is None: continue
             pub = 'public ' if k in self.promote else ''
@@ -1338,9 +1356,11 @@ class Emitter:
         with open(os.path.join(self.g.out, 'Support', 'aliases.txt'), 'w') as f:
             for a, b in sorted(self.aliases): f.write('%s %s\n' % (a, b))
         print('problems:', dict(self.problems), file=sys.stderr)
+        if os.environ.get('SKELETON_NAMESPACES'): print('namespaces:', ' '.join(sorted(self.namespaces)), file=sys.stderr)
 
     def emit_all(self):
         self.alias_done = {}
+        self.namespaces = set()
         files = collections.defaultdict(list)
         owner_file = {}
         for ti in self.top:

@@ -20,6 +20,7 @@ import os
 class SafeAreaIgnoringElement: SwiftUI.WrapperElement {
     let edges: SwiftUI.Edge.Set = _skeletonValue()
     override func place(`in` a0: CGRect) { _skeleton() }
+    static func expand(_ a0: CGRect, edges a1: SwiftUI.Edge.Set) -> CGRect { _skeleton() }
     init(_ a0: SwiftUI.Element, edges a1: SwiftUI.Edge.Set) { _skeleton() }
     deinit {}
 }

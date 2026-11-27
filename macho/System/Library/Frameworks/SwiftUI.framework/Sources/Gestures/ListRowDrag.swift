@@ -21,5 +21,6 @@ struct ListRowDrag {
     var move: ((group: SwiftUI.ListMoveGroup, offset: Swift.Int))?
     var payload: (() -> Any)?
     var insertion: ((target: SwiftUI.TableRowInsertion, offset: Swift.Int))?
+    static func of(_ a0: SwiftUI.Element) -> SwiftUI.ListRowDrag? { _skeleton() }
     static var key: Swift.ObjectIdentifier { _skeleton() }
 }

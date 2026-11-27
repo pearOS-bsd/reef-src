@@ -35,6 +35,7 @@ class PlatformViewElement: SwiftUI.Element {
     override func hitTest(_ a0: CGPoint) -> SwiftUI.Element? { _skeleton() }
     init(view a0: NSView, canvas a1: SwiftUI.ElementCanvas?, sizing a2: @escaping (SwiftUI.ProposedViewSize) -> CGSize) { _skeleton() }
     func viewFrame(`for` a0: CGRect) -> CGRect { _skeleton() }
+    static func measurementChanged(_ a0: NSView) { _skeleton() }
     override func containsContent(_ a0: CGPoint) -> Swift.Bool { _skeleton() }
     static var measuring: Swift.Set<Swift.ObjectIdentifier> { _skeleton() }
     static var versions: NSMapTable<NSView, NSNumber> { _skeleton() }

@@ -17,4 +17,6 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+enum SceneWalk {
+    static func items<A>(_ a0: A, _ a1: SwiftUI.SceneOptions) -> [SwiftUI.SceneItem] where A: SwiftUI.Scene { _skeleton() }
+}

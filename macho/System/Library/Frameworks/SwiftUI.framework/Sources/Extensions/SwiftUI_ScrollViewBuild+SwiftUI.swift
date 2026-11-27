@@ -17,4 +17,6 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+enum ScrollViewBuild {
+    static func build<A>(_ a0: A, axes a1: SwiftUI.Axis.Set, context a2: SwiftUI.BuildContext) -> [SwiftUI.Element] where A: SwiftUI.View { _skeleton() }
+}

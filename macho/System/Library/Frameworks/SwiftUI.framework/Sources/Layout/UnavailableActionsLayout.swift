@@ -18,6 +18,8 @@ import Metal
 import os
 
 struct UnavailableActionsLayout {
+    func sizeThatFits(proposal a0: SwiftUI.ProposedViewSize, subviews a1: SwiftUI.LayoutSubviews, cache a2: inout ()) -> CGSize { _skeleton() }
+    func placeSubviews(`in` a0: CGRect, proposal a1: SwiftUI.ProposedViewSize, subviews a2: SwiftUI.LayoutSubviews, cache a3: inout ()) { _skeleton() }
 }
 
 extension SwiftUI.UnavailableActionsLayout: SwiftUI.Animatable {
@@ -26,6 +28,4 @@ extension SwiftUI.UnavailableActionsLayout: SwiftUI.Animatable {
 
 extension SwiftUI.UnavailableActionsLayout: SwiftUI.Layout {
     typealias Cache = ()
-    func sizeThatFits(proposal a0: SwiftUI.ProposedViewSize, subviews a1: SwiftUI.LayoutSubviews, cache a2: inout Self.Cache) -> CGSize { _skeleton() }
-    func placeSubviews(`in` a0: CGRect, proposal a1: SwiftUI.ProposedViewSize, subviews a2: SwiftUI.LayoutSubviews, cache a3: inout Self.Cache) { _skeleton() }
 }

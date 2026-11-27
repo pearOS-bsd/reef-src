@@ -22,10 +22,10 @@ public struct _BlurEffect {
     public var isOpaque: Swift.Bool
     public init(radius a0: CoreGraphics.CGFloat, opaque a1: Swift.Bool) { _skeleton() }
     public static func == (_ a0: SwiftUI._BlurEffect, _ a1: SwiftUI._BlurEffect) -> Swift.Bool { _skeleton() }
+    func _apply(_ a0: SwiftUI.BuildContext, content a1: @escaping (SwiftUI.BuildContext) -> [SwiftUI.Element]) -> [SwiftUI.Element] { _skeleton() }
 }
 
 extension SwiftUI._BlurEffect: SwiftUI.PrimitiveModifier {
-    func _apply(_ a0: SwiftUI.BuildContext, content a1: @escaping (SwiftUI.BuildContext) -> [SwiftUI.Element]) -> [SwiftUI.Element] { _skeleton() }
 }
 
 extension SwiftUI._BlurEffect: SwiftUI.ViewModifier {

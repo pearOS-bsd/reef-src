@@ -24,6 +24,7 @@ final class DragSourceSession: NSObject {
     var start: CGPoint? = _skeletonValue()
     var started: Swift.Bool = _skeletonValue()
     func beginSession(_ a0: NSEvent) { _skeleton() }
+    static func image(of a0: CGRect, `in` a1: NSView) -> NSImage? { _skeleton() }
     deinit {}
 }
 

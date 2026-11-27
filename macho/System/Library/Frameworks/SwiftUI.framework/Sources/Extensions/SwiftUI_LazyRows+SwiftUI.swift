@@ -17,4 +17,6 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+enum LazyRows {
+    static func rows<A>(_ a0: A, _ a1: SwiftUI.BuildContext) -> [SwiftUI.LazyRow] where A: SwiftUI.View { _skeleton() }
+}

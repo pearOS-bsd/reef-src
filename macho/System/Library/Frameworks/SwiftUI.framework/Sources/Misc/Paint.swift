@@ -28,4 +28,7 @@ enum Paint {
     func fill(_ a0: CGPath, `in` a1: CGRect, context a2: CGContext, eoFill a3: Swift.Bool) { _skeleton() }
     func withOpacity(_ a0: Swift.Double) -> SwiftUI.Paint { _skeleton() }
     func drawGradient(`in` a0: CGRect, context a1: CGContext) { _skeleton() }
+    func gradient(_ a0: [(SwiftUI.Color.Resolved, CoreGraphics.CGFloat)]) -> CGGradient? { _skeleton() }
+    static func interpolate(_ a0: [(SwiftUI.Color.Resolved, CoreGraphics.CGFloat)], at a1: CoreGraphics.CGFloat) -> SwiftUI.Color.Resolved { _skeleton() }
+    static func same(_ a0: SwiftUI.Paint?, _ a1: SwiftUI.Paint?) -> Swift.Bool { _skeleton() }
 }

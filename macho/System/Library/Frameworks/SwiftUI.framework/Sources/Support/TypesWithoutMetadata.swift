@@ -26,5 +26,4 @@ struct PropertyInstallContext {
     var index: Swift.Int
 }
 struct RenderContext {}
-enum TransferExport {}
 protocol FadeLayer {}

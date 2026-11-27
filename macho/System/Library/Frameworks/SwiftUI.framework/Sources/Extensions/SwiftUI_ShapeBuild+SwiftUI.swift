@@ -17,4 +17,8 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+enum ShapeBuild {
+    static func element<A>(_ a0: A, paint a1: SwiftUI.Paint, stroke a2: SwiftUI.StrokeStyle?, eoFill a3: Swift.Bool) -> SwiftUI.ShapeElement where A: SwiftUI.Shape { _skeleton() }
+    static func element<A>(_ a0: A, paint a1: SwiftUI.Paint, eoFill a2: Swift.Bool, environment a3: SwiftUI.EnvironmentValues) -> SwiftUI.ShapeElement where A: SwiftUI.Shape { _skeleton() }
+    static func element<A>(_ a0: A, style a1: SwiftUI.Paint) -> SwiftUI.ShapeElement where A: SwiftUI.Shape { _skeleton() }
+}

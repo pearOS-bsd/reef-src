@@ -23,6 +23,7 @@ struct FluidSpringAnimation {
     let blendDuration: Swift.Double
     func animate<A>(value a0: A, time a1: Swift.Double, context a2: inout SwiftUI.AnimationContext<A>) -> A? where A: SwiftUI.VectorArithmetic { _skeleton() }
     func velocity<A>(value a0: A, time a1: Swift.Double, context a2: SwiftUI.AnimationContext<A>) -> A? where A: SwiftUI.VectorArithmetic { _skeleton() }
+    func shouldMerge<A>(previous a0: SwiftUI.Animation, value a1: A, time a2: Swift.Double, context a3: inout SwiftUI.AnimationContext<A>) -> Swift.Bool where A: SwiftUI.VectorArithmetic { _skeleton() }
 }
 
 extension SwiftUI.FluidSpringAnimation: Swift.Equatable {

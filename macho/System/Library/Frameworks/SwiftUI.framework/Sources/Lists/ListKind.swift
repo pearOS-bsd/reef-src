@@ -22,6 +22,7 @@ enum ListKind {
     case plain
     case bordered
     case sidebar
+    init(_ a0: Any?) { _skeleton() }
 }
 
 extension SwiftUI.ListKind: Swift.Hashable {

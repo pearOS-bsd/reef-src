@@ -23,6 +23,8 @@ class FormColumnsElement: SwiftUI.Element {
     override func measure(_ a0: SwiftUI.ProposedViewSize) -> CGSize { _skeleton() }
     override func place(`in` a0: CGRect) { _skeleton() }
     override func draw(_ a0: SwiftUI.RenderContext) { _skeleton() }
+    static func formRow(_ a0: SwiftUI.Element) -> SwiftUI.FormRowElement? { _skeleton() }
+    final func stack(_ a0: CoreGraphics.CGFloat?) -> (SwiftUI.StackElement, CoreGraphics.CGFloat) { _skeleton() }
     override var children: [SwiftUI.Element] { _skeleton() }
     init(rows a0: [SwiftUI.Element]) { _skeleton() }
     deinit {}

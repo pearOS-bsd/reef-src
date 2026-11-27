@@ -19,8 +19,8 @@ import os
 
 struct VisualEffectGeometry {
     let proxy: SwiftUI.GeometryProxy
+    static func == (_ a0: SwiftUI.VisualEffectGeometry, _ a1: SwiftUI.VisualEffectGeometry) -> Swift.Bool { _skeleton() }
 }
 
 extension SwiftUI.VisualEffectGeometry: Swift.Equatable {
-    static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
 }

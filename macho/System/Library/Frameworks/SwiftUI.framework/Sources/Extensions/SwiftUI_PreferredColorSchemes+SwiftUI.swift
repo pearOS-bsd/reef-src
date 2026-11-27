@@ -1,0 +1,22 @@
+// SPDX-FileCopyrightText: 2026 Reion Wong <reionwong@gmail.com>
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// Reconstructed from the published binary.
+// What SwiftUI adds to SwiftUI_PreferredColorSchemes.
+
+import Foundation
+import AppKit
+import CoreGraphics
+import CoreText
+import Combine
+import Observation
+import CoreTransferable
+import UniformTypeIdentifiers
+import Symbols
+import DeveloperToolsSupport
+import Metal
+import os
+
+enum PreferredColorSchemes {
+    static func apply(_ a0: SwiftUI.Element, to a1: NSWindow?, applied a2: inout SwiftUI.ColorScheme??) { _skeleton() }
+}

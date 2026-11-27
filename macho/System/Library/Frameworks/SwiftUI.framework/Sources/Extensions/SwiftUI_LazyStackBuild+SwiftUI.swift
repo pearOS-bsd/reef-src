@@ -17,4 +17,6 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+enum LazyStackBuild {
+    static func build<A>(axis a0: SwiftUI.Axis, alignment a1: SwiftUI.AlignmentKey, spacing a2: CoreGraphics.CGFloat?, pinned a3: SwiftUI.PinnedScrollableViews, content a4: A, context a5: SwiftUI.BuildContext) -> [SwiftUI.Element] where A: SwiftUI.View { _skeleton() }
+}

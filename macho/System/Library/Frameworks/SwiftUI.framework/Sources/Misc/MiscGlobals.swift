@@ -26,3 +26,4 @@ func singleElement(_ a0: [SwiftUI.Element]) -> SwiftUI.Element {
 func isInsideLiftedPart(_ a0: SwiftUI.Element) -> Swift.Bool { _skeleton() }
 func changeAction<A>(_ a0: SwiftUI.BuildContext, _ a1: A, initial a2: Swift.Bool, content a3: (SwiftUI.BuildContext) -> [SwiftUI.Element], _ a4: @escaping (A, A) -> ()) -> [SwiftUI.Element] where A: Swift.Equatable { _skeleton() }
 func valueTask<A>(_ a0: SwiftUI.BuildContext, _ a1: A, priority a2: Swift.TaskPriority, content a3: (SwiftUI.BuildContext) -> [SwiftUI.Element], _ a4: @escaping () async -> ()) -> [SwiftUI.Element] where A: Swift.Equatable { _skeleton() }
+func attach(_ a0: SwiftUI.PreferenceOperation, to a1: [SwiftUI.Element]) -> [SwiftUI.Element] { _skeleton() }

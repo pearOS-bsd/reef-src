@@ -19,6 +19,7 @@ import os
 
 enum CanvasDamage {
     static func visit(_ a0: SwiftUI.Element, transform a1: CGAffineTransform, outset a2: CoreGraphics.CGFloat, effects a3: [SwiftUI.Element], into a4: inout [SwiftUI.DrawnPart]) { _skeleton() }
+    static func changes(from a0: [SwiftUI.DrawnPart], to a1: [SwiftUI.DrawnPart]) -> [CGRect] { _skeleton() }
     struct Key {
         let type: Swift.ObjectIdentifier
         let x: CoreGraphics.CGFloat

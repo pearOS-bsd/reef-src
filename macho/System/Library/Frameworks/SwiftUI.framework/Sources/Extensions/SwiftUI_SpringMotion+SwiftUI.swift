@@ -17,4 +17,7 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+struct SpringMotion {
+    func settlingTime(epsilon a0: Swift.Double) -> Swift.Double { _skeleton() }
+    func displacement(at a0: Swift.Double) -> (x: Swift.Double, v: Swift.Double) { _skeleton() }
+}

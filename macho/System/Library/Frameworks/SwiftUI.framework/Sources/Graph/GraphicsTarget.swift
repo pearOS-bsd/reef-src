@@ -20,6 +20,7 @@ import os
 class GraphicsTarget {
     let cg: CGContext = _skeletonValue()
     let bounds: CGRect = _skeletonValue()
+    final func drawFiltered(_ a0: SwiftUI.GraphicsContext, _ a1: (CGContext, SwiftUI.EnvironmentValues) throws -> ()) throws { _skeleton() }
     init(cg a0: CGContext, bounds a1: CGRect) { _skeleton() }
     deinit {}
 }

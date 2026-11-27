@@ -34,6 +34,7 @@ class SelectableTextElement: SwiftUI.WrapperElement {
     override func draw(_ a0: SwiftUI.RenderContext) { _skeleton() }
     final func rects(`for` a0: _NSRange) -> [CGRect] { _skeleton() }
     final func laidOut() -> (origin: CGPoint, manager: NSLayoutManager, container: NSTextContainer) { _skeleton() }
+    static func word(`in` a0: NSString, at a1: Swift.Int) -> _NSRange { _skeleton() }
     deinit {}
 }
 

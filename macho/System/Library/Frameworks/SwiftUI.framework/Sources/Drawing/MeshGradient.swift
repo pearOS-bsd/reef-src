@@ -32,7 +32,9 @@ public struct MeshGradient {
     public init(width a0: Swift.Int, height a1: Swift.Int, bezierPoints a2: [SwiftUI.MeshGradient.BezierPoint], resolvedColors a3: [SwiftUI.Color.Resolved], background a4: SwiftUI.Color, smoothsColors a5: Swift.Bool, colorSpace a6: SwiftUI.Gradient.ColorSpace) { _skeleton() }
     public var body: SwiftUI.Canvas<SwiftUI.EmptyView> { _skeleton() }
     func resolvedColors(_ a0: SwiftUI.EnvironmentValues) -> [SwiftUI.Color.Resolved] { _skeleton() }
+    static func bilinear<A>(_ a0: [A], _ a1: Swift.Float, _ a2: Swift.Float) -> A where A: Swift.SIMD, A.Scalar == Swift.Float { _skeleton() }
     public static func == (_ a0: SwiftUI.MeshGradient, _ a1: SwiftUI.MeshGradient) -> Swift.Bool { _skeleton() }
+    func paint(_ a0: SwiftUI.EnvironmentValues, level a1: Swift.Int) -> SwiftUI.Paint { _skeleton() }
     public struct BezierPoint {
         public var position: Swift.SIMD2<Swift.Float>
         public var leadingControlPoint: Swift.SIMD2<Swift.Float>
@@ -75,5 +77,4 @@ extension SwiftUI.MeshGradient: SwiftUI.View {
 }
 
 extension SwiftUI.MeshGradient: SwiftUI.ResolvableShapeStyle {
-    func paint(_ a0: SwiftUI.EnvironmentValues, level a1: Swift.Int) -> SwiftUI.Paint { _skeleton() }
 }

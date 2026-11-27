@@ -17,4 +17,6 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+enum StyleBuild {
+    static func custom<A, B>(_ a0: A, context a1: SwiftUI.BuildContext, pieces a2: [(Any.Type, (SwiftUI.BuildContext) -> [SwiftUI.Element])], body a3: (A) -> B) -> [SwiftUI.Element] where B: SwiftUI.View { _skeleton() }
+}

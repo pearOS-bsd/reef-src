@@ -21,10 +21,10 @@ struct BezierAnimation {
     let duration: Swift.Double
     let curve: SwiftUI.UnitCurve
     func animate<A>(value a0: A, time a1: Swift.Double, context a2: inout SwiftUI.AnimationContext<A>) -> A? where A: SwiftUI.VectorArithmetic { _skeleton() }
+    static func == (_ a0: SwiftUI.BezierAnimation, _ a1: SwiftUI.BezierAnimation) -> Swift.Bool { _skeleton() }
 }
 
 extension SwiftUI.BezierAnimation: Swift.Equatable {
-    static func == (a0: Self, a1: Self) -> Swift.Bool { _skeleton() }
 }
 
 extension SwiftUI.BezierAnimation: Swift.Hashable {

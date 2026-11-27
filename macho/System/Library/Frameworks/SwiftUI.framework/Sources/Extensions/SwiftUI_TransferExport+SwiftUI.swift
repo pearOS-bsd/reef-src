@@ -17,4 +17,6 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+enum TransferExport {
+    static func exports<A>(_ a0: A) -> [(Swift.String, Foundation.Data)] where A: CoreTransferable.Transferable { _skeleton() }
+}

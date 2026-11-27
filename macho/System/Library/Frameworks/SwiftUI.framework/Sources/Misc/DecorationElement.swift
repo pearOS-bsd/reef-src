@@ -27,12 +27,12 @@ class DecorationElement: SwiftUI.Element {
     override func place(`in` a0: CGRect) { _skeleton() }
     final var coveredViews: [NSView] { _skeleton() }
     override func draw(_ a0: SwiftUI.RenderContext) { _skeleton() }
+    init(content a0: SwiftUI.Element, decoration a1: SwiftUI.Element, alignment a2: SwiftUI.Alignment, isOverlay a3: Swift.Bool) { _skeleton() }
     override func measure(_ a0: SwiftUI.ProposedViewSize) -> CGSize { _skeleton() }
     override func explicitAlignment(_ a0: SwiftUI.AlignmentKey, size a1: CGSize) -> CoreGraphics.CGFloat? { _skeleton() }
     override func hasFlexibleIdeal(_ a0: SwiftUI.Axis) -> Swift.Bool { _skeleton() }
     override var isSpacer: Swift.Bool { _skeleton() }
     override var spacingKind: SwiftUI.SpacingKind { _skeleton() }
-    init(content a0: SwiftUI.Element, decoration a1: SwiftUI.Element, alignment a2: SwiftUI.Alignment, isOverlay a3: Swift.Bool) { _skeleton() }
     deinit {}
 }
 

@@ -58,6 +58,7 @@ public struct Text {
     public func fontWidth(_ a0: SwiftUI.Font.Width?) -> SwiftUI.Text { _skeleton() }
     public func baselineOffset(_ a0: CoreGraphics.CGFloat) -> SwiftUI.Text { _skeleton() }
     public func bold(_ a0: Swift.Bool) -> SwiftUI.Text { _skeleton() }
+    static func markdownStorage(_ a0: Swift.String) -> SwiftUI.Text.Storage? { _skeleton() }
     public func accessibilityHeading(_ a0: SwiftUI.AccessibilityHeadingLevel) -> SwiftUI.Text { _skeleton() }
     public func speechAlwaysIncludesPunctuation(_ a0: Swift.Bool) -> SwiftUI.Text { _skeleton() }
     public struct LineStyle {

@@ -19,10 +19,10 @@ import os
 
 struct GlassShapeStyle {
     let glass: SwiftUI.Glass
+    func paint(_ a0: SwiftUI.EnvironmentValues, level a1: Swift.Int) -> SwiftUI.Paint { _skeleton() }
 }
 
 extension SwiftUI.GlassShapeStyle: SwiftUI.ResolvableShapeStyle {
-    func paint(_ a0: SwiftUI.EnvironmentValues, level a1: Swift.Int) -> SwiftUI.Paint { _skeleton() }
 }
 
 extension SwiftUI.GlassShapeStyle: SwiftUI.ShapeStyle {

@@ -73,6 +73,7 @@ public struct Color {
         public func hash(into a0: inout Swift.Hasher) { _skeleton() }
         public var hashValue: Swift.Int { _skeleton() }
         public func resolve(`in` a0: SwiftUI.EnvironmentValues) -> SwiftUI.Color.Resolved { _skeleton() }
+        init(_ a0: NSColor, colorScheme a1: SwiftUI.ColorScheme) { _skeleton() }
     }
     public enum RGBColorSpace {
         case sRGB

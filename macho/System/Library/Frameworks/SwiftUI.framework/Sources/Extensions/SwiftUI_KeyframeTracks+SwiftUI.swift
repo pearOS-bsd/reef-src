@@ -17,4 +17,6 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+enum KeyframeTracks {
+    static func collect<A>(_ a0: A, into a1: inout [SwiftUI.KeyframeTrackEvaluator]) where A: SwiftUI.Keyframes { _skeleton() }
+}

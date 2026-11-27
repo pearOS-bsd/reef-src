@@ -25,6 +25,7 @@ enum SpacingKind {
     case toggleSwitch
     case spacer
     case other
+    static func == (_ a0: SwiftUI.SpacingKind, _ a1: SwiftUI.SpacingKind) -> Swift.Bool { _skeleton() }
 }
 
 extension SwiftUI.SpacingKind: Swift.Equatable {

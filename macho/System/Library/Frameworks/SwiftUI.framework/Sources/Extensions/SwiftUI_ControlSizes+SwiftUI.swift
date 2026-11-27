@@ -17,4 +17,6 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+struct ControlSizes {
+    init(_ a0: SwiftUI.EnvironmentValues) { _skeleton() }
+}

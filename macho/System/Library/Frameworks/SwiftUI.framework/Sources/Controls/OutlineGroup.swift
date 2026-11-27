@@ -36,6 +36,7 @@ extension SwiftUI.OutlineGroup where C: SwiftUI.View, D: SwiftUI.View, E: SwiftU
 extension SwiftUI.OutlineGroup where B == A.Element.ID, C: SwiftUI.TableRowContent, C == D, D == E, A.Element == C.TableRowValue {
     public var tableRowBody: Swift.Never { _skeleton() }
     public init<A1>(_ a0: A, children a1: Swift.KeyPath<A1, A?>) where B == A1.ID, C == SwiftUI.TableRow<A1>, D == SwiftUI.TableRow<A1>, E == SwiftUI.TableRow<A1>, A1: Swift.Identifiable, A1 == A.Element { _skeleton() }
+    func tableRows() -> [SwiftUI.TableRowEntry] { _skeleton() }
 }
 
 extension SwiftUI.OutlineGroup: SwiftUI.PrimitiveView where C: SwiftUI.View, D: SwiftUI.View, E: SwiftUI.View {
@@ -51,5 +52,4 @@ extension SwiftUI.OutlineGroup: SwiftUI.TableRowContent where B == A.Element.ID,
 }
 
 extension SwiftUI.OutlineGroup: SwiftUI.TableRowsSource where B == A.Element.ID, C: SwiftUI.TableRowContent, C == D, D == E, A.Element == C.TableRowValue {
-    func tableRows() -> [SwiftUI.TableRowEntry] { _skeleton() }
 }

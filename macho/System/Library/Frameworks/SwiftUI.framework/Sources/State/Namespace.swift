@@ -21,6 +21,7 @@ import os
     public var id: Swift.Int
     public init() { _skeleton() }
     public var wrappedValue: SwiftUI.Namespace.ID { _skeleton() }
+    static func _reefInstall(at a0: Swift.UnsafeMutableRawPointer, context a1: SwiftUI.PropertyInstallContext) { _skeleton() }
     public struct ID {
         var id: Swift.Int
         public static func == (_ a0: SwiftUI.Namespace.ID, _ a1: SwiftUI.Namespace.ID) -> Swift.Bool { _skeleton() }
@@ -30,7 +31,6 @@ import os
 }
 
 extension SwiftUI.Namespace: SwiftUI.DynamicPropertyInstaller {
-    static func _reefInstall(at a0: Swift.UnsafeMutableRawPointer, context a1: SwiftUI.PropertyInstallContext) { _skeleton() }
 }
 
 extension SwiftUI.Namespace: SwiftUI.DynamicProperty {

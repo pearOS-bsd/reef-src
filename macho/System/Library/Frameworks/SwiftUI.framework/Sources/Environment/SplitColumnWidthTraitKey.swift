@@ -18,6 +18,7 @@ import Metal
 import os
 
 struct SplitColumnWidthTraitKey {
+    static func width(of a0: SwiftUI.Element) -> CoreGraphics.CGFloat? { _skeleton() }
 }
 
 extension SwiftUI.SplitColumnWidthTraitKey: SwiftUI._ViewTraitKey {

@@ -17,4 +17,6 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+enum Gestures {
+    static func recognizer<A>(_ a0: A) -> SwiftUI.GestureRecognizer? where A: SwiftUI.Gesture { _skeleton() }
+}

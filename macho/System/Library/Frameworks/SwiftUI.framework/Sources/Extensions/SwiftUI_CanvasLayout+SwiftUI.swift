@@ -17,4 +17,8 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+enum CanvasLayout {
+    static func place(_ a0: SwiftUI.Element, `in` a1: CGRect, scale a2: CoreGraphics.CGFloat) { _skeleton() }
+    static var fullBounds: CGRect? { _skeleton() }
+    static var safeBounds: CGRect? { _skeleton() }
+}

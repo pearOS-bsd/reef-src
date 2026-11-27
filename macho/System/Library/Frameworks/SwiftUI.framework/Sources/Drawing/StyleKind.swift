@@ -32,6 +32,7 @@ enum StyleKind {
     case datePicker
     case disclosureGroup
     case gauge
+    init?(_ a0: Any) { _skeleton() }
 }
 
 extension SwiftUI.StyleKind: Swift.Hashable {

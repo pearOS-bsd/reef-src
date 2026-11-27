@@ -24,6 +24,7 @@ struct TransferableDropDelegate<A> where A: CoreTransferable.Transferable {
     static func load(_ a0: NSItemProvider) async -> A? { _skeleton() }
     func dropEntered(info a0: SwiftUI.DropInfo) { _skeleton() }
     func dropExited(info a0: SwiftUI.DropInfo) { _skeleton() }
+    func validateDrop(info a0: SwiftUI.DropInfo) -> Swift.Bool { _skeleton() }
     init(action a0: @escaping ([A], CGPoint) -> Swift.Bool, isTargeted a1: @escaping (Swift.Bool) -> ()) { _skeleton() }
 }
 

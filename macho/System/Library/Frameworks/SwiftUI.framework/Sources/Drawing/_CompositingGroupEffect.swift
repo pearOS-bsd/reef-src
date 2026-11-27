@@ -19,10 +19,10 @@ import os
 
 public struct _CompositingGroupEffect {
     public init() { _skeleton() }
+    func _apply(_ a0: SwiftUI.BuildContext, content a1: @escaping (SwiftUI.BuildContext) -> [SwiftUI.Element]) -> [SwiftUI.Element] { _skeleton() }
 }
 
 extension SwiftUI._CompositingGroupEffect: SwiftUI.PrimitiveModifier {
-    func _apply(_ a0: SwiftUI.BuildContext, content a1: @escaping (SwiftUI.BuildContext) -> [SwiftUI.Element]) -> [SwiftUI.Element] { _skeleton() }
 }
 
 extension SwiftUI._CompositingGroupEffect: SwiftUI.ViewModifier {

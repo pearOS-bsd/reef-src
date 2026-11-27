@@ -17,4 +17,6 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+struct Oklab {
+    var resolved: SwiftUI.Color.Resolved { _skeleton() }
+}

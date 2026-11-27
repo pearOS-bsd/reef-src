@@ -22,6 +22,7 @@ class ListDragSession: NSObject {
     let move: ((group: SwiftUI.ListMoveGroup, offsets: [Swift.Int]))? = _skeletonValue()
     let payloads: [Any] = _skeletonValue()
     let token: Swift.String = _skeletonValue()
+    static func matching(_ a0: [SwiftUI.DropItem]) -> SwiftUI.ListDragSession? { _skeleton() }
     init(source a0: SwiftUI.ListDragState, move a1: ((group: SwiftUI.ListMoveGroup, offsets: [Swift.Int]))?, payloads a2: [Any]) { _skeleton() }
     static var type: UniformTypeIdentifiers.UTType { _skeleton() }
     static var current: SwiftUI.ListDragSession? { _skeleton() }

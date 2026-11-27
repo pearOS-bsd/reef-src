@@ -17,4 +17,6 @@ import DeveloperToolsSupport
 import Metal
 import os
 
-
+enum TabContentPages {
+    static func collect(_ a0: Any) -> [SwiftUI.TabPage] { _skeleton() }
+}

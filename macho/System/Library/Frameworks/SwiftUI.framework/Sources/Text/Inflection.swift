@@ -18,6 +18,11 @@ import Metal
 import os
 
 enum Inflection {
+    static func inflects(_ a0: Swift.String) -> Swift.Bool { _skeleton() }
+    static func number(_ a0: Swift.String) -> Swift.Double? { _skeleton() }
+    static func noun(_ a0: Swift.String, singular a1: Swift.Bool) -> Swift.String { _skeleton() }
+    static func inflected(_ a0: Swift.String) -> Swift.String { _skeleton() }
+    static func applyingExtendedAttributes(_ a0: Swift.String) -> Swift.String { _skeleton() }
     static var verbs: [Swift.String: (singular: Swift.String, plural: Swift.String)] { _skeleton() }
     static var unchanging: Swift.Set<Swift.String> { _skeleton() }
     struct Token {
