@@ -72,6 +72,8 @@ __attribute__((constructor)) static void ReefDumpViews(void) {
     const char *t = getenv("REEF_DUMP_VIEWS");
     if (!t) return;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(atof(t) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        // REEF_DUMP_FILE=path: apps that take over stderr (crash reporters) still show the dump
+        if (getenv("REEF_DUMP_FILE")) freopen(getenv("REEF_DUMP_FILE"), "a", stderr);
         for (NSWindow *w in NSApp.windows) {
             fprintf(stderr, "WINDOW %s %s\n", object_getClassName(w), NSStringFromRect(w.frame).UTF8String);
             DumpView(w.contentView, 1);
@@ -108,6 +110,21 @@ __attribute__((constructor)) static void ReefFixHostingWidth(void) {
     });
 }
 
+// Test aid: runs a block on the main thread after a delay, also while a modal panel or a tracking loop runs
+// (dispatch_after on the main queue waits for the default run loop mode).
+@interface ReefInjectRunner : NSObject
++ (void)run:(void (^)(void))block after:(double)seconds;
+@end
+@implementation ReefInjectRunner
++ (void)call:(void (^)(void))block { block(); }
++ (void)run:(void (^)(void))block after:(double)seconds {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(seconds * NSEC_PER_SEC)), dispatch_get_global_queue(0, 0), ^{
+        [self performSelectorOnMainThread:@selector(call:) withObject:[block copy] waitUntilDone:NO
+                                    modes:@[NSRunLoopCommonModes, NSModalPanelRunLoopMode, NSEventTrackingRunLoopMode, NSDefaultRunLoopMode]];
+    });
+}
+@end
+
 // Test aid: REEF_INJECT_KEYS="1 2 + 3 =" types the characters into the key window, one every
 // REEF_INJECT_INTERVAL seconds (default 0.6), starting REEF_INJECT_DELAY seconds after launch (default 9).
 // Names: Return, Escape, Delete (backspace).
@@ -128,11 +145,13 @@ static void ReefPostClick(double x, double yFromTop) {
     if (!w) return;
     NSRect content = w.contentView.frame;
     NSPoint p = NSMakePoint(x, content.size.height - yFromTop);
-    for (NSNumber *down in @[@YES, @NO]) {
-        NSEvent *e = [NSEvent mouseEventWithType:down.boolValue ? NSEventTypeLeftMouseDown : NSEventTypeLeftMouseUp location:p modifierFlags:0
-                                       timestamp:NSProcessInfo.processInfo.systemUptime windowNumber:w.windowNumber context:nil eventNumber:0 clickCount:1 pressure:down.boolValue ? 1.0 : 0.0];
-        [NSApp sendEvent:e];
-    }
+    // The release is queued before the press is delivered: a control tracks the mouse inside its mouseDown: and reads the release from the queue.
+    NSEvent *up = [NSEvent mouseEventWithType:NSEventTypeLeftMouseUp location:p modifierFlags:0
+                                    timestamp:NSProcessInfo.processInfo.systemUptime windowNumber:w.windowNumber context:nil eventNumber:0 clickCount:1 pressure:0.0];
+    NSEvent *down = [NSEvent mouseEventWithType:NSEventTypeLeftMouseDown location:p modifierFlags:0
+                                      timestamp:NSProcessInfo.processInfo.systemUptime windowNumber:w.windowNumber context:nil eventNumber:0 clickCount:1 pressure:1.0];
+    [NSApp postEvent:up atStart:NO];
+    [NSApp sendEvent:down];
 }
 
 __attribute__((constructor)) static void ReefInjectClicks(void) {
@@ -145,10 +164,10 @@ __attribute__((constructor)) static void ReefInjectClicks(void) {
         NSArray *xy = [list[i] componentsSeparatedByString:@","];
         if (xy.count != 2) continue;
         double x = [xy[0] doubleValue], y = [xy[1] doubleValue];
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((delay + interval * i) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [ReefInjectRunner run:^{
             fprintf(stderr, "inject: click %g,%g\n", x, y);
             ReefPostClick(x, y);
-        });
+        } after:delay + interval * i];
     }
 }
 
@@ -160,13 +179,13 @@ __attribute__((constructor)) static void ReefInjectKeys(void) {
     NSArray *list = [[NSString stringWithUTF8String:keys] componentsSeparatedByString:@" "];
     for (NSUInteger i = 0; i < list.count; i++) {
         NSString *k = list[i];
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((delay + interval * i) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [ReefInjectRunner run:^{
             fprintf(stderr, "inject: %s\n", k.UTF8String);
             if ([k isEqualToString:@"Return"]) ReefPostKey(@"\r", 36);
             else if ([k isEqualToString:@"Escape"]) ReefPostKey(@"\x1b", 53);
             else if ([k isEqualToString:@"Delete"]) ReefPostKey(@"\x7f", 51);
             else ReefPostKey(k, 0);
-        });
+        } after:delay + interval * i];
     }
 }
 
@@ -183,3 +202,48 @@ __attribute__((constructor)) static void ReefLogEvents(void) {
 
 // Option key of NSImage's bitmap conversion (observed on macOS 26: the value is the name).
 NSBitmapImageRepPropertyKey NSImageDitherTransparency = @"NSImageDitherTransparency";
+
+// Debug aid: REEF_LOG_EXCEPTIONS=path appends the reason and the whole call stack of an uncaught exception to the file
+// (the report dialog of the loader shows only the first lines).
+static NSUncaughtExceptionHandler *ReefPreviousHandler;
+static void ReefLogException(NSException *e) {
+    FILE *f = fopen(getenv("REEF_LOG_EXCEPTIONS"), "a");
+    if (f) {
+        fprintf(f, "%s: %s\n", e.name.UTF8String, e.reason.UTF8String);
+        for (NSString *s in e.callStackSymbols) fprintf(f, "  %s\n", s.UTF8String);
+        fclose(f);
+    }
+    if (ReefPreviousHandler) ReefPreviousHandler(e);
+}
+
+__attribute__((constructor)) static void ReefInstallExceptionLog(void) {
+    if (!getenv("REEF_LOG_EXCEPTIONS")) return;
+    ReefPreviousHandler = NSGetUncaughtExceptionHandler();
+    NSSetUncaughtExceptionHandler(ReefLogException);
+}
+
+// Reef's binding code applies value transformers (NSNegateBoolean ...) to the binding markers (NSNoSelectionMarker,
+// NSMultipleValuesMarker, NSNotApplicableMarker); AppKit never does. Until that code skips markers, a marker reads as NO / 0.
+#import <objc/runtime.h>
+__attribute__((constructor)) static void ReefMarkerNumbers(void) {
+    Class c = NSClassFromString(@"AKMarker");
+    if (!c) return;
+    class_addMethod(c, @selector(boolValue), imp_implementationWithBlock(^BOOL(id s) { return NO; }), "c@:");
+    class_addMethod(c, @selector(intValue), imp_implementationWithBlock(^int(id s) { return 0; }), "i@:");
+    class_addMethod(c, @selector(integerValue), imp_implementationWithBlock(^NSInteger(id s) { return 0; }), "q@:");
+    class_addMethod(c, @selector(doubleValue), imp_implementationWithBlock(^double(id s) { return 0; }), "d@:");
+    class_addMethod(c, @selector(floatValue), imp_implementationWithBlock(^float(id s) { return 0; }), "f@:");
+    class_addMethod(c, @selector(longValue), imp_implementationWithBlock(^long(id s) { return 0; }), "q@:");
+    class_addMethod(c, @selector(longLongValue), imp_implementationWithBlock(^long long(id s) { return 0; }), "q@:");
+    class_addMethod(c, @selector(unsignedIntegerValue), imp_implementationWithBlock(^NSUInteger(id s) { return 0; }), "Q@:");
+    class_addMethod(c, @selector(stringValue), imp_implementationWithBlock(^id(id s) { return @""; }), "@@:");
+}
+
+// NSMatrix -setToolTip:forCell: (Reef's NSMatrix lacks it): remembered per cell, not shown.
+__attribute__((constructor)) static void ReefMatrixToolTips(void) {
+    Class c = NSClassFromString(@"NSMatrix");
+    if (!c) return;
+    class_addMethod(c, @selector(setToolTip:forCell:), imp_implementationWithBlock(^(id s, NSString *tip, id cell) {
+        objc_setAssociatedObject(cell, "reefToolTip", tip, OBJC_ASSOCIATION_COPY_NONATOMIC);
+    }), "v@:@@");
+}
