@@ -30,3 +30,9 @@ The aliases cover functions, types, descriptors and opaque result descriptors. R
 (and `REDIRECT`ed libraries such as SwiftUICore, which Reef folds into SwiftUI) are rewritten to the original.
 Rules: the generic signature (requirements) of our declaration must be Apple's, or the calling convention differs;
 a protocol requirement Reef's protocol lacks cannot be added (see `SLOT_ALIASES`).
+
+## Media playback (AVFoundation, AVKit)
+Reef's AVFoundation has the classes but no engine. The AVFoundation wrapper adds one over the host's FFmpeg libraries
+(looked up at run time, never linked or shipped): assets load their tracks, items decode ahead on their own threads,
+sound goes to the AppKit host's audio output, AVPlayerLayer gets the pictures. The AVKit wrapper's AVPlayerView shows
+them with floating controls. Evidence: AVFoundation/EVIDENCE.md. Debug output: `REEF_AV_LOG=1`.
