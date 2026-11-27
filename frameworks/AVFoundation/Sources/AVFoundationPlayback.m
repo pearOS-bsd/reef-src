@@ -463,8 +463,9 @@ static CGImageRef CreateImage(ReefVideoFrame *frame)
     static CGColorSpaceRef space;
     if (!space)
         space = CGColorSpaceCreateDeviceRGB();
+    // opaque BGRA as the host's native premultiplied ARGB32 (no conversion when it is drawn)
     CGImageRef image = CGImageCreate(frame->width, frame->height, 8, 32, frame->bytesPerRow, space,
-                                     kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipFirst, provider, NULL, false,
+                                     kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst, provider, NULL, false,
                                      kCGRenderingIntentDefault);
     CGDataProviderRelease(provider);
     return image;
@@ -1137,8 +1138,29 @@ static ReefItemState *SetUpItem(AVPlayerItem *item, AVAsset *asset)
     if (!item || !item->engine)
         return state->rate != 0;
     ReefPlaybackEngine *engine = item->engine;
+    // the pictures are decoded at the size of the largest layer showing them (in pixels)
+    double wantWidth = 0, wantHeight = 0;
+    for (CALayer *layer in [state->layers allObjects]) {
+        double scale = layer.contentsScale > 0 ? layer.contentsScale : 1;
+        wantWidth = MAX(wantWidth, layer.bounds.size.width * scale);
+        wantHeight = MAX(wantHeight, layer.bounds.size.height * scale);
+    }
+    if (engine->open)
+        ReefMediaReaderSetPictureSize(engine->reader, (int)ceil(wantWidth), (int)ceil(wantHeight));
     BOOL ended = NO;
     ReefVideoFrame *frame = engine->open ? [engine takePicture:&ended] : NULL;
+    static double statsStart;
+    static int statsTicks, statsFrames;
+    statsTicks++;
+    if (frame)
+        statsFrames++;
+    double wall = Now();
+    if (wall - statsStart >= 2) {
+        if (state->rate != 0)
+            ReefLog(@"display: %d pictures, %d ticks in %.1f s", statsFrames, statsTicks, wall - statsStart);
+        statsStart = wall;
+        statsTicks = statsFrames = 0;
+    }
     if (frame) {
         CGImageRef image = CreateImage(frame); // the image owns the picture now
         for (CALayer *layer in [state->layers allObjects]) {

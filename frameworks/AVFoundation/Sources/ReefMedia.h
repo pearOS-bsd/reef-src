@@ -78,6 +78,8 @@ void ReefMediaReaderVideoSize(ReefMediaReader *reader, int *width, int *height);
 // Decodes until something comes out: 1 a picture in *frame, 2 sound in *chunk, 0 the end, negative an error.
 // The caller frees what it gets with ReefVideoFrameFree / ReefAudioChunkFree.
 int ReefMediaReaderNext(ReefMediaReader *reader, ReefVideoFrame **frame, ReefAudioChunk **chunk);
+// The size the pictures come out at (0, 0: the coded size); any thread may set it, the next picture has it.
+void ReefMediaReaderSetPictureSize(ReefMediaReader *reader, int width, int height);
 // Goes to the key frame at or before `seconds`; what comes out next starts there (the caller drops what is early).
 int ReefMediaReaderSeek(ReefMediaReader *reader, double seconds);
 void ReefVideoFrameFree(ReefVideoFrame *frame);

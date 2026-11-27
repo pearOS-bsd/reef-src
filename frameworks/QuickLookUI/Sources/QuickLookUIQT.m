@@ -7,4 +7,6 @@
 @interface QLSeamlessDocumentOpener : NSObject
 @end
 @implementation QLSeamlessDocumentOpener
+// Opening a document from a Quick Look preview without a seam: there is no preview to continue from.
++ (instancetype)seamlessDocumentOpenerForURL:(NSURL *)url { return nil; }
 @end

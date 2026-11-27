@@ -380,6 +380,30 @@ static void *kResolverContext = &kResolverContext;
 - (NSView *)hitTest:(NSPoint)point { return nil; }
 - (void)reef_playerLayerDidChangeContents:(CALayer *)layer { [self setNeedsDisplay:YES]; }
 
+// The player layer has the size of the picture on screen, so that the engine decodes at that size.
+- (void)updateLayerSize
+{
+    CGSize size = self.playerLayer.player.currentItem.presentationSize;
+    NSRect bounds = self.bounds;
+    if (size.width > 0 && size.height > 0) {
+        double scale = MIN(bounds.size.width / size.width, bounds.size.height / size.height);
+        size = CGSizeMake(size.width * scale, size.height * scale);
+    } else {
+        size = bounds.size;
+    }
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+    self.playerLayer.bounds = CGRectMake(0, 0, size.width, size.height);
+    self.playerLayer.contentsScale = self.window ? self.window.backingScaleFactor : 1;
+    [CATransaction commit];
+}
+
+- (void)setFrameSize:(NSSize)size
+{
+    [super setFrameSize:size];
+    [self updateLayerSize];
+}
+
 - (NSRect)videoRect
 {
     CGImageRef image = (__bridge CGImageRef)self.playerLayer.contents;
@@ -406,6 +430,8 @@ static void *kResolverContext = &kResolverContext;
     CGImageRef image = (__bridge CGImageRef)self.playerLayer.contents;
     if (!image)
         return;
+    if (!CGSizeEqualToSize(self.playerLayer.bounds.size, [self videoRect].size))
+        [self updateLayerSize];
     CGContextRef context = [NSGraphicsContext currentContext].CGContext;
     CGContextSaveGState(context);
     CGContextSetInterpolationQuality(context, kCGInterpolationMedium);

@@ -287,6 +287,8 @@ struct ReefMediaReader {
     double videoFrameDuration;
     int eof, videoDone, audioDone;
     int width, height;
+    volatile int wantWidth, wantHeight; // the picture size asked for (0: coded size)
+    int swsOutWidth, swsOutHeight;
 };
 
 static void *openDecoder(void *format, int index, Rational *base)
@@ -388,6 +390,14 @@ int ReefMediaReaderHasAudio(ReefMediaReader *r) { return r && r->audio >= 0; }
 int ReefMediaReaderSampleRate(ReefMediaReader *r) { return r ? r->rate : 0; }
 int ReefMediaReaderChannels(ReefMediaReader *r) { return r ? r->channels : 0; }
 
+void ReefMediaReaderSetPictureSize(ReefMediaReader *r, int width, int height)
+{
+    if (r) {
+        r->wantWidth = width;
+        r->wantHeight = height;
+    }
+}
+
 void ReefMediaReaderVideoSize(ReefMediaReader *r, int *width, int *height)
 {
     *width = r ? r->width : 0;
@@ -408,19 +418,27 @@ static ReefVideoFrame *convertPicture(ReefMediaReader *r)
     int width = AT(int, f, FR_WIDTH), height = AT(int, f, FR_HEIGHT), format = AT(int, f, FR_FORMAT);
     if (width <= 0 || height <= 0)
         return 0;
-    if (!r->sws || width != r->swsWidth || height != r->swsHeight || format != r->swsFormat) {
+    // scaled down to the size asked for (scaling up is left to whoever draws the picture)
+    int outWidth = width, outHeight = height, wantWidth = r->wantWidth, wantHeight = r->wantHeight;
+    if (wantWidth > 0 && wantHeight > 0 && wantWidth < width && wantHeight < height) {
+        outWidth = wantWidth & ~1;
+        outHeight = wantHeight & ~1;
+    }
+    if (!r->sws || width != r->swsWidth || height != r->swsHeight || format != r->swsFormat || outWidth != r->swsOutWidth ||
+        outHeight != r->swsOutHeight) {
         if (r->sws)
             ff.sws_freeContext(r->sws);
-        r->sws = ff.sws_getContext(width, height, format, width, height, PIX_FMT_BGRA, SWS_BILINEAR, 0, 0, 0);
+        r->sws = ff.sws_getContext(width, height, format, outWidth, outHeight, PIX_FMT_BGRA, SWS_BILINEAR, 0, 0, 0);
         r->swsWidth = width, r->swsHeight = height, r->swsFormat = format;
+        r->swsOutWidth = outWidth, r->swsOutHeight = outHeight;
         if (!r->sws)
             return 0;
     }
     ReefVideoFrame *out = calloc(1, sizeof *out);
-    out->width = width;
-    out->height = height;
+    out->width = outWidth;
+    out->height = outHeight;
     out->bytesPerRow = ((size_t)width * 4 + 63) & ~(size_t)63;
-    out->pixels = malloc(out->bytesPerRow * height);
+    out->pixels = malloc(out->bytesPerRow * outHeight);
     uint8_t *planes[4] = {out->pixels, 0, 0, 0};
     int strides[4] = {(int)out->bytesPerRow, 0, 0, 0};
     ff.sws_scale(r->sws, (const uint8_t *const *)&AT(uint8_t *, f, FR_DATA), &AT(int, f, FR_LINESIZE), 0, height, planes, strides);
