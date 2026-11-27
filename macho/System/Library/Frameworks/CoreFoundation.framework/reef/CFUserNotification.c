@@ -30,22 +30,22 @@ typedef void (*CFUserNotificationCallBack)(CFUserNotificationRef userNotificatio
 typedef struct { double x, y, w, h; } Frame;
 SInt32 CFUserNotificationCancel(CFUserNotificationRef userNotification);
 
-const CFStringRef kCFUserNotificationIconURLKey = CFSTR("IconURL");
-const CFStringRef kCFUserNotificationSoundURLKey = CFSTR("SoundURL");
-const CFStringRef kCFUserNotificationLocalizationURLKey = CFSTR("LocalizationURL");
-const CFStringRef kCFUserNotificationAlertHeaderKey = CFSTR("AlertHeader");
-const CFStringRef kCFUserNotificationAlertMessageKey = CFSTR("AlertMessage");
-const CFStringRef kCFUserNotificationDefaultButtonTitleKey = CFSTR("DefaultButtonTitle");
-const CFStringRef kCFUserNotificationAlternateButtonTitleKey = CFSTR("AlternateButtonTitle");
-const CFStringRef kCFUserNotificationOtherButtonTitleKey = CFSTR("OtherButtonTitle");
-const CFStringRef kCFUserNotificationProgressIndicatorValueKey = CFSTR("ProgressIndicatorValue");
-const CFStringRef kCFUserNotificationPopUpTitlesKey = CFSTR("PopUpTitles");
-const CFStringRef kCFUserNotificationTextFieldTitlesKey = CFSTR("TextFieldTitles");
-const CFStringRef kCFUserNotificationCheckBoxTitlesKey = CFSTR("CheckBoxTitles");
-const CFStringRef kCFUserNotificationTextFieldValuesKey = CFSTR("TextFieldValues");
-const CFStringRef kCFUserNotificationPopUpSelectionKey = CFSTR("PopUpSelection");
-const CFStringRef kCFUserNotificationAlertTopMostKey = CFSTR("AlertTopMost");
-const CFStringRef kCFUserNotificationKeyboardTypesKey = CFSTR("KeyboardTypes");
+const CFStringRef kCFUserNotificationIconURLKey = (CFStringRef)__builtin___CFStringMakeConstantString("IconURL");
+const CFStringRef kCFUserNotificationSoundURLKey = (CFStringRef)__builtin___CFStringMakeConstantString("SoundURL");
+const CFStringRef kCFUserNotificationLocalizationURLKey = (CFStringRef)__builtin___CFStringMakeConstantString("LocalizationURL");
+const CFStringRef kCFUserNotificationAlertHeaderKey = (CFStringRef)__builtin___CFStringMakeConstantString("AlertHeader");
+const CFStringRef kCFUserNotificationAlertMessageKey = (CFStringRef)__builtin___CFStringMakeConstantString("AlertMessage");
+const CFStringRef kCFUserNotificationDefaultButtonTitleKey = (CFStringRef)__builtin___CFStringMakeConstantString("DefaultButtonTitle");
+const CFStringRef kCFUserNotificationAlternateButtonTitleKey = (CFStringRef)__builtin___CFStringMakeConstantString("AlternateButtonTitle");
+const CFStringRef kCFUserNotificationOtherButtonTitleKey = (CFStringRef)__builtin___CFStringMakeConstantString("OtherButtonTitle");
+const CFStringRef kCFUserNotificationProgressIndicatorValueKey = (CFStringRef)__builtin___CFStringMakeConstantString("ProgressIndicatorValue");
+const CFStringRef kCFUserNotificationPopUpTitlesKey = (CFStringRef)__builtin___CFStringMakeConstantString("PopUpTitles");
+const CFStringRef kCFUserNotificationTextFieldTitlesKey = (CFStringRef)__builtin___CFStringMakeConstantString("TextFieldTitles");
+const CFStringRef kCFUserNotificationCheckBoxTitlesKey = (CFStringRef)__builtin___CFStringMakeConstantString("CheckBoxTitles");
+const CFStringRef kCFUserNotificationTextFieldValuesKey = (CFStringRef)__builtin___CFStringMakeConstantString("TextFieldValues");
+const CFStringRef kCFUserNotificationPopUpSelectionKey = (CFStringRef)__builtin___CFStringMakeConstantString("PopUpSelection");
+const CFStringRef kCFUserNotificationAlertTopMostKey = (CFStringRef)__builtin___CFStringMakeConstantString("AlertTopMost");
+const CFStringRef kCFUserNotificationKeyboardTypesKey = (CFStringRef)__builtin___CFStringMakeConstantString("KeyboardTypes");
 
 enum {
     kNoDefaultButtonFlag = 1 << 5,
@@ -363,7 +363,7 @@ static void present(struct __CFUserNotification *n) {
     if (CFArrayGetCount(fields) != 0) {
         CFMutableArrayRef values = CFArrayCreateMutable(alloc, 0, &kCFTypeArrayCallBacks);
         for (CFIndex i = 0; i < CFArrayGetCount(fields); i++) {
-            CFStringRef s = (CFStringRef)SEND((id)CFArrayGetValueAtIndex(fields, i), "stringValue");
+            CFStringRef s = (CFStringRef)(uintptr_t)SEND((id)CFArrayGetValueAtIndex(fields, i), "stringValue");
             CFArrayAppendValue(values, s ? s : CFSTR(""));
         }
         CFDictionarySetValue(responses, kCFUserNotificationTextFieldValuesKey, values);
