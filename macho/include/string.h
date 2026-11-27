@@ -15,7 +15,7 @@ char *strcpy(char *, const char *); char *strncpy(char *, const char *, size_t);
 char *strchr(const char *, int); char *strrchr(const char *, int); char *strstr(const char *, const char *); char *strpbrk(const char *, const char *);
 size_t strspn(const char *, const char *); size_t strcspn(const char *, const char *); char *strtok(char *, const char *);
 char *strdup(const char *); char *strndup(const char *, size_t); char *strerror(int); int strerror_r(int, char *, size_t);
-void bzero(void *, size_t); void bcopy(const void *, void *, size_t); int strcasecmp(const char *, const char *); int strncasecmp(const char *, const char *, size_t);
+void bzero(void *, size_t); void bcopy(const void *, void *, size_t); int strcasecmp(const char *, const char *); char *strcasestr(const char *, const char *); int strncasecmp(const char *, const char *, size_t);
 size_t strlcpy(char *, const char *, size_t); size_t strlcat(char *, const char *, size_t);
 #ifdef __cplusplus
 }
