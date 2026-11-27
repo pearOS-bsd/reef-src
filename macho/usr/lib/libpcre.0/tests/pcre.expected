@@ -1,0 +1,25 @@
+version 8.44 2020-02-12
+utf8 1
+unicode properties 1
+jit 0
+newline 10
+link size 2
+match limit 10000000
+/(\d+)-(\d+)/ on 'tel 555-1234 end': 3 [4,12] [4,7] [8,12]
+/^(?<year>\d{4})-(?<mon>\d\d)$/ on '2026-11': 3 [0,7] [0,4] [5,7]
+/a(b|c)*d/ on 'xxabcbcdyy': 2 [2,8] [6,7]
+/(unclosed/ error 'missing )' at 9
+/\bfoo\b/ on 'a FOO b': 1 [2,5]
+/\p{Lu}\p{Ll}+/ on 'x École y': 1 [2,8]
+/^\w+$/ on 'café': 1 [0,5]
+/(?i)stra\xdfe/ on 'STRA�E': 1 [0,6]
+/(a+)+b/ on 'aaaaaaaaaaaaaaaaaaaaaaaaaaaac': -1
+/(?s).+/ on 'line1
+line2': 1 [0,11]
+/^.+$/ on 'one
+two': 1 [0,7]
+named second = 'world' number 2
+captures 2 size 111
+study ok jit 0
+jit exec 3 [0,7]
+dfa 1 [0,5]

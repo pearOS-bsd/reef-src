@@ -1,0 +1,4 @@
+_pcre_compile
+_pcre_exec
+_pcre_free
+_pcre_study

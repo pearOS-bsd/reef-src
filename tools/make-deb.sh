@@ -33,6 +33,9 @@ macho=0
 if [ -d "$build/macho" ]; then
     for file in $(cd "$build/macho" && find . -type f | sort); do
         dest=$work/pkg/usr/lib/cutefish-reef/${file#./}
+        if [ ! -e "$dest" ] && grep -qsx "install = ${file#./}" $(sed 's/#.*//' "$here/macho/additions.txt" | sed "s|^\(.\+\)|$here/macho/\1/target.conf|"); then
+            mkdir -p "$(dirname "$dest")" && : > "$dest"      # a file that the original package does not have (macho/additions.txt)
+        fi
         [ -f "$dest" ] && [ ! -L "$dest" ] || { echo "make-deb.sh: $dest is not a file of the original package" >&2; exit 1; }
         cat "$build/macho/$file" > "$dest"
         macho=$((macho + 1))

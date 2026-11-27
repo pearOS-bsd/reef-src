@@ -1,0 +1,4 @@
+# Mach-O libraries and frameworks that are not in the original package: built like macho/targets.txt (tools/build-macho.py), but there is no original to
+# compare with. tests/additions.py runs their tests (macho/<folder>/tests/*.c, golden output next to each as NAME.expected, recorded on a Mac), and
+# tools/make-deb.sh adds the files to the package.
+usr/lib/libpcre.0

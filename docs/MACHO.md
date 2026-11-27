@@ -130,3 +130,11 @@ Each folder has the source, `target.conf` (`cflags = -fno-objc-arc` when the bin
 Habits of the compiler that decide the match: MRR files get the GOT calls `objc_release`, `objc_retain` and `objc_autorelease` (and `objc_alloc_init` for `[[X alloc] init]`) only when `NSObject` declares `release`, `retain` and `autorelease`
 (declare them in a category in the file); nested messages in one statement load the receivers' class references first; `dispatch_once` needs the inline fast path of the SDK header; a program (`type = executable`) is tested with `testruns`.
 A test that links AppKit explicitly or runs the initializer of an `NSPanel` subclass cannot run in the image (no host AppKit library): allocate without `init`.
+
+## Libraries that the original package does not have (`macho/additions.txt`)
+Apps import open-source libraries that macOS ships in `/usr/lib` and the original package lacks (libpcre, libxslt, libtidy, libedit, libncurses, libsasl2 ...).
+They are built from the unchanged upstream source (`upstream/<name>`, a row in `upstream/PROVENANCE.md`) with Apple's install name and versions, as `macho/` targets, but are listed
+in `macho/additions.txt` instead of `targets.txt` (there is no original file to compare with). `tests/additions.py` checks them: the exports against `exports.txt` (the list
+`dyld_info -exports` shows for the library in the shared cache of macOS 26.7; `imports.txt` is what the apps import, all of it must be exported; `tools/check-exports.py`) and
+every `tests/NAME.c` against `NAME.expected`, the output of the same program run on a Mac against Apple's library. `tools/make-deb.sh` adds the files to the package.
+- libpcre.0: PCRE 8.44 as Apple's (`pcre_version()` is `8.44 2020-02-12`, `PCRE_CONFIG_JIT` 0: the JIT entry points exist and are stubs), all 31 exports.
