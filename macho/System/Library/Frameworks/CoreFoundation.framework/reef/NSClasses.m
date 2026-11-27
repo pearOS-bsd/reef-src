@@ -863,8 +863,7 @@ extern NSString *const NSRangeException;
 
 - (unsigned long)countForKey:(id)a0
 {
-    // unresolved
-    return 0;
+    return [self objectForKey:a0] != nil;
 }
 
 - (unsigned long)countForObject:(id)a0
@@ -880,8 +879,9 @@ extern NSString *const NSRangeException;
 
 - (BOOL)__getValue:(id *)a0 forKey:(id)a1
 {
-    // unresolved
-    return NO;
+    id value = [self objectForKey:a1];
+    if (a0) *a0 = value;
+    return value != nil;
 }
 
 - (void)__apply:(void * *)a0 context:(void *)a1
@@ -904,8 +904,10 @@ extern NSString *const NSRangeException;
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    id mutableCopy = [self _cfMutableCopy];
+    CFDictionaryRef copy = CFDictionaryCreateCopy(kCFAllocatorSystemDefault, (CFDictionaryRef)mutableCopy);
+    CFRelease(mutableCopy);
+    return (id)copy;
 }
 
 - (id)mutableCopyWithZone:(struct _NSZone *)a0
@@ -959,20 +961,22 @@ extern NSString *const NSRangeException;
 
 - (void)removeAllObjects
 {
-    // unresolved
-
+    unsigned long count = [self count];
+    id *keys = malloc(count * sizeof(id) + 1);
+    [self getObjects:NULL andKeys:keys];
+    for (unsigned long idx = 0; idx < count; idx++) [self removeObjectForKey:keys[idx]];
+    free(keys);
 }
 
 - (void)replaceObject:(id)a0 forKey:(id)a1
 {
-    // unresolved
-
+    if ([self objectForKey:a1]) [self setObject:a0 forKey:a1];
 }
 
 - (void)__addObject:(id)a0 forKey:(id)a1
 {
-    // unresolved
-
+    if ([self objectForKey:a1]) return;
+    [self setObject:a0 forKey:a1];
 }
 
 - (void)__setObject:(id)a0 forKey:(id)a1
