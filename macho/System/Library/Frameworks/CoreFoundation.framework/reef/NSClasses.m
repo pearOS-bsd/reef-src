@@ -6,6 +6,11 @@
 
 #import "NSBase.h"
 
+// The info word of a Core Foundation object (the second word): the lowest bits tell mutable from immutable collections and strings.
+#define REEF_INFO(object) (__c11_atomic_load((_Atomic(unsigned long) *)((char *)(object) + 8), __ATOMIC_RELAXED))
+
+@class NSDictionary, NSString, CacheEntry, ReefFrame, ReefSignature;
+
 extern long reefCall_CFArrayGetCount(long) __asm__("_CFArrayGetCount");
 extern long reefCall_CFArrayGetTypeID(void) __asm__("_CFArrayGetTypeID");
 extern long reefCall_CFAttributedStringBeginEditing(long) __asm__("_CFAttributedStringBeginEditing");
@@ -78,7 +83,34 @@ extern long reefCall__CFSetWeaklyReferenced(long) __asm__("__CFSetWeaklyReferenc
 extern long reefCall__CFIsDeallocating(long) __asm__("__CFIsDeallocating");
 extern long reefCall__CFTryRetain(long) __asm__("__CFTryRetain");
 extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
-@class NSString, CacheEntry, ReefFrame, ReefSignature;
+@interface NSException : NSObject
+{
+    NSString * _name;
+    NSString * _reason;
+    NSDictionary * _userInfo;
+    struct __CFArray * _callStack;
+}
++ (id)exceptionWithName:(id)a0 reason:(id)a1 userInfo:(id)a2;
++ (void)raise:(id)a0 format:(id)a1, ...;
++ (void)raise:(id)a0 format:(id)a1 arguments:(void *)a2;
+- (id)initWithName:(id)a0 reason:(id)a1 userInfo:(id)a2;
+- (void)dealloc;
+- (void)raise;
+- (id)name;
+- (id)reason;
+- (id)userInfo;
+- (void)_recordCallStack;
+- (id)callStackReturnAddresses;
+- (id)callStackSymbols;
+- (id)copyWithZone:(struct _NSZone *)a0;
+- (id)description;
+@end
+extern void __reefRaiseImmutable(id, SEL) __attribute__((noreturn));
+extern void __reefRaiseNil(id, SEL, const char *) __attribute__((noreturn));
+extern void __reefRaiseIndex(id, SEL, unsigned long, unsigned long) __attribute__((noreturn));
+extern unsigned long _CFArrayFastEnumeration(id, NSFastEnumerationState *, id *, unsigned long);
+extern const char *object_getClassName(id);
+extern NSString *const NSRangeException;
 
 
 @interface __NSCFType : NSObject
@@ -625,8 +657,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (Class)classForCoder
 {
-    // unresolved
-    return nil;
+    return [(REEF_INFO(self) & 3 ? [NSMutableArray class] : [NSArray class]) class];
 }
 
 - (unsigned long)count
@@ -636,80 +667,106 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (id)objectAtIndex:(unsigned long)a0
 {
-    // unresolved
-    return nil;
+    unsigned long count = CFArrayGetCount((CFArrayRef)self);
+    if (count <= a0) __reefRaiseIndex(self, _cmd, a0, count);
+    return (id)CFArrayGetValueAtIndex((CFArrayRef)self, a0);
 }
 
 - (void)getObjects:(id *)a0 range:(NSRange)a1
 {
-    // unresolved
-
+    unsigned long count = CFArrayGetCount((CFArrayRef)self);
+    if (count < a1.location || count - a1.location < a1.length) {
+        [NSException raise:NSRangeException format:CFSTR("*** -[%s getObjects:range:]: range {%lu, %lu} extends beyond bounds [0 .. %ld]"), object_getClassName(self), a1.location, a1.length, count - 1];
+    }
+    CFArrayGetValues((CFArrayRef)self, CFRangeMake(a1.location, a1.length), (const void **)a0);
 }
 
 - (void)insertObject:(id)a0 atIndex:(unsigned long)a1
 {
-    // unresolved
-
+    if (!(REEF_INFO(self) & 3)) __reefRaiseImmutable(self, _cmd);
+    if (a0 == 0) __reefRaiseNil(self, _cmd, "object");
+    unsigned long count = CFArrayGetCount((CFArrayRef)self);
+    if (count < a1) __reefRaiseIndex(self, _cmd, a1, count + 1);
+    CFArrayInsertValueAtIndex((CFMutableArrayRef)self, a1, a0);
 }
 
 - (void)removeObjectAtIndex:(unsigned long)a0
 {
-    // unresolved
-
+    if (!(REEF_INFO(self) & 3)) __reefRaiseImmutable(self, _cmd);
+    unsigned long count = CFArrayGetCount((CFArrayRef)self);
+    if (count <= a0) __reefRaiseIndex(self, _cmd, a0, count);
+    CFArrayRemoveValueAtIndex((CFMutableArrayRef)self, a0);
 }
 
 - (void)replaceObjectAtIndex:(unsigned long)a0 withObject:(id)a1
 {
-    // unresolved
-
+    if (!(REEF_INFO(self) & 3)) __reefRaiseImmutable(self, _cmd);
+    if (a1 == 0) __reefRaiseNil(self, _cmd, "object");
+    unsigned long count = CFArrayGetCount((CFArrayRef)self);
+    if (count <= a0) __reefRaiseIndex(self, _cmd, a0, count);
+    CFArraySetValueAtIndex((CFMutableArrayRef)self, a0, a1);
 }
 
 - (void)addObject:(id)a0
 {
-    // unresolved
-
+    if (!(REEF_INFO(self) & 3)) __reefRaiseImmutable(self, _cmd);
+    if (a0 == 0) __reefRaiseNil(self, _cmd, "object");
+    CFArrayAppendValue((CFMutableArrayRef)self, a0);
 }
 
 - (void)setObject:(id)a0 atIndex:(unsigned long)a1
 {
-    // unresolved
-
+    if (!(REEF_INFO(self) & 3)) __reefRaiseImmutable(self, _cmd);
+    if (a0 == 0) __reefRaiseNil(self, _cmd, "object");
+    unsigned long count = CFArrayGetCount((CFArrayRef)self);
+    if (count < a1) __reefRaiseIndex(self, _cmd, a1, count + 1);
+    CFArraySetValueAtIndex((CFMutableArrayRef)self, a1, a0);
 }
 
 - (void)exchangeObjectAtIndex:(unsigned long)a0 withObjectAtIndex:(unsigned long)a1
 {
-    // unresolved
-
+    if (!(REEF_INFO(self) & 3)) __reefRaiseImmutable(self, _cmd);
+    unsigned long count = CFArrayGetCount((CFArrayRef)self);
+    if (count <= a0) __reefRaiseIndex(self, _cmd, a0, count);
+    if (count <= a1) __reefRaiseIndex(self, _cmd, a1, count);
+    CFArrayExchangeValuesAtIndices((CFMutableArrayRef)self, a0, a1);
 }
 
 - (void)removeAllObjects
 {
-    // unresolved
-
+    if (!(REEF_INFO(self) & 3)) __reefRaiseImmutable(self, _cmd);
+    CFArrayRemoveAllValues((CFMutableArrayRef)self);
 }
 
 - (void)replaceObjectsInRange:(NSRange)a0 withObjects:(id *)a1 count:(unsigned long)a2
 {
-    // unresolved
-
+    if (!(REEF_INFO(self) & 3)) __reefRaiseImmutable(self, _cmd);
+    unsigned long count = CFArrayGetCount((CFArrayRef)self);
+    if (count < a0.location || count - a0.location < a0.length) {
+        [NSException raise:NSRangeException format:CFSTR("*** -[%s replaceObjectsInRange:withObjects:count:]: range {%lu, %lu} extends beyond bounds [0 .. %ld]"), object_getClassName(self), a0.location, a0.length, count - 1];
+    }
+    for (unsigned long idx = 0; idx < a2; idx++) {
+        if (a1[idx] == 0) __reefRaiseNil(self, _cmd, "object");
+    }
+    CFArrayReplaceValues((CFMutableArrayRef)self, CFRangeMake(a0.location, a0.length), (const void **)a1, a2);
 }
 
 - (void)removeLastObject
 {
-    // unresolved
-
+    if (!(REEF_INFO(self) & 3)) __reefRaiseImmutable(self, _cmd);
+    unsigned long count = CFArrayGetCount((CFArrayRef)self);
+    if (count != 0) CFArrayRemoveValueAtIndex((CFMutableArrayRef)self, count - 1);
 }
 
 - (unsigned long)countByEnumeratingWithState:(NSFastEnumerationState *)a0 objects:(id *)a1 count:(unsigned long)a2
 {
-    // unresolved
-    return 0;
+    if (a0->state == 0) a0->mutationsPtr = (unsigned long *)&a0->extra[0];
+    return _CFArrayFastEnumeration(self, a0, a1, a2);
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFArrayCreateCopy(kCFAllocatorSystemDefault, (CFArrayRef)self);
 }
 
 @end
@@ -1896,28 +1953,6 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 @end
 
-@interface NSException : NSObject
-{
-    NSString * _name;
-    NSString * _reason;
-    NSDictionary * _userInfo;
-    struct __CFArray * _callStack;
-}
-+ (id)exceptionWithName:(id)a0 reason:(id)a1 userInfo:(id)a2;
-+ (void)raise:(id)a0 format:(id)a1;
-+ (void)raise:(id)a0 format:(id)a1 arguments:(void *)a2;
-- (id)initWithName:(id)a0 reason:(id)a1 userInfo:(id)a2;
-- (void)dealloc;
-- (void)raise;
-- (id)name;
-- (id)reason;
-- (id)userInfo;
-- (void)_recordCallStack;
-- (id)callStackReturnAddresses;
-- (id)callStackSymbols;
-- (id)copyWithZone:(struct _NSZone *)a0;
-- (id)description;
-@end
 
 @implementation NSException
 + (id)exceptionWithName:(id)a0 reason:(id)a1 userInfo:(id)a2
@@ -1926,7 +1961,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
     return nil;
 }
 
-+ (void)raise:(id)a0 format:(id)a1
++ (void)raise:(id)a0 format:(id)a1, ...
 {
     // unresolved
 
@@ -3522,8 +3557,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (Class)classForCoder
 {
-    // unresolved
-    return nil;
+    return [(REEF_INFO(self) & 1 ? [NSMutableString class] : [NSString class]) class];
 }
 
 - (unsigned long)length
@@ -3538,14 +3572,12 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (void)getCharacters:(unsigned short *)a0 range:(NSRange)a1
 {
-    // unresolved
-
+    CFStringGetCharacters((CFStringRef)self, CFRangeMake(a1.location, a1.length), a0);
 }
 
 - (void)replaceCharactersInRange:(NSRange)a0 withString:(id)a1
 {
-    // unresolved
-
+    CFStringReplace((CFMutableStringRef)self, CFRangeMake(a0.location, a0.length), (CFStringRef)a1);
 }
 
 - (void)appendString:(id)a0
@@ -3560,8 +3592,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFStringCreateCopy(kCFAllocatorSystemDefault, (CFStringRef)self);
 }
 
 @end
