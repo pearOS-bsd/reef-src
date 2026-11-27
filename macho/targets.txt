@@ -60,3 +60,4 @@ System/Library/Frameworks/CoreTelephony.framework
 System/Library/Frameworks/CallKit.framework
 System/Library/Frameworks/ExceptionHandling.framework
 System/Library/Frameworks/FinderSync.framework
+System/Library/Frameworks/LocalAuthentication.framework
