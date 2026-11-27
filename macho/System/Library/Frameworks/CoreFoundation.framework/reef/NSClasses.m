@@ -115,6 +115,8 @@ extern id objc_autorelease(id);
 extern id objc_retain(id);
 extern void objc_release(id);
 extern long _CFNumberGetType2(CFNumberRef);
+extern void *CFAttributedStringCreateCopy(CFAllocatorRef, void *);
+extern void *CFAttributedStringCreateMutableCopy(CFAllocatorRef, CFIndex, void *);
 extern const char *object_getClassName(id);
 extern NSString *const NSRangeException;
 
@@ -484,14 +486,12 @@ extern NSString *const NSRangeException;
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFArrayCreateCopy(kCFAllocatorSystemDefault, (void *)self);
 }
 
 - (id)mutableCopyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFArrayCreateMutableCopy(kCFAllocatorSystemDefault, 0, (void *)self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -533,20 +533,17 @@ extern NSString *const NSRangeException;
 @implementation NSMutableArray
 - (void)insertObject:(id)a0 atIndex:(unsigned long)a1
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)removeObjectAtIndex:(unsigned long)a0
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)replaceObjectAtIndex:(unsigned long)a0 withObject:(id)a1
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)addObject:(id)a0
@@ -825,8 +822,7 @@ extern NSString *const NSRangeException;
 
 - (BOOL)containsKey:(id)a0
 {
-    // unresolved
-    return NO;
+    return [self objectForKey: a0] != 0;
 }
 
 - (unsigned long)countForKey:(id)a0
@@ -843,8 +839,7 @@ extern NSString *const NSRangeException;
 
 - (BOOL)containsObject:(id)a0
 {
-    // unresolved
-    return NO;
+    return [self countForObject: a0] != 0;
 }
 
 - (BOOL)__getValue:(id *)a0 forKey:(id)a1
@@ -918,14 +913,12 @@ extern NSString *const NSRangeException;
 @implementation NSMutableDictionary
 - (void)setObject:(id)a0 forKey:(id)a1
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)removeObjectForKey:(id)a0
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)removeAllObjects
@@ -1182,8 +1175,7 @@ extern NSString *const NSRangeException;
 
 - (BOOL)containsObject:(id)a0
 {
-    // unresolved
-    return NO;
+    return [self member: a0] != 0;
 }
 
 - (unsigned long)countForObject:(id)a0
@@ -1218,8 +1210,7 @@ extern NSString *const NSRangeException;
 
 - (id)mutableCopyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFSetCreateMutableCopy(kCFAllocatorSystemDefault, 0, (void *)self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -1257,14 +1248,12 @@ extern NSString *const NSRangeException;
 @implementation NSMutableSet
 - (void)addObject:(id)a0
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)removeObject:(id)a0
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)removeAllObjects
@@ -2679,14 +2668,12 @@ extern NSString *const NSRangeException;
 
 - (void)open
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)close
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (id)delegate
@@ -3332,8 +3319,7 @@ extern NSString *const NSRangeException;
 
 - (id)mutableCopyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFStringCreateMutableCopy(kCFAllocatorSystemDefault, 0, (void *)self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -3427,8 +3413,7 @@ extern NSString *const NSRangeException;
 @implementation NSMutableString
 - (void)replaceCharactersInRange:(NSRange)a0 withString:(id)a1
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)appendString:(id)a0
@@ -3743,14 +3728,12 @@ extern NSString *const NSRangeException;
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFAttributedStringCreateCopy(kCFAllocatorSystemDefault, (void *)self);
 }
 
 - (id)mutableCopyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFAttributedStringCreateMutableCopy(kCFAllocatorSystemDefault, 0, (void *)self);
 }
 
 - (id)string
@@ -3869,8 +3852,7 @@ extern NSString *const NSRangeException;
 @implementation NSTimer
 - (void)invalidate
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (BOOL)isValid
@@ -3910,8 +3892,7 @@ extern NSString *const NSRangeException;
 
 - (void)setFireDate:(id)a0
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (id)userInfo
@@ -4102,8 +4083,7 @@ extern NSString *const NSRangeException;
 
 - (id)mutableCopyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFDataCreateMutableCopy(kCFAllocatorSystemDefault, 0, (void *)self);
 }
 
 - (BOOL)isEqual:(id)a0
@@ -4143,8 +4123,7 @@ extern NSString *const NSRangeException;
 
 - (void)setLength:(unsigned long)a0
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void *)bytes
@@ -4307,8 +4286,7 @@ extern NSString *const NSRangeException;
 
 - (void)getValue:(void *)a0
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 @end
@@ -4757,44 +4735,37 @@ extern NSString *const NSRangeException;
 @implementation NSMutableCharacterSet
 - (void)addCharactersInRange:(NSRange)a0
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)removeCharactersInRange:(NSRange)a0
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)addCharactersInString:(id)a0
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)removeCharactersInString:(id)a0
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)formUnionWithCharacterSet:(id)a0
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)formIntersectionWithCharacterSet:(id)a0
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 - (void)invert
 {
-    // unresolved
-
+    [self doesNotRecognizeSelector:_cmd];
 }
 
 @end
