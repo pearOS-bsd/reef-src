@@ -87,6 +87,13 @@ int main(void) {
             printf("\n");
         }
     }
+    // the empty singletons through their exported pointers
+    extern void *reefArray0 __asm__("___NSArray0__"), *reefDictionary0 __asm__("___NSDictionary0__");
+    void *emptyArray = reefArray0, *emptyDict = reefDictionary0;
+    printf("array0 count %lu retain same %d\n", MSG(unsigned long, emptyArray, "count"), MSG(void *, emptyArray, "retain") == emptyArray);
+    printf("dict0 count %lu object %p retain same %d\n", MSG(unsigned long, emptyDict, "count"), MSG(void *, emptyDict, "objectForKey:", emptyArray), MSG(void *, emptyDict, "retain") == emptyDict);
+    void *keys = MSG(void *, emptyDict, "keyEnumerator");
+    printf("keys %p\n", MSG(void *, keys, "nextObject"));
     // the empty dictionary singleton
     void *error = MSG(void *, objc_getClass("NSError"), "errorWithDomain:code:userInfo:", CFStringCreateWithCString(kCFAllocatorDefault, "d", 0x08000100), 5L, 0);
     printf("error user info %p\n", MSG(void *, error, "userInfo") ? (void *)1 : (void *)0);

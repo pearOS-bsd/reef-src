@@ -1731,6 +1731,16 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 
 @end
 
+// The empty array and dictionary singletons: two objects of one word (the isa, the classes below) and the exported pointers to them.
+extern struct { Class isa; } __NSArray0__struct __asm__("___NSArray0__struct");
+__asm__(".section __DATA,__const\n"
+        ".globl ___NSArray0__\n.p2align 3\n___NSArray0__: .quad ___NSArray0__struct\n"
+        ".globl ___NSDictionary0__\n___NSDictionary0__: .quad ___NSDictionary0__struct\n"
+        ".section __DATA,__data\n"
+        ".globl ___NSArray0__struct\n.p2align 3\n___NSArray0__struct: .quad _OBJC_CLASS_$___NSArray0\n"
+        ".globl ___NSDictionary0__struct\n___NSDictionary0__struct: .quad _OBJC_CLASS_$___NSDictionary0\n"
+        ".text\n");
+
 @interface __NSArray0 : NSArray
 - (id)retain;
 - (void)release;
@@ -1823,12 +1833,8 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 
 - (id)keyEnumerator
 {
-    // The original hands the enumerator the static ___NSArray0__struct, whose isa nothing ever sets (the first message to it would crash);
-    // an enumerator over an empty array is what it is meant to be.
-    CFArrayRef keys = CFArrayCreate(kCFAllocatorSystemDefault, NULL, 0, &kCFTypeArrayCallBacks);
-    id enumerator = objc_autorelease([[__NSCFSnapshotEnumerator alloc] initWithSnapshot:(id)keys]);
-    CFRelease(keys);
-    return enumerator;
+    // The snapshot is the static empty array object (___NSArray0__struct, an object whose isa is the class __NSArray0).
+    return objc_autorelease([[__NSCFSnapshotEnumerator alloc] initWithSnapshot:(id)&__NSArray0__struct]);
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
