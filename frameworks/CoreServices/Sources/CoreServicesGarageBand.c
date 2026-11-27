@@ -54,7 +54,9 @@ OSErr PtrAndHand(const void *p, Handle h, long size) {
 signed char HGetState(Handle h) { return 0; }
 void HSetState(Handle h, signed char flags) {}
 
-// The Time Manager: a task's routine runs once its time has passed (milliseconds, or microseconds if negative)
+// The Time Manager: a task's routine runs once its time has passed (milliseconds, or microseconds if negative;
+// 0 is at once). The system field tmReserved counts primings: a task removed or primed again before its time does
+// not run for the earlier priming.
 typedef struct TMTask {
     void *qLink;
     short qType;
@@ -64,14 +66,15 @@ typedef struct TMTask {
     long tmReserved;
 } TMTask;
 
-void InsTime(TMTask *task) {}
-void InsXTime(TMTask *task) {}
-void RmvTime(TMTask *task) { task->tmCount = 0; }
+void InsTime(TMTask *task) { task->tmReserved = 0; }
+void InsXTime(TMTask *task) { task->tmReserved = 0; }
+void RmvTime(TMTask *task) { __atomic_add_fetch(&task->tmReserved, 1, __ATOMIC_SEQ_CST); }
 void PrimeTime(TMTask *task, long count) {
     int64_t delay = count >= 0 ? count * NSEC_PER_MSEC : -count * NSEC_PER_USEC;
+    long generation = __atomic_add_fetch(&task->tmReserved, 1, __ATOMIC_SEQ_CST);
     task->tmCount = count;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, delay), dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0), ^{
-        if (task->tmAddr && task->tmCount) {
+        if (task->tmAddr && __atomic_load_n(&task->tmReserved, __ATOMIC_SEQ_CST) == generation) {
             task->tmCount = 0;
             task->tmAddr(task);
         }
