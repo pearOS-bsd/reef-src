@@ -43,3 +43,4 @@ usr/lib/libiconv.2
 usr/lib/libenchant-2.2
 usr/lib/libsqlite3
 usr/lib/libcurl.4
+usr/lib/libxml2.2

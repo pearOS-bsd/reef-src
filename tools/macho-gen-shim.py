@@ -16,7 +16,7 @@ for a in sorted(I.funcs):
     if len(d) == 6 and d[:2] == b'\xff\x25':
         t = a + 6 + struct.unpack_from('<i', d, 2)[0]
         sym = I.symbol_at(t)
-        rows.append((sym[1] // 8, I.fname[a].lstrip('_'), sym[0]))
+        rows.append((sym[1] // 8, I.fname[a][1:], sym[0]))
 slots = {r[2] for r in rows}
 assert len(slots) == 1, slots
 slots = slots.pop()
