@@ -126,17 +126,17 @@ static void __CFForwardingInitialize(void) {
 }
 
 // Connects the type identifiers of the Core Foundation types to the Objective-C classes of their objects (the class an object of the type
-// has as its isa), after the forwarding and the exception handlers of the runtime: every type is an __NSCFType first.
+// has as its isa), after the forwarding and the exception handlers of the runtime: every type (1024 slots) is an __NSCFType first.
 CF_PRIVATE void __CFBridgeInitialize(void) {
     static const struct { CFTypeID typeID; const char *className; } classes[] = {
         {7, "__NSCFString"}, {19, "__NSCFArray"}, {18, "__NSCFDictionary"}, {17, "__NSCFSet"}, {20, "__NSCFData"}, {22, "__NSCFNumber"},
         {21, "__NSCFBoolean"}, {16, "NSNull"}, {25, "__NSCFCharacterSet"}, {27, "__NSCFError"}, {42, "__NSCFDate"}, {29, "NSURL"},
         {47, "__NSCFTimer"}, {38, "__NSCFInputStream"}, {39, "__NSCFOutputStream"}, {55, "__NSCFLocale"}, {48, "__NSCFTimeZone"},
-        {49, "__NSCFCalendar"},
+        {49, "__NSCFCalendar"}, {62, "__NSCFAttributedString"},
     };
     __CFForwardingInitialize();
     __CFExceptionInitialize();
     const void *type = objc_getClass("__NSCFType");
-    for (CFTypeID idx = 0; idx < 128; idx++) _CFRuntimeBridgeTypeToClass(idx, type);
+    for (CFTypeID idx = 0; idx < 1024; idx++) _CFRuntimeBridgeTypeToClass(idx, type);
     for (CFIndex idx = 0; idx < sizeof(classes) / sizeof(classes[0]); idx++) _CFRuntimeBridgeTypeToClass(classes[idx].typeID, objc_getClass(classes[idx].className));
 }

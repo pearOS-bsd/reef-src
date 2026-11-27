@@ -30,7 +30,21 @@
  #endif
  
  Boolean _CFIsObjC(CFTypeID typeID, void *obj) {
-@@ -1165,19 +1153,14 @@
+@@ -615,11 +603,8 @@
+ 
+ CF_PRIVATE void _CFRuntimeSetInstanceTypeIDAndIsa(CFTypeRef cf, CFTypeID newTypeID) {
+     _CFRuntimeSetInstanceTypeID(cf, newTypeID);
+-#if DEPLOYMENT_RUNTIME_SWIFT
+-    if (_CFTypeGetClass(cf) != __CFISAForTypeID(newTypeID)) {
+-        ((CFSwiftRef)cf)->isa = (uintptr_t)__CFISAForTypeID(newTypeID);
+-    }
+-#endif
++    // Reef: the object takes the Objective-C class of its new type.
++    *(uintptr_t *)cf = __CFRuntimeObjCClassTable[newTypeID];
+ }
+ 
+ 
+@@ -1165,19 +1150,14 @@
  
  CF_PRIVATE os_unfair_recursive_lock CFPlugInGlobalDataLock;
  
