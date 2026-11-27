@@ -85,7 +85,7 @@ public struct Text {
     public func speechSpellsOutCharacters(_ a0: Swift.Bool) -> SwiftUI.Text { _skeleton() }
     public func font(_ a0: SwiftUI.Font?) -> SwiftUI.Text { adding(.font(a0)) }
     public func monospaced(_ a0: Swift.Bool) -> SwiftUI.Text { adding(.monospaced(a0)) }
-    public static func == (_ a0: SwiftUI.Text, _ a1: SwiftUI.Text) -> Swift.Bool { _skeleton() }
+    public static func == (_ a0: SwiftUI.Text, _ a1: SwiftUI.Text) -> Swift.Bool { a0.storage == a1.storage && a0.modifiers == a1.modifiers }
     public func foregroundStyle<A>(_ a0: A) -> SwiftUI.Text where A: SwiftUI.ShapeStyle { _skeleton() }
     public func foregroundColor(_ a0: SwiftUI.Color?) -> SwiftUI.Text { adding(.color(a0)) }
     public init(_ a0: Foundation.AttributedString) { _skeleton() }
@@ -160,13 +160,32 @@ public struct Text {
     @frozen public enum Storage {
         case verbatim(Swift.String)
         case anyTextStorage(SwiftUI.AnyTextStorage)
-        public static func == (_ a0: SwiftUI.Text.Storage, _ a1: SwiftUI.Text.Storage) -> Swift.Bool { _skeleton() }
+        public static func == (_ a0: SwiftUI.Text.Storage, _ a1: SwiftUI.Text.Storage) -> Swift.Bool {
+            // verbatim strings by value, storages by identity
+            switch (a0, a1) {
+            case let (.verbatim(a), .verbatim(b)): return a == b
+            case let (.anyTextStorage(a), .anyTextStorage(b)): return a === b
+            default: return false
+            }
+        }
     }
     @frozen public enum Modifier {
         case color(SwiftUI.Color?)
         case font(SwiftUI.Font?)
         case anyTextModifier(SwiftUI.AnyTextModifier)
-        public static func == (_ a0: SwiftUI.Text.Modifier, _ a1: SwiftUI.Text.Modifier) -> Swift.Bool { _skeleton() }
+        public static func == (_ a0: SwiftUI.Text.Modifier, _ a1: SwiftUI.Text.Modifier) -> Swift.Bool {
+            // colours and fonts through their boxes (nil equal to nil), other modifiers by identity
+            switch (a0, a1) {
+            case let (.color(a), .color(b)):
+                guard let a, let b else { return a == nil && b == nil }
+                return a.provider.isEqual(to: b.provider)
+            case let (.font(a), .font(b)):
+                guard let a, let b else { return a == nil && b == nil }
+                return a.provider.isEqual(to: b.provider)
+            case let (.anyTextModifier(a), .anyTextModifier(b)): return a === b
+            default: return false
+            }
+        }
     }
     public struct DateStyle {
         let kind: SwiftUI.Text.DateStyle.Kind

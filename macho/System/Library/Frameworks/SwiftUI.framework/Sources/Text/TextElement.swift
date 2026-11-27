@@ -29,8 +29,22 @@ class TextElement: SwiftUI.Element {
     lazy var idealWidth: CoreGraphics.CGFloat = string.boundingRect(
         with: CGSize(width: CoreGraphics.CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude),
         options: .usesLineFragmentOrigin, context: nil).width
-    lazy var truncatedWidth: CoreGraphics.CGFloat = _skeletonValue()
-    override func draw(_ a0: SwiftUI.RenderContext) { _skeleton() }
+    /// the width of the first character followed by an ellipsis (in the first run's attributes)
+    lazy var truncatedWidth: CoreGraphics.CGFloat = {
+        let first = (string.string as NSString).rangeOfComposedCharacterSequence(at: 0)
+        let truncated = string.attributedSubstring(from: first).mutableCopy() as! NSMutableAttributedString
+        truncated.append(NSAttributedString(string: "\u{2026}", attributes: string.attributes(at: 0, effectiveRange: nil)))
+        return truncated.size().width
+    }()
+    override func draw(_ a0: SwiftUI.RenderContext) {
+        // the string drawn in its drawing rectangle, clipped to the frame when it is truncated
+        guard string.length > 0 else { return }
+        NSGraphicsContext.saveGraphicsState()
+        let (rect, options, clips) = drawing()
+        if clips { NSBezierPath(rect: frame).addClip() }
+        string.draw(with: rect, options: options, context: nil)
+        NSGraphicsContext.restoreGraphicsState()
+    }
     init(text a0: SwiftUI.Text, environment a1: SwiftUI.EnvironmentValues) {
         // the string with one paragraph style over all of it, whose line height is the largest run's line advance
         // moved by the leading (tight/loose: 2/13 of the size, rounded)
@@ -86,8 +100,36 @@ class TextElement: SwiftUI.Element {
     }
     override func containsContent(_ a0: CGPoint) -> Swift.Bool { allowsHitTesting && !isHidden && string.length > 0 && frame.contains(a0) }
     override var drawsOwnContent: Swift.Bool { true }
-    override func drawsSame(`as` a0: SwiftUI.Element) -> Swift.Bool { _skeleton() }
-    final func drawing() -> (rect: CGRect, options: NSString.DrawingOptions, clips: Swift.Bool) { _skeleton() }
+    override func drawsSame(`as` a0: SwiftUI.Element) -> Swift.Bool {
+        // the same class exactly, the same limits, spacing, scales, run style and string
+        guard type(of: a0) == SwiftUI.TextElement.self, let other = a0 as? SwiftUI.TextElement else { return false }
+        if other === self { return true }
+        return other.lineLimit == lineLimit && other.minimumLines == minimumLines && other.lineSpacing == lineSpacing
+            && other.scale == scale && other.minimumScaleFactor == minimumScaleFactor
+            && SwiftUI.GraphCompare.viewEqual(other.style, style) && other.string.isEqual(to: string)
+    }
+    final func drawing() -> (rect: CGRect, options: NSString.DrawingOptions, clips: Swift.Bool) {
+        // truncation when the string is wider than the frame (half a point of slack) or has a line limit, but not when
+        // even one character and the ellipsis do not fit (then clipped); a width a little over the frame's is kept;
+        // the rectangle starts half the difference between line advance and line height above the frame
+        let ideal = idealWidth
+        var options: NSString.DrawingOptions = ideal > frame.width + 0.5 || lineLimit != nil ? [.usesLineFragmentOrigin, .truncatesLastVisibleLine] : .usesLineFragmentOrigin
+        let clips = truncatedWidth > frame.width + 0.5
+        if clips { options = .usesLineFragmentOrigin }
+        var width = max(1, frame.width)
+        if options == .usesLineFragmentOrigin && ideal > width && ideal <= width + 0.5 { width = ideal }
+        if case .linear = style.paint { return (CGRect(x: frame.minX, y: frame.minY, width: width, height: frame.height), options, clips) }
+        let size = style.traits.size
+        var advance = SwiftUI.FontResolver.lineAdvance(size)
+        switch style.traits.leading {
+        case .tight?: advance -= (size * 2 / 13).rounded()
+        case .loose?: advance += (size * 2 / 13).rounded()
+        default: break
+        }
+        let lineHeight = SwiftUI.FontResolver.lineHeight(size)
+        let y = frame.minY + (advance - lineHeight) * -0.5
+        return (CGRect(x: frame.minX, y: y, width: width, height: frame.height + (advance - lineHeight) + 1), options, clips)
+    }
     override func explicitAlignment(_ a0: SwiftUI.AlignmentKey, size a1: CGSize) -> CoreGraphics.CGFloat? {
         // baselines: the ascender below half the space the line height leaves around the font's height
         func firstBaseline() -> CoreGraphics.CGFloat {

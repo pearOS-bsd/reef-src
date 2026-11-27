@@ -31,6 +31,9 @@ text case ABC Optional(2)
 text layout nil 32.0 [16.0, 16.0] [0.0, 16.0]
 text layout Optional(100.0) 64.0 [16.0, 48.0] [0.0, 16.0]
 text baseline Optional(12.9130859375) text(13.0)
+text drawing (5.0, 7.0, 10.0, 17.0) 1 true
+text drawing (5.0, 7.0, 400.0, 17.0) 1 false
+text same true false false true false true
 localized Hello %@, %lld items at 100%% true 2
 localized text Plain key Hello Ana, 3 items at 100% 2.500000 x
 markdown AttributedTextStorage Some bold word

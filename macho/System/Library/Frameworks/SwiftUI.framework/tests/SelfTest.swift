@@ -177,6 +177,21 @@ func selftestTextLayout(_ host: SwiftUI.ViewHost) {
     let text = root.children[0]
     print("text baseline", text.explicitAlignment(SwiftUI.VerticalAlignment.firstTextBaseline.key, size: text.frame.size) as Any,
           text.spacingKind)
+    // drawing: a frame narrower than the string truncates, a wide one does not; drawsSame against itself and another text
+    if let t = text as? SwiftUI.TextElement {
+        let env = SwiftUI.EnvironmentValues()
+        let other = SwiftUI.TextElement(text: SwiftUI.Text(verbatim: "Other"), environment: env)
+        let same = SwiftUI.TextElement(text: SwiftUI.Text(verbatim: "Hello"), environment: env)
+        let again = SwiftUI.TextElement(text: SwiftUI.Text(verbatim: "Hello"), environment: env)
+        for width in [10 as CoreGraphics.CGFloat, 400] {
+            t.place(in: CGRect(x: 5, y: 7, width: width, height: 16))
+            let d = t.drawing()
+            print("text drawing", d.rect, d.options.rawValue, d.clips)
+        }
+        print("text same", t.drawsSame(as: t), same.drawsSame(as: again), same.drawsSame(as: other),
+              SwiftUI.Text(verbatim: "a") == SwiftUI.Text(verbatim: "a"), SwiftUI.Text(verbatim: "a").bold() == SwiftUI.Text(verbatim: "a"),
+              SwiftUI.Text(verbatim: "a").foregroundColor(.red) == SwiftUI.Text(verbatim: "a").foregroundColor(.red))
+    }
 }
 
 func selftestLocalized() {
