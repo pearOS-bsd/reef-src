@@ -4007,56 +4007,59 @@ extern NSString *const NSRangeException;
 
 - (BOOL)isValid
 {
-    // unresolved
-    return NO;
+    return CFRunLoopTimerIsValid((CFRunLoopTimerRef)self);
 }
 
 - (double)timeInterval
 {
-    // unresolved
-    return 0;
+    return CFRunLoopTimerGetInterval((CFRunLoopTimerRef)self);
 }
 
 - (double)tolerance
 {
-    // unresolved
-    return 0;
+    return CFRunLoopTimerGetTolerance((CFRunLoopTimerRef)self);
 }
 
 - (void)setTolerance:(double)a0
 {
-    // unresolved
-
+    CFRunLoopTimerSetTolerance((CFRunLoopTimerRef)self, a0);
 }
 
 - (double)_cffireTime
 {
-    // unresolved
-    return 0;
+    return CFRunLoopTimerGetNextFireDate((CFRunLoopTimerRef)self);
 }
 
 - (id)fireDate
 {
-    // unresolved
-    return nil;
+    id date = (id)CFDateCreate(kCFAllocatorSystemDefault, CFRunLoopTimerGetNextFireDate((CFRunLoopTimerRef)self));
+    return date ? objc_autorelease(date) : nil;
 }
 
 - (void)setFireDate:(id)a0
 {
-    // unresolved
-
+    CFRunLoopTimerSetNextFireDate((CFRunLoopTimerRef)self, [a0 timeIntervalSinceReferenceDate]);
 }
 
 - (id)userInfo
 {
-    // unresolved
+    CFRunLoopTimerContext context = {0};
+    CFRunLoopTimerGetContext((CFRunLoopTimerRef)self, &context);
+    id info = (id)context.info;
+    if ([info respondsToSelector:@selector(_reefUserInfo)]) return [info _reefUserInfo];
     return nil;
 }
 
 - (void)fire
 {
-    // unresolved
-
+    if (CFRunLoopTimerIsValid((CFRunLoopTimerRef)self)) {
+        CFRunLoopTimerContext context = {0};
+        CFRunLoopTimerGetContext((CFRunLoopTimerRef)self, &context);
+        id info = objc_retain((id)context.info);
+        if ([info respondsToSelector:@selector(_reefFireTimer:)]) [info _reefFireTimer:self];
+        objc_release(info);
+        if (!(CFRunLoopTimerGetInterval((CFRunLoopTimerRef)self) > 0)) CFRunLoopTimerInvalidate((CFRunLoopTimerRef)self);
+    }
 }
 
 @end
@@ -4872,56 +4875,48 @@ extern NSString *const NSRangeException;
 
 - (Class)classForCoder
 {
-    // unresolved
-    return nil;
+    return [(REEF_INFO(self) & 1 ? [NSMutableCharacterSet class] : [NSCharacterSet class]) class];
 }
 
 - (BOOL)characterIsMember:(unsigned short)a0
 {
-    // unresolved
-    return NO;
+    return CFCharacterSetIsCharacterMember((CFCharacterSetRef)self, a0);
 }
 
 - (BOOL)longCharacterIsMember:(unsigned int)a0
 {
-    // unresolved
-    return NO;
+    return CFCharacterSetIsLongCharacterMember((CFCharacterSetRef)self, a0);
 }
 
 - (BOOL)hasMemberInPlane:(unsigned char)a0
 {
-    // unresolved
-    return NO;
+    return CFCharacterSetHasMemberInPlane((CFCharacterSetRef)self, a0);
 }
 
 - (id)invertedSet
 {
-    // unresolved
-    return nil;
+    id result = (id)CFCharacterSetCreateInvertedSet(kCFAllocatorSystemDefault, (CFCharacterSetRef)self);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (struct __CFCharacterSet *)_expandedCFCharacterSet
 {
-    // unresolved
-    return 0;
+    return self;
 }
 
 - (struct __CFData *)_retainedBitmapRepresentation
 {
-    // unresolved
-    return 0;
+    return (id)CFCharacterSetCreateBitmapRepresentation(kCFAllocatorSystemDefault, (CFCharacterSetRef)self);
 }
 
 - (void)addCharactersInRange:(NSRange)a0
 {
-    // unresolved
-
+    CFCharacterSetAddCharactersInRange((CFMutableCharacterSetRef)self, CFRangeMake(a0.location, a0.length));
 }
 
 - (void)removeCharactersInRange:(NSRange)a0
 {
-    // unresolved
-
+    CFCharacterSetRemoveCharactersInRange((CFMutableCharacterSetRef)self, CFRangeMake(a0.location, a0.length));
 }
 
 - (void)addCharactersInString:(id)a0
@@ -4951,8 +4946,7 @@ extern NSString *const NSRangeException;
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFCharacterSetCreateCopy(kCFAllocatorSystemDefault, (CFCharacterSetRef)self);
 }
 
 @end
