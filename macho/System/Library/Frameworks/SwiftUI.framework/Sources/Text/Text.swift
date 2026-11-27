@@ -43,6 +43,18 @@ public struct Text {
         storage = .verbatim(a0)
         modifiers = []
     }
+    /// the text with one more modifier
+    func adding(_ a0: SwiftUI.Text.Modifier) -> SwiftUI.Text {
+        var text = self
+        text.modifiers.append(a0)
+        return text
+    }
+
+    /// the text with one more attribute modifier
+    func adding(_ a0: SwiftUI.TextAttributeModifier.Attribute) -> SwiftUI.Text {
+        adding(.anyTextModifier(SwiftUI.TextAttributeModifier(a0)))
+    }
+
     func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] {
         let element = SwiftUI.TextElement(text: self, environment: a0.environment)
         if a0.environment.textSelectable {
@@ -60,22 +72,22 @@ public struct Text {
         text.storage = .anyTextStorage(SwiftUI.ConcatenatedTextStorage(a0, a1))
         return text
     }
-    public func bold() -> SwiftUI.Text { _skeleton() }
-    public func italic() -> SwiftUI.Text { _skeleton() }
-    public func tracking(_ a0: CoreGraphics.CGFloat) -> SwiftUI.Text { _skeleton() }
-    public func underline(_ a0: Swift.Bool, color a1: SwiftUI.Color?) -> SwiftUI.Text { _skeleton() }
-    public func strikethrough(_ a0: Swift.Bool, color a1: SwiftUI.Color?) -> SwiftUI.Text { _skeleton() }
+    public func bold() -> SwiftUI.Text { adding(.bold(true)) }
+    public func italic() -> SwiftUI.Text { adding(.italic(true)) }
+    public func tracking(_ a0: CoreGraphics.CGFloat) -> SwiftUI.Text { adding(.tracking(a0)) }
+    public func underline(_ a0: Swift.Bool, color a1: SwiftUI.Color?) -> SwiftUI.Text { adding(.underline(a0, a1)) }
+    public func strikethrough(_ a0: Swift.Bool, color a1: SwiftUI.Color?) -> SwiftUI.Text { adding(.strikethrough(a0, a1)) }
     public func accessibilityLabel<A>(_ a0: A) -> SwiftUI.Text where A: Swift.StringProtocol { _skeleton() }
-    public func textScale(_ a0: SwiftUI.Text.Scale, isEnabled a1: Swift.Bool) -> SwiftUI.Text { _skeleton() }
+    public func textScale(_ a0: SwiftUI.Text.Scale, isEnabled a1: Swift.Bool) -> SwiftUI.Text { a1 ? adding(.scale(a0.factor)) : self }
     public func accessibilityTextContentType(_ a0: SwiftUI.AccessibilityTextContentType) -> SwiftUI.Text { _skeleton() }
     public func accessibilityLabel(_ a0: SwiftUI.Text) -> SwiftUI.Text { _skeleton() }
     public func accessibilityLabel(_ a0: SwiftUI.LocalizedStringKey) -> SwiftUI.Text { _skeleton() }
     public func speechSpellsOutCharacters(_ a0: Swift.Bool) -> SwiftUI.Text { _skeleton() }
-    public func font(_ a0: SwiftUI.Font?) -> SwiftUI.Text { _skeleton() }
-    public func monospaced(_ a0: Swift.Bool) -> SwiftUI.Text { _skeleton() }
+    public func font(_ a0: SwiftUI.Font?) -> SwiftUI.Text { adding(.font(a0)) }
+    public func monospaced(_ a0: Swift.Bool) -> SwiftUI.Text { adding(.monospaced(a0)) }
     public static func == (_ a0: SwiftUI.Text, _ a1: SwiftUI.Text) -> Swift.Bool { _skeleton() }
     public func foregroundStyle<A>(_ a0: A) -> SwiftUI.Text where A: SwiftUI.ShapeStyle { _skeleton() }
-    public func foregroundColor(_ a0: SwiftUI.Color?) -> SwiftUI.Text { _skeleton() }
+    public func foregroundColor(_ a0: SwiftUI.Color?) -> SwiftUI.Text { adding(.color(a0)) }
     public init(_ a0: Foundation.AttributedString) { _skeleton() }
     public init(_ a0: Foundation.LocalizedStringResource) { _skeleton() }
     public init(_ a0: Foundation.Date, style a1: SwiftUI.Text.DateStyle) { _skeleton() }
@@ -84,15 +96,15 @@ public struct Text {
     public init<A>(_ a0: A.FormatInput, format a1: A) where A: Foundation.FormatStyle, A.FormatInput: Swift.Equatable, A.FormatOutput == Swift.String { _skeleton() }
     public init<A>(_ a0: A, formatter a1: Formatter) where A: Foundation.ReferenceConvertible { _skeleton() }
     public init<A>(_ a0: A, formatter a1: Formatter) where A: NSObject { _skeleton() }
-    public func monospacedDigit() -> SwiftUI.Text { _skeleton() }
-    public func kerning(_ a0: CoreGraphics.CGFloat) -> SwiftUI.Text { _skeleton() }
+    public func monospacedDigit() -> SwiftUI.Text { adding(.monospacedDigit) }
+    public func kerning(_ a0: CoreGraphics.CGFloat) -> SwiftUI.Text { adding(.kerning(a0)) }
     public init(_ a0: SwiftUI.Image) { _skeleton() }
-    public func italic(_ a0: Swift.Bool) -> SwiftUI.Text { _skeleton() }
-    public func fontWeight(_ a0: SwiftUI.Font.Weight?) -> SwiftUI.Text { _skeleton() }
-    public func fontDesign(_ a0: SwiftUI.Font.Design?) -> SwiftUI.Text { _skeleton() }
-    public func fontWidth(_ a0: SwiftUI.Font.Width?) -> SwiftUI.Text { _skeleton() }
-    public func baselineOffset(_ a0: CoreGraphics.CGFloat) -> SwiftUI.Text { _skeleton() }
-    public func bold(_ a0: Swift.Bool) -> SwiftUI.Text { _skeleton() }
+    public func italic(_ a0: Swift.Bool) -> SwiftUI.Text { adding(.italic(a0)) }
+    public func fontWeight(_ a0: SwiftUI.Font.Weight?) -> SwiftUI.Text { adding(.weight(a0)) }
+    public func fontDesign(_ a0: SwiftUI.Font.Design?) -> SwiftUI.Text { adding(.design(a0)) }
+    public func fontWidth(_ a0: SwiftUI.Font.Width?) -> SwiftUI.Text { adding(.width(a0)) }
+    public func baselineOffset(_ a0: CoreGraphics.CGFloat) -> SwiftUI.Text { adding(.baselineOffset(a0)) }
+    public func bold(_ a0: Swift.Bool) -> SwiftUI.Text { adding(.bold(a0)) }
     static func markdownStorage(_ a0: Swift.String) -> SwiftUI.Text.Storage? {
         // only strings with markdown characters, parsed inline (whitespace kept); nil when parsing fails or changes nothing
         guard a0.contains(where: { "*_`~\\".contains($0) }) else { return nil }
@@ -132,8 +144,8 @@ public struct Text {
     }
     public struct Scale {
         let factor: CoreGraphics.CGFloat
-        public static var `default`: SwiftUI.Text.Scale { _skeleton() }
-        public static var secondary: SwiftUI.Text.Scale { _skeleton() }
+        public static var `default`: SwiftUI.Text.Scale { Scale(factor: 1) }
+        public static var secondary: SwiftUI.Text.Scale { Scale(factor: 0.8461538461538461) }
         public func hash(into a0: inout Swift.Hasher) { _skeleton() }
         public static func == (_ a0: SwiftUI.Text.Scale, _ a1: SwiftUI.Text.Scale) -> Swift.Bool { _skeleton() }
         public var hashValue: Swift.Int { _skeleton() }

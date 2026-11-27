@@ -18,6 +18,7 @@ import Metal
 import os
 
 open class AnyTextModifier {
-    init() { _skeleton() }
+    init() {
+    }
     deinit {}
 }

@@ -18,8 +18,11 @@ import Metal
 import os
 
 class TextAttributeModifier: SwiftUI.AnyTextModifier {
-    let attribute: SwiftUI.TextAttributeModifier.Attribute = _skeletonValue()
-    init(_ a0: SwiftUI.TextAttributeModifier.Attribute) { _skeleton() }
+    let attribute: SwiftUI.TextAttributeModifier.Attribute
+    init(_ a0: SwiftUI.TextAttributeModifier.Attribute) {
+        attribute = a0
+        super.init()
+    }
     deinit {}
     enum Attribute {
         case bold(Swift.Bool)

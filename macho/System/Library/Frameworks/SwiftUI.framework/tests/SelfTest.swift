@@ -189,4 +189,11 @@ func selftestLocalized() {
     if case .anyTextStorage(let storage) = text("Some **bold** word").storage {
         print("markdown", type(of: storage), storage.plainString)
     }
+    let styled = SwiftUI.Text(verbatim: "B").bold().italic().kerning(1).tracking(0.5).underline(true, color: nil)
+        .font(.title).textScale(.secondary, isEnabled: true)
+    let (string, style) = SwiftUI.TextBuilder.string(styled, SwiftUI.EnvironmentValues())
+    let font = string.attribute(.font, at: 0, effectiveRange: nil) as? NSFont
+    print("modifiers", style.traits.size, style.traits.weight?.value as Any, style.traits.italic, style.kerning, style.tracking,
+          font?.pointSize as Any, string.attribute(.kern, at: 0, effectiveRange: nil) as Any,
+          string.attribute(.underlineStyle, at: 0, effectiveRange: nil) as Any)
 }
