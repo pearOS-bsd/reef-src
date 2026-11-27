@@ -18,10 +18,13 @@ import Metal
 import os
 
 open class AnyColorBox {
-    var nsColor: NSColor { _skeleton() }
-    func resolve(`in` a0: SwiftUI.EnvironmentValues) -> SwiftUI.Color.Resolved { _skeleton() }
-    func hash(into a0: inout Swift.Hasher) { _skeleton() }
-    func isEqual(to a0: SwiftUI.AnyColorBox) -> Swift.Bool { _skeleton() }
+    var nsColor: NSColor { NSColor.clear }
+    func resolve(`in` a0: SwiftUI.EnvironmentValues) -> SwiftUI.Color.Resolved {
+        // the AppKit colour read in the environment's colour scheme
+        SwiftUI.Color.Resolved(nsColor, colorScheme: a0[SwiftUI.ColorSchemeKey.self])
+    }
+    func hash(into a0: inout Swift.Hasher) { a0.combine(ObjectIdentifier(self)) }
+    func isEqual(to a0: SwiftUI.AnyColorBox) -> Swift.Bool { self === a0 }
     init() {
     }
     deinit {}

@@ -40,3 +40,7 @@ text environment Optional(1) 4.0 Optional(5) Optional(1) Optional(0.4) (97.0, 16
 color light 255.0 56.0 60.0 1.0
 color dark 255.0 66.0 69.0 1.0
 color white 1.0 1.0
+color eq true false true true true true true true
+color rgb 255.0,128.0,0.0,1.0 128.0,128.0,128.0,0.25 255.0,56.0,60.0,0.5 51.0,102.0,153.0,1.0
+color mix 127.0,127.0,127.0,1.0 255.0,255.0,255.0,1.0 99.0,99.0,99.0,1.0 38.0,38.0,38.0,1.0
+color resolved true [0.5, 0.5, 0.5, 1.0]

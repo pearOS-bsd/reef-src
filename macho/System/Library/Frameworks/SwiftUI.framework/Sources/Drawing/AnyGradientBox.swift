@@ -18,7 +18,7 @@ import Metal
 import os
 
 public class AnyGradientBox {
-    let base: SwiftUI.Color = _skeletonValue()
-    init(base a0: SwiftUI.Color) { _skeleton() }
+    let base: SwiftUI.Color
+    init(base a0: SwiftUI.Color) { base = a0 }
     deinit {}
 }

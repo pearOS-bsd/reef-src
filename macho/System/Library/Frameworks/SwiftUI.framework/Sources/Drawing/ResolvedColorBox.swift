@@ -22,9 +22,17 @@ class ResolvedColorBox: SwiftUI.AnyColorBox {
     let green: Swift.Double
     let blue: Swift.Double
     let opacity: Swift.Double
-    override func isEqual(to a0: SwiftUI.AnyColorBox) -> Swift.Bool { _skeleton() }
-    override func hash(into a0: inout Swift.Hasher) { _skeleton() }
-    override var nsColor: NSColor { _skeleton() }
+    override func isEqual(to a0: SwiftUI.AnyColorBox) -> Swift.Bool {
+        guard let other = a0 as? Self else { return false }
+        return red == other.red && green == other.green && blue == other.blue && opacity == other.opacity
+    }
+    override func hash(into a0: inout Swift.Hasher) {
+        a0.combine(red)
+        a0.combine(green)
+        a0.combine(blue)
+        a0.combine(opacity)
+    }
+    override var nsColor: NSColor { NSColor(srgbRed: red, green: green, blue: blue, alpha: opacity) }
     override func resolve(`in` a0: SwiftUI.EnvironmentValues) -> SwiftUI.Color.Resolved {
         // sRGB components made linear, the opacity as it is
         func linear(_ v: Swift.Double) -> Swift.Float {

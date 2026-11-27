@@ -18,7 +18,7 @@ import Metal
 import os
 
 public struct Rectangle {
-    public init() { _skeleton() }
+    public init() {}
     public func inset(by a0: CoreGraphics.CGFloat) -> SwiftUI.Rectangle._Inset { _skeleton() }
     public func path(`in` a0: CGRect) -> SwiftUI.Path { _skeleton() }
     public struct _Inset {

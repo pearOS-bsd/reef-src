@@ -19,8 +19,11 @@ import os
 
 class PlatformColorBox: SwiftUI.AnyColorBox {
     let color: NSColor
-    override func isEqual(to a0: SwiftUI.AnyColorBox) -> Swift.Bool { _skeleton() }
-    override var nsColor: NSColor { _skeleton() }
+    override func isEqual(to a0: SwiftUI.AnyColorBox) -> Swift.Bool {
+        guard let other = a0 as? Self else { return false }
+        return color == other.color
+    }
+    override var nsColor: NSColor { color }
     init(_ a0: NSColor) {
         color = a0
         super.init()

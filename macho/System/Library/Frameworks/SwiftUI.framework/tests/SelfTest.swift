@@ -75,6 +75,7 @@ func selftestBuild() {
     selftestLocalized()
     selftestForEach(host)
     selftestTextEnvironment(host)
+    selftestColors()
 }
 
 /// a leaf as wide as 10, or 20 when enabled
@@ -247,4 +248,24 @@ func selftestTextEnvironment(_ host: SwiftUI.ViewHost) {
     }
     let white = SwiftUI.Color.white.provider.resolve(in: SwiftUI.EnvironmentValues())
     print("color white", white.linearRed, white.opacity)
+}
+
+/// colours: equality and hashing of the boxes, stored statics, opacity, mixing, Resolved round trips
+func selftestColors() {
+    let env = SwiftUI.EnvironmentValues()
+    func rgb(_ c: SwiftUI.Color) -> String {
+        let r = c.resolve(in: env)
+        return "\((r.red * 255).rounded()),\((r.green * 255).rounded()),\((r.blue * 255).rounded()),\((r.opacity * 100).rounded() / 100)"
+    }
+    print("color eq", SwiftUI.Color.red == SwiftUI.Color.red, SwiftUI.Color.red == SwiftUI.Color.blue,
+          SwiftUI.Color.red.provider === SwiftUI.Color.red.provider,
+          SwiftUI.Color(red: 1, green: 0.5, blue: 0, opacity: 1) == SwiftUI.Color(red: 1, green: 0.5, blue: 0, opacity: 1),
+          SwiftUI.Color.red.opacity(0.5) == SwiftUI.Color.red.opacity(0.5), SwiftUI.Color.red.hashValue == SwiftUI.Color.red.hashValue,
+          SwiftUI.Color("a", bundle: nil) == SwiftUI.Color("a", bundle: nil), SwiftUI.Color.accentColor == SwiftUI.Color.accentColor)
+    print("color rgb", rgb(SwiftUI.Color(red: 1, green: 0.5, blue: 0, opacity: 1)), rgb(SwiftUI.Color(white: 0.5, opacity: 0.25)),
+          rgb(SwiftUI.Color.red.opacity(0.5)), rgb(SwiftUI.Color(SwiftUI.Color.Resolved(colorSpace: .sRGB, red: 0.2, green: 0.4, blue: 0.6, opacity: 1))))
+    print("color mix", rgb(SwiftUI.Color.black.mix(with: .white, by: 0.5, in: .device)), rgb(SwiftUI.Color.black.mix(with: .white, by: 2, in: .device)),
+          rgb(SwiftUI.Color.black.mix(with: .white, by: 0.5, in: .perceptual)), rgb(SwiftUI.Color(provider: SwiftUI.MixedColorBox(base: SwiftUI.Color.black.provider, white: 0.9))))
+    let resolved = SwiftUI.Color.Resolved(colorSpace: .sRGB, red: 0.5, green: 0.5, blue: 0.5, opacity: 1)
+    print("color resolved", resolved == resolved.resolve(in: env), (resolved.cgColor.components ?? []).map { ($0 * 1000).rounded() / 1000 })
 }
