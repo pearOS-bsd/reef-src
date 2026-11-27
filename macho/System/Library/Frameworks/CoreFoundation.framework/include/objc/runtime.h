@@ -14,5 +14,6 @@ enum {
     OBJC_ASSOCIATION_RETAIN = 01401,
     OBJC_ASSOCIATION_COPY = 01403
 };
+extern Class objc_getClass(const char *name);
 extern id objc_getAssociatedObject(id object, const void *key);
 extern void objc_setAssociatedObject(id object, const void *key, id value, objc_AssociationPolicy policy);

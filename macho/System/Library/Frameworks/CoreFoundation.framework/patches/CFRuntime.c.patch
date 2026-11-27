@@ -1,0 +1,28 @@
+# Reef's changes to CFRuntime.c of CoreFoundation (swift-corelibs-foundation swift-6.0-RELEASE).
+# The patched file is a derived work: Apache License v2.0 with Runtime Library Exception, see upstream/corefoundation/LICENSE.
+# Written from the published binary. SPDX-License-Identifier: Apache-2.0 WITH Swift-exception
+--- CFRuntime.c
++++ CFRuntime.c
+@@ -1165,19 +1165,14 @@
+ 
+ CF_PRIVATE os_unfair_recursive_lock CFPlugInGlobalDataLock;
+ 
+-#if __HAS_DISPATCH__
+-extern void libdispatch_init();
+-#endif
++extern void __CFBridgeInitialize(void);
+ 
+ void __CFInitialize(void) {
+     if (!__CFInitialized && !__CFInitializing) {
+         __CFInitializing = 1;
+ 
+-#if __HAS_DISPATCH__ && !TARGET_OS_MAC
+-    // libdispatch has to be initialized before CoreFoundation, so to avoid
+-    // issues with static initializer ordering, we are doing it explicitly.
+-    libdispatch_init();
+-#endif
++    // Reef: the classes of the Core Foundation types and the Objective-C runtime handlers, in the place of the libdispatch initialization.
++    __CFBridgeInitialize();
+ 
+     // This is a no-op on Darwin, but is needed on Linux and Windows.
+     _CFPerformDynamicInitOfOSRecursiveLock(&CFPlugInGlobalDataLock);

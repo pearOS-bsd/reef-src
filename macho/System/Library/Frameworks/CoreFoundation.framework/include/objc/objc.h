@@ -38,7 +38,7 @@ OBJC_ROOT_CLASS @interface NSObject <NSObject> { Class isa; }
 - (id)retain;
 @end
 #endif
-#ifdef __OBJC__
+#if defined(__OBJC__) && !defined(REEF_NSCLASSES)
 @interface NSException : NSObject
 @property (readonly, copy) id name;
 @property (readonly, copy) id reason;
