@@ -21,7 +21,7 @@ def main():
     src = os.path.join(HERE, '..')
     for what, rx in (('override', r"error: overriding declaration requires an 'override' keyword"),
                      ('required', r"error: 'required' modifier must be present on all overrides of a required initializer"),
-                     ('not_override', r"error: (method|property|initializer|subscript) does not override any (method|property|initializer|subscript) from its superclass")):
+                     ('not_override', r"error: (?:(?:method|property|initializer|subscript) does not override any (?:method|property|initializer|subscript) from its superclass|initializer does not override a designated initializer from its superclass)")):
         lst = fx.setdefault(what, [])
         for m in re.finditer(r'^(Sources/[^:]+):(\d+):\d+: ' + rx, errs, re.M):
             k = member_at(os.path.join(src, m[1]), int(m[2]))

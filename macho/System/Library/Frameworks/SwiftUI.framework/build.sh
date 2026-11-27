@@ -19,7 +19,7 @@ $SSH "rm -rf $R/Sources && mkdir -p $R"
 tar -C "$here" -cf - Sources | $SSH "cd $R && tar xf -"
 INSTALL=/System/Library/Frameworks/SwiftUI.framework/Versions/A/SwiftUI
 COMMON="-target x86_64-apple-macos14.0 -sdk $SDK -enable-library-evolution -module-name SwiftUI -parse-as-library -swift-version 5 \
- -Xfrontend -disable-availability-checking -suppress-warnings"
+ -Xfrontend -disable-availability-checking -suppress-warnings -enable-upcoming-feature MemberImportVisibility"
 case $MODE in
 typecheck)
   $SSH "cd $R && find Sources -name '*.swift' | sort > files.txt && swiftc $COMMON -typecheck -j4 -continue-building-after-errors @files.txt > errors.txt 2>&1; echo exit \$?" ;;
@@ -28,6 +28,7 @@ onone|release)
   $SSH "cd $R && find Sources -name '*.swift' | sort > files.txt && rm -rf lib && mkdir -p lib && swiftc $COMMON $OPT -wmo -emit-library \
  -emit-module -emit-module-interface -emit-module-path lib/SwiftUI.swiftmodule -o lib/SwiftUI \
  -Xlinker -install_name -Xlinker $INSTALL -Xlinker -current_version -Xlinker 1.0.0 -Xlinker -compatibility_version -Xlinker 1.0.0 \
+ -Xlinker -alias_list -Xlinker Sources/Support/aliases.txt \
  @files.txt > errors.txt 2>&1; echo exit \$?; ls -la lib/SwiftUI 2>/dev/null && nm -gU lib/SwiftUI | awk '{print \$3}' > lib/exports.txt" ;;
 esac
 $SSH "cd $R && tar cf - errors.txt lib 2>/dev/null" | tar -C "$OUT" -xf -

@@ -9,3 +9,4 @@ BIN=${REEF_SWIFTUI:-$ROOT/upstream/cutefish-reef/usr/lib/cutefish-reef/System/Li
 OUT=${1:-/tmp/swiftui-skeleton}
 rm -rf "$OUT"
 python3 "$here/gen-skeleton.py" "$BIN" "$OUT"
+python3 "$here/postfix.py" "$OUT"

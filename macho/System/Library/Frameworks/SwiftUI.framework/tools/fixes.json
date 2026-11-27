@@ -1,5 +1,16 @@
 {
- "not_override": [],
+ "no_imports": [
+  "Swift_Int+SwiftUI.swift",
+  "Swift_Int8+SwiftUI.swift",
+  "Swift_Int16+SwiftUI.swift",
+  "Swift_UInt+SwiftUI.swift",
+  "Swift_UInt8+SwiftUI.swift",
+  "Swift_UInt16+SwiftUI.swift"
+ ],
+ "not_override": [
+  "SwiftUI.MenuActionTarget|init(_)",
+  "SwiftUI.PopoverDelegate|init(_:closed)"
+ ],
  "override": [
   "SwiftUI.NSHostingController|init(nibName:bundle)",
   "SwiftUI.NSHostingController|loadView()",

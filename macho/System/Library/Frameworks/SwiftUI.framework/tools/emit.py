@@ -50,14 +50,15 @@ def esc_member(name):
 
 class Env:
     """how generic parameters print"""
-    def __init__(self, names=None, proto_self=False, opaque=None, class_self=None):
+    def __init__(self, names=None, proto_self=False, opaque=None, class_self=None, packs=None):
         self.names = dict(names or {})
+        self.packs = set(packs or ())
         self.proto_self = proto_self
         self.opaque = opaque
         self.class_self = class_self
 
     def child(self, **kw):
-        e = Env(self.names, self.proto_self, self.opaque, self.class_self)
+        e = Env(self.names, self.proto_self, self.opaque, self.class_self, self.packs)
         for k, v in kw.items(): setattr(e, k, v)
         return e
 
@@ -208,6 +209,7 @@ class Emitter:
             if rel: full = nm + '.' + {'e': 'Code'}.get(rel[0].t, rel[0].t)
             s = self.renames.get(full, full)
             if mod == '__C_Synthesized' and not rel: s = self.renames.get(nm, nm)
+            if k == 'Protocol' and nm == 'NSObject': s = 'NSObjectProtocol'   # the protocol, not the class
         elif mod:
             if mod == 'SwiftUI':
                 if self.track is not None: self.track.add(self.key(n))
@@ -317,7 +319,8 @@ class Emitter:
             if not ps: return 'AnyObject'
             return 'any ' + ' & '.join(ps + ['AnyObject'])
         if k == 'DependentGenericParamType':
-            return env.gp(idx(n.c[0]), idx(n.c[1]))
+            d, i = idx(n.c[0]), idx(n.c[1])
+            return ('each ' if (d, i) in env.packs else '') + env.gp(d, i)
         if k == 'DependentMemberType':
             base = self.ty(n.c[0], env)
             ref = n.c[1]
@@ -422,7 +425,8 @@ class Emitter:
         out = []
         for r in sig.c:
             if r.k == 'DependentGenericConformanceRequirement':
-                out.append('%s: %s' % (self.ty(r.c[0], env), self.ty(r.c[1], env)))
+                a = self.ty(r.c[0], env)
+                out.append('%s%s: %s' % ('repeat ' if a.startswith('each ') else '', a, self.ty(r.c[1], env)))
             elif r.k == 'DependentGenericSameTypeRequirement':
                 out.append('%s == %s' % (self.ty(r.c[0], env), self.ty(r.c[1], env)))
             elif r.k == 'DependentGenericLayoutRequirement':
@@ -483,7 +487,7 @@ class Emitter:
             node = t.c[0].c[0]
             if node.k == 'Type': node = node.c[0]
             k = self.key(node)
-            if k.startswith('__C.') or k.startswith('__C_Synthesized.'):
+            if (k.startswith('__C.') or k.startswith('__C_Synthesized.')) and node.c[0].k != 'Extension':
                 continue   # metadata of an imported C/Objective-C type, emitted by every user of it
             ti = TypeInfo(key=k, node=node, kind=c.kind, ctx=c, name=self.name_of(node),
                           exported=c.symbol in self.exports, disc=self.disc_of(node))
@@ -547,6 +551,13 @@ class Emitter:
             for d, cnt in enumerate(ti.depths):
                 for i in range(cnt): ti.gp[(d, i)] = gp_name(d, i)
             ti.own_depth = len(ti.depths) - 1 if ti.own > 0 else None
+            # type packs (`struct TupleContent<each A>`): kind 1 in the generic parameter descriptors
+            gen = getattr(ti.ctx, 'generic', None)
+            ti.packs = set()
+            if gen:
+                flat = [(d, i) for d, cnt in enumerate(ti.depths) for i in range(cnt)]
+                for j, p in enumerate(gen['params']):
+                    if (p & 0x3f) == 1 and j < len(flat): ti.packs.add(flat[j])
         # nesting
         self.top = []
         for ti in self.types.values():
@@ -633,8 +644,22 @@ class Emitter:
         addr_of = {}
         for name, ntype, nsect, value in self.m.symbols:
             if nsect and not (ntype & 0xe0): addr_of.setdefault(name, value)
+        # Reef exports some functions under a second name, the extension-context mangling of a type that Apple moved to
+        # SwiftUICore (`$s7SwiftUI4EdgeOAAE6CornerO...` = `$s7SwiftUI4EdgeO6CornerO...`, same address): the alias is
+        # made by the linker (Support/aliases.txt), not declared twice
+        by_addr = collections.defaultdict(list)
+        for name, ntype, nsect, value in self.m.symbols:
+            if nsect and not (ntype & 0xe0) and name in self.exports: by_addr[value].append(name)
+        self.aliases = []
+        skip = set()
+        for v, names in by_addr.items():
+            if len(names) != 2: continue   # (empty property descriptors all share one address)
+            plain = [n for n in names if 'AAE' not in n]
+            for n in names:
+                if 'AAE' in n and plain:
+                    skip.add(n); self.aliases.append((plain[0], n))
         for name, ntype, nsect, value in sorted(self.m.symbols, key=lambda s: s[3]):
-            if not nsect or (ntype & 0xe0): continue
+            if not nsect or (ntype & 0xe0) or name in skip: continue
             t = g.tree(name)
             if t is None: continue
             e = self.entity(t)
@@ -691,19 +716,28 @@ class Emitter:
             return x.c[0], x.c[1]
         return None, t
 
-    def generic_clause(self, sig, env, base_depth):
+    def generic_clause(self, sig, env, base_depth, rest=None):
         """(<...> text, where-clause list, env with the new parameters)"""
         if sig is None: return '', [], env
         counts, packs = self.sig_params(sig)
         names = dict(env.names)
         gps = []
+        # the signature of a member of a constrained extension (`extension AppStorage where Value == Bool`) repeats the
+        # type's own parameters: it adds none when nothing references a depth >= base_depth
+        if base_depth > 0 and rest is not None:
+            ds = []
+            def walk(n):
+                if n.k == 'DependentGenericParamType': ds.append(idx(n.c[0]))
+                for c in n.c: walk(c)
+            walk(sig); walk(rest)
+            if not ds or max(ds) < base_depth: counts = []
         for j, cnt in enumerate(counts):
             d = base_depth + j
             for i in range(cnt):
                 nm = gp_name(d, i)
                 names[(d, i)] = nm
                 gps.append(('each ' + nm) if (d, i) in packs else nm)
-        env2 = env.child(names=names)
+        env2 = env.child(names=names, packs=env.packs | packs)
         reqs = self.sig_reqs(sig, env2)
         return ('<' + ', '.join(gps) + '>') if gps else '', reqs, env2
 
@@ -732,11 +766,15 @@ class Emitter:
         if r is None: return 'Swift.Void'
         return self.ty(r.c[0], env)
 
-    def body_for(self, rtype):
+    def body_for(self, rtype, cinfo=None, static=False):
         """a body that type-checks for a declared result type"""
         if rtype.startswith('some '):
             c = rtype[5:]
             first = c.split(' & ')[0]
+            # `extension Shape { func trim(...) -> some Shape }`: Self is a valid underlying type of the stub
+            if cinfo is not None and cinfo.get('kind') == 'protoext' and not static and ' & ' not in c:
+                ti = self.types.get(cinfo.get('self_key'))
+                if ti is not None and self.qualified(ti) == first: return '{ self }'
             stub = self.fixes.get('opaque_stub', {}).get(first)
             if stub: return '{ %s }' % stub
             return '{ _skeleton() }'
@@ -746,8 +784,12 @@ class Emitter:
         if cinfo.get('in_protocol'): return ''
         if 'force_public' in cinfo: return 'public ' if cinfo['force_public'] else ''
         if ent['exp']:
-            return 'open ' if cinfo.get('open') and not ent['static'] and ent['kind'] not in ('Allocator',) and cinfo.get('member_open', True) else 'public '
+            return 'open ' if cinfo.get('open') and not ent['static'] and not ent.get('final') and ent['kind'] not in ('Allocator',) and cinfo.get('member_open', True) else 'public '
         return ''
+
+    def override_public(self, ent):
+        """does the member override an Objective-C (framework) member rather than an internal one of ours"""
+        return bool(ent.get('objc') or ent.get('override_objc', True))
 
     def member_decl(self, ent, cinfo):
         """lines declaring one entity; types used by a public declaration become public"""
@@ -784,7 +826,10 @@ class Emitter:
         is_class = cinfo.get('kind') == 'class'
         if static:
             mods += ('class ' if is_class and ent.get('vtable') else 'static ')
-        if is_class and ent.get('override'): mods = 'override ' + mods
+        if is_class and ent.get('override'):
+            mods = 'override ' + mods
+            # an override is as visible as the overridden member allows (AppKit's are public)
+            if not acc and cinfo.get('public') and not cinfo.get('in_protocol') and self.override_public(ent): acc = 'public '
         if is_class and ent.get('final') and not static and k not in ('Allocator',): mods = 'final ' + mods
         if ent.get('objc') and is_class and not ent.get('override'): mods = '@objc ' + mods
         if cinfo.get('in_protocol'): acc = ''
@@ -793,7 +838,7 @@ class Emitter:
             name = self.name_of(n)
             op = n.first('InfixOperator', 'PrefixOperator', 'PostfixOperator')
             sig, fn = self.split_type(n)
-            gc, reqs, env2 = self.generic_clause(sig, env, base_depth)
+            gc, reqs, env2 = self.generic_clause(sig, env, base_depth, fn)
             fnt = fn.c[0] if fn is not None and fn.k == 'Type' else fn
             if fnt is None or not fnt.k.endswith('FunctionType'):
                 return ['// unsupported function %s' % name]
@@ -808,11 +853,11 @@ class Emitter:
             s = '%s%sfunc %s%s%s%s' % (acc, mods, dn, gc, plist, self.effects(fnt))
             if r not in ('Swift.Void', '()'): s += ' -> ' + r
             if reqs: s += ' where ' + ', '.join(reqs)
-            if body: s += ' ' + self.body_for(r)
+            if body: s += ' ' + self.body_for(r, cinfo, static)
             return [s]
         if k == 'Allocator':
             sig, fn = self.split_type(n)
-            gc, reqs, env2 = self.generic_clause(sig, env, base_depth)
+            gc, reqs, env2 = self.generic_clause(sig, env, base_depth, fn)
             fnt = fn.c[0] if fn is not None and fn.k == 'Type' else fn
             if fnt is None: return ['// unsupported init']
             plist, ps = self.param_list(fnt, env2, self.labels(n), defaults=ent['defaults'])
@@ -827,6 +872,7 @@ class Emitter:
                     mods = 'convenience ' + mods.replace('final ', '')
                 if ent.get('required'): mods = 'required ' + mods
             mods = mods.replace('static ', '').replace('class ', '')
+            if cinfo.get('extern_class'): mods = 'convenience ' + mods   # an extension of a class adds convenience inits only
             s = '%s%sinit%s%s%s%s' % (acc, mods, fail, gc, plist, self.effects(fnt))
             if reqs: s += ' where ' + ', '.join(reqs)
             if body: s += ' { _skeleton() }'
@@ -834,7 +880,7 @@ class Emitter:
         if k in ('Variable', 'Subscript'):
             accs = ent['acc']
             sig, t = self.split_type(n)
-            gc, reqs, env2 = self.generic_clause(sig, env, base_depth)
+            gc, reqs, env2 = self.generic_clause(sig, env, base_depth, t)
             settable = bool(accs & {'set', 'modify', 'mutableAddress'})
             if k == 'Variable':
                 name = self.name_of(n)
@@ -856,7 +902,7 @@ class Emitter:
             if cinfo.get('in_protocol'):
                 return [head + (' { get set }' if settable else ' { get }')]
             if ty.startswith('some '):
-                return [head + ' ' + self.body_for(ty)]
+                return [head + ' ' + self.body_for(ty, cinfo, static)]
             if settable:
                 return [head + ' {', '    get { _skeleton() }', '    set { _skeleton() }', '}']
             return [head + ' { _skeleton() }']
@@ -864,7 +910,7 @@ class Emitter:
 
     # ------------------------------------------------------------------------------------------ types
     def type_env(self, ti):
-        return Env(ti.gp, proto_self=(ti.kind == 'protocol'))
+        return Env(ti.gp, proto_self=(ti.kind == 'protocol'), packs=ti.packs)
 
     def own_reqs(self, ti, env):
         gen = getattr(ti.ctx, 'generic', None)
@@ -894,9 +940,13 @@ class Emitter:
                 self.reqs[self.key(c)].append(ent); continue
             tk, sig, ext = self.ctx_of(n)
             if tk is None:
-                if c.k == 'Module': self.globals.append(ent)
+                # (copies of other modules' inlinable functions, `$ss15withUnsafeBytes...`, are not ours)
+                if c.k == 'Module' and c.t == 'SwiftUI': self.globals.append(ent)
                 continue
             if tk.startswith('local:'): continue
+            # a member of another module's type declared there (a copy of its inlinable code, `$ss6ResultO3get...`)
+            if ext is None and tk not in self.types and not tk.startswith('SwiftUI.'): continue
+            if ext is not None and ext.c and ext.c[0].k == 'Module' and ext.c[0].t != 'SwiftUI': continue
             sk = sig.key() if sig is not None else ''
             if ext is None and tk in self.types and self.types[tk].kind != 'protocol':
                 self.types[tk].members.append(ent); continue
@@ -917,6 +967,19 @@ class Emitter:
             nm = r['name']
             t = self.g.mtype(r['type']) if r['type'] else None
             if ti.kind == 'enum':
+                continue
+            if nm.startswith('$__lazy_storage_$_'):
+                # the storage of `lazy var x` (an Optional of x's type)
+                base = nm[len('$__lazy_storage_$_'):]
+                ent = vars_by_name.get(base)
+                ty = self.tracked(bool(ent is not None and ent['exp']), self.ty, t, env)
+                if ty.endswith('?'): ty = ty[:-1]
+                elif ty.startswith('Swift.Optional<'): ty = ty[15:-1]
+                acc = ''
+                if ent is not None:
+                    consumed.add(id(ent))
+                    if ent['exp']: acc = 'public '
+                out.append('%slazy var %s: %s = _skeletonValue()' % (acc, esc(base), ty))
                 continue
             pre = ''
             tt = t.c[0] if t is not None and t.c else None
@@ -946,7 +1009,8 @@ class Emitter:
             if r['type']:
                 t = self.g.mtype(r['type'])
                 s = self.tracked(ti.exported, self.ty, t, env)
-                if not s.startswith('('): s = '(' + s + ')'
+                tt = t.c[0] if t is not None and t.k == 'Type' and t.c else t
+                if tt is None or tt.k != 'Tuple': s = '(' + s + ')'
                 out.append('%scase %s%s' % ('indirect ' if r['indirect'] else '', nm, s))
             else:
                 out.append('case %s' % nm)
@@ -961,7 +1025,7 @@ class Emitter:
         gps = ''
         if ti.own > 0:
             d = ti.own_depth
-            gps = '<' + ', '.join(gp_name(d, i) for i in range(ti.own)) + '>'
+            gps = '<' + ', '.join(('each ' if (d, i) in ti.packs else '') + gp_name(d, i) for i in range(ti.own)) + '>'
         inherit = []
         attrs = ''
         if ti.kind == 'class':
@@ -983,7 +1047,7 @@ class Emitter:
         for x in self.field_decls(ti, env, consumed): L.append(ind + '    ' + x)
         if ti.kind == 'enum':
             for x in self.case_decls(ti, env): L.append(ind + '    ' + x)
-        cinfo = dict(env=env, depth=len(ti.depths), kind=ti.kind, self_key=ti.key, open=acc == 'open ',
+        cinfo = dict(env=env, depth=len(ti.depths), kind=ti.kind, self_key=ti.key, open=acc == 'open ', public=bool(acc),
                      has_designated=any(e['constructor'] for e in ti.members))
         for ent in ti.members:
             if id(ent) in consumed: continue
@@ -1003,10 +1067,18 @@ class Emitter:
         ov = self.override_syms.get(ti.key, set())
         syms = set(ent['syms'])
         ent['vtable'] = bool(syms & vt) or bool(ent['exp'] & {'MethodDescriptor', 'DispatchThunk'})
-        q = self.qualified(ti) + '|' + self.member_sig(ent)
-        ent['override'] = (bool(syms & ov) or q in self.fixes.get('override', [])) and q not in self.fixes.get('not_override', [])
+        # labels `_` are not in the mangling when every label is `_`: compare without them
+        norm = lambda x: re.sub(r'\(([^)]*)\)', lambda m: '(' + ':'.join(y for y in m[1].split(':') if y not in ('_', '')) + ')', x)
+        q = norm(self.qualified(ti) + '|' + self.member_sig(ent))
+        fx = lambda k: set(norm(x) for x in self.fixes.get(k, []))
+        ent['override'] = (bool(syms & ov) or q in fx('override')) and q not in fx('not_override')
+        # `init()` of a subclass of an Objective-C class overrides NSObject's
+        if ent['kind'] == 'Allocator' and 'ArgumentTuple(Type(Tuple))' in ent['node'].key() and q not in fx('not_override') \
+                and getattr(ti.ctx, 'superclass', None):
+            sc = self.g.mtype(ti.ctx.superclass)
+            if sc is not None and self.key(sc).startswith('__C.'): ent['override'] = True
         ent['final'] = not ent['vtable'] and not ent['override'] and not ent.get('objc') and bool(ti.ctx.ksf & (1 << 15))
-        ent['required'] = q in self.fixes.get('required', [])
+        ent['required'] = q in fx('required')
 
     def member_sig(self, ent):
         n = ent['node']
@@ -1085,6 +1157,9 @@ class Emitter:
 
     def extern_env(self, node):
         name = self.nominal_name(node, Env())
+        n = node.c[0] if node.k == 'Type' else node
+        if n.k == 'Protocol' or n.k == 'ProtocolSymbolicReference':
+            return Env({}, proto_self=True), 1, name
         gps = EXTERN_GP.get(name, [])
         return Env({(0, i): nm for i, nm in enumerate(gps)}), (1 if gps else 0), name
 
@@ -1107,38 +1182,78 @@ class Emitter:
         nested = set(s.ename for s in ti.nested) if ti is not None else set()
         members = set(self.name_of(e['node']) for e in ti.members) if ti is not None else set()
         done = self.alias_done.setdefault(tk, set())
+        # an associated type witnessed by a member with an opaque result (`var body: some View`) is inferred from it
+        opaque_sigs = set()
+        if ti is not None:
+            ents = list(ti.members)
+            for (bk, sk), b in self.blocks.items():
+                if bk == tk: ents += b['ents']
+            opaque_sigs = set(self.member_sig(e) for e in ents if 'OpaqueReturnType' in e['node'].key())
+        inferred = set()
+        for ent in self.reqs.get(cf['pkey'], []):
+            if self.member_sig(ent) in opaque_sigs:
+                for nm in re.findall(r'DependentAssociatedTypeRef\(Identifier=(\w+)', ent['node'].key()): inferred.add(nm)
         for a, t in cf['assoc']:
             for nm, tn in a['records']:
-                if nm in nested or nm in members or nm in done: continue
+                if nm in nested or nm in members or nm in done or nm in inferred: continue
                 tt = self.g.mtype(tn)
                 s = self.tracked(bool(pub), self.ty, tt, env)
                 if 'opaque' in s or 'some ' in s or '/*' in s: continue
                 done.add(nm)
                 L.append('    %stypealias %s = %s' % (pub, esc(nm), s))
         # requirements whose witness the binary has only inlined (no symbol of its own): declare them from the requirement
-        if ti is not None and cf['pkey'] in self.protocols:
-            have = set(self.member_sig(e) for e in ti.members)
+        if cf['pkey'] in self.protocols and (ti is not None or tk == 'Swift.Never'):
+            have = set(self.member_sig(e) for e in ti.members) if ti is not None else set()
             for (bk, sk), b in self.blocks.items():
                 if bk == tk: have |= set(self.member_sig(e) for e in b['ents'])
+            # stored properties witness `var x { get }` requirements
+            if ti is not None and ti.ctx.fields:
+                for r in ti.ctx.fields['records']:
+                    nm = r['name']
+                    if nm.startswith('$__lazy_storage_$_'): nm = nm[len('$__lazy_storage_$_'):]
+                    have.add('%s()' % nm)
             defaults = set()
+            conformed = set(c['pkey'] for c in self.confs.get(tk, []))
+            concrete_body = False
+            for a, t in cf['assoc']:
+                for nm, tn in a['records']:
+                    if nm == 'Body' and nm not in inferred:
+                        tt = self.g.mtype(tn)
+                        if tt is not None and self.ty(tt, env) != 'Swift.Never': concrete_body = True
             for (bk, sk), b in self.blocks.items():
-                if bk == cf['pkey']: defaults |= set(self.member_sig(e) for e in b['ents'])
-            env_r = Env({}, proto_self=True, class_self=name if ti.kind == 'class' else None)
-            cinfo = dict(env=env_r, depth=1, kind=ti.kind, self_key=tk, force_public=bool(pub))
+                # `extension View where Body == Never` does not witness a concrete Body
+                if bk in conformed and not (b['sig'] is not None and 'Identifier=Never' in b['sig'].key() and concrete_body):
+                    defaults |= set(self.member_sig(e) for e in b['ents'])
+            kind = ti.kind if ti is not None else 'enum'
+            env_r = Env({}, proto_self=True, class_self=name if kind == 'class' else None)
+            cinfo = dict(env=env_r, depth=1, kind=kind, self_key=tk, force_public=bool(pub))
             seen = set()
             for ent in self.reqs.get(cf['pkey'], []):
                 sg = self.member_sig(ent)
                 if sg in have or sg in defaults or sg in seen: continue
                 seen.add(sg)
                 for x in self.member_decl(ent, cinfo): L.append('    ' + x)
+        # Equatable / Hashable whose == / hash(into:) Reef inlined (fields that are not Equatable: no synthesis)
+        if ti is not None and cf['pkey'] in ('Swift.Equatable', 'Swift.Hashable') and ti.kind != 'protocol':
+            have = set(self.member_sig(e) for e in ti.members)
+            for (bk, sk), b in self.blocks.items():
+                if bk == tk: have |= set(self.member_sig(e) for e in b['ents'])
+            if cf['pkey'] == 'Swift.Equatable' and not any(h.startswith('static ==(') for h in have) and ti.kind != 'enum':
+                me = name if ti.kind == 'class' else 'Self'
+                L.append('    %sstatic func == (a0: %s, a1: %s) -> Swift.Bool { _skeleton() }' % (pub, me, me))
+            if cf['pkey'] == 'Swift.Hashable' and not any(h.startswith('hash(') for h in have) and ti.kind != 'enum':
+                L.append('    %sfunc hash(into a0: inout Swift.Hasher) { _skeleton() }' % pub)
         L.append('}')
         return L
 
     def qualified(self, ti):
         parts = [ti.ename]
         p = self.types.get(ti.parent_key)
+        top = ti
         while p is not None and p.kind != 'protocol' and not ti.local:
-            parts.insert(0, p.ename); p = self.types.get(p.parent_key)
+            parts.insert(0, p.ename); top = p; p = self.types.get(p.parent_key)
+        if top is not ti and top.node.c[0].k == 'Extension' and top.parent_key not in self.types:
+            return self.nominal_name(top.node.c[0].c[1], Env()) + '.' + '.'.join(esc_member(x) for x in parts)
         if ti.node.c[0].k == 'Extension' or (ti.parent_key not in self.types and ti.parent_key != 'SwiftUI' and not ti.local):
             par = ti.node.c[0]
             if par.k == 'Extension': par = par.c[1]
@@ -1160,11 +1275,14 @@ class Emitter:
             if base is None: return []
             env, depth, name = self.extern_env(base)
             kind = 'extern'
+            bn = base.c[0] if base.k == 'Type' and base.c else base
+            extern_class = bn.k == 'Class'
         head = 'extension %s' % name
         if b['sig'] is not None:
             reqs = self.tracked(any(e['exp'] for e in b['ents']), self.sig_reqs, b['sig'], env)
             if reqs: head += ' where ' + ', '.join(reqs)
-        cinfo = dict(env=env, depth=depth, kind=kind if kind != 'protocol' else 'protoext', self_key=tk)
+        cinfo = dict(env=env, depth=depth, kind=kind if kind != 'protocol' else 'protoext', self_key=tk,
+                     extern_class=kind == 'extern' and extern_class)
         L = [head + ' {']
         for ent in b['ents']:
             if ti is not None: self.class_flags(ti, ent)
@@ -1205,6 +1323,8 @@ class Emitter:
             self.problems['type without metadata'] += 1
         if ph: files['Support/TypesWithoutMetadata.swift'].append('\n'.join(ph))
         self.write(files)
+        with open(os.path.join(self.g.out, 'Support', 'aliases.txt'), 'w') as f:
+            for a, b in sorted(self.aliases): f.write('%s %s\n' % (a, b))
         print('problems:', dict(self.problems), file=sys.stderr)
 
     def emit_all(self):
@@ -1218,7 +1338,13 @@ class Emitter:
                 owner_file[t.key] = f
                 for s in t.nested: mark(s, f)
             mark(ti, f)
-            files[f].append('\n'.join(self.type_decl(ti)))
+            par = ti.node.c[0]
+            if par.k == 'Extension' and not ti.local and ti.parent_key not in self.types:
+                # a type declared in an extension of another module's type (`extension AttributeScopes { struct SwiftUIAttributes }`)
+                pn = self.nominal_name(par.c[1], Env())
+                files[f].append('\n'.join(['extension %s {' % pn] + self.type_decl(ti, '    ') + ['}']))
+            else:
+                files[f].append('\n'.join(self.type_decl(ti)))
         for (tk, sk), b in self.blocks.items():
             if tk in self.types and self.types[tk].kind == 'protocol' and len(b['ents']) > 40:
                 # large protocol extensions (View modifiers ...) are split by area of the member
@@ -1258,7 +1384,10 @@ class Emitter:
             with open(p, 'w') as fh:
                 fh.write(HEADER % desc)
                 fh.write('\n')
-                for i in IMPORTS: fh.write('import %s\n' % i)
+                # files that must not see Foundation's members (Foundation declares `Int._Arg = Int64`; Reef's is Int):
+                # with MemberImportVisibility, members of a module are visible only where it is imported
+                if os.path.basename(f) not in self.fixes.get('no_imports', []):
+                    for i in IMPORTS: fh.write('import %s\n' % i)
                 fh.write('\n')
                 fh.write('\n\n'.join(chunks))
                 fh.write('\n')
