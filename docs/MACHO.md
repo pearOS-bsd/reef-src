@@ -84,3 +84,28 @@ and the Objective-C classes. The function match dropped a little (69.5 %) becaus
 `usr/lib/system/libdispatch.dylib` (636 functions) is built as `__APPLE__` (the Apple branch of `internal.h`: `os/availability.h`, `mach/*`, `mach_msg`, `mach_port_*`) with the epoll backend of
 `event_config.h` (`__linux__` true there: `epoll_create1`, `eventfd`, `timerfd_create`, `signalfd`) and the ObjC classes `OS_dispatch_*` (`data.m`, `object.m`); it imports `kevent` and `kqueue` too.
 The `config/config.h` of the repository is the Apple one. It needs the Apple private headers (`os/tsd.h`, `pthread/private.h`, `mach/*`, voucher, firehose), written from the symbols.
+
+## The small C libraries and the shims with their own code (2026-11-27)
+The host shims (`tools/macho-gen-shim.py`) are a table of jumps (`trampolines.S`), a constructor that fills the table from the host's library (`reef_host_symbol`) and `reef_bridge_missing`
+for what the host lacks. The generator keeps the names with two leading underscores (`__xmlRaiseError`) and only rewrites `symbols.h` and `trampolines.S` when the folder exists. What the
+binary has next to the table is Reef's own wrapper code, written in a second source file linked after the constructor (the original has zeros, not nops, between the two objects):
+- `libsqlite3`: 292 of 292 functions. The variable argument functions (`sqlite3_mprintf`, `_snprintf`, `_str_appendf`, `_log`, `_config`, `_db_config`, `_test_control`, `_vtab_config`) cannot be
+  jumps: the printf ones call the host's `v` variant with a `va_list`, `sqlite3_log` formats first and logs `"%s"`, the configuration ones copy 16 words from the caller's arguments and pass them on.
+  Each looks the host's function up the first time (`static` pointer inside an inline helper `host_<name>`, which is what the symbols `host_sqlite3_vmprintf.function` are).
+- `libcurl`: 101 of 102. Every handle gets a record (a list under a mutex): the write callback the caller set, the header callback and data. The defaults are Apple's stdio (`writeStream`
+  fwrites to the stream or `stdout`, `readStream` freads from `stdin` and answers `CURL_READFUNC_ABORT` on an error), set for every new, reset and duplicated handle; `curl_easy_setopt`
+  keeps the write function and header function/data (`applyHeader`), replaces Apple's `stderr` by the host's (`libc.so.6` `stderr`), and passes 16 words on; `curl_easy_getinfo`,
+  `curl_multi_setopt`, `curl_share_setopt` pass 16 words on, `curl_formadd` 40; the `curl_m*printf` family formats with the host's `curl_mvaprintf` and writes through Apple's stdio.
+- `libxml2`: 1572 of 1572. The global variables of the library (`xmlMalloc`, `xmlFree`, the SAX handlers, `xmlLastError`, the character tables ...) live in the shim and are copied from the host
+  when the library is loaded and after `xmlMemSetup`/`xmlGcMemSetup` (`reef_xml2_refresh_data`); `-fno-common` with 16 byte alignment gives the same layout. The error functions format with
+  `vasprintf` and pass `"%s"`; a function the host lacks stops the program with `reef: libxml2 lacks <name>`.
+- Other libraries: `libsandbox` (byte for byte; compiles profiles through `reef_sandbox_compile` of libSystem), `libresolv` (14 of 17; the resolver state is read from `/etc/resolv.conf`,
+  queries go to the host's resolver and its `h_errno` is copied; `names.c` is built with `-fwrapv`, which is what gives the original's sign extensions), `libcompression` (25 of 33; the stream
+  API around the LZFSE reference code of `upstream/lzfse`; LZ4, LZMA and Brotli through the host's libraries, zlib through libz; the host table is one struct, `host`).
+- Small frameworks: `ForceFeedback`, `CoreMediaIO`, `CoreDisplay`, `MediaAccessibility`, `GSS` (a fake GSS-API: names, OID sets, status texts, no credentials), `CoreMIDI` (clients and ports are
+  numbers above 0x10000; the packet and event list helpers) match function for function except where noted in their `target.conf` (`minimum`).
+- Two compiler findings: `static` helpers are placed in the file where they are first referenced, deferred ones last; a constant string used first in an inline helper lands in `__cstring`
+  after the strings of the functions before it (the only reason `libsqlite3` and `libxml2` are not byte for byte: the position of `"%s"` and `""`). `-fno-common` globals are `.zerofill
+  __DATA,__common` and are accessed directly, `-fcommon` ones through an address register.
+Not done (they are real implementations, not wrappers): `libxar` (19 KB, XML parser and writer, CommonCrypto), the C frameworks `Carbon`, `ColorSync`, `VideoToolbox`, `Accelerate`
+(vDSP, vImage), `ApplicationServices` (AX, HIShape, printing), `SystemConfiguration`, `CFNetwork`, `ImageIO`, `CoreMedia`, `libswiftsimd` (Swift).
