@@ -1374,7 +1374,7 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 - (unsigned long)countForObject:(id)a0;
 - (void)getObjects:(id *)a0;
 - (BOOL)__getValue:(id *)a0 forObj:(id)a1;
-- (void)__applyValues:(void * *)a0 context:(void *)a1;
+- (void)__applyValues:(void (*)(id, void *))a0 context:(void *)a1;
 - (id)copyWithZone:(struct _NSZone *)a0;
 - (id)mutableCopyWithZone:(struct _NSZone *)a0;
 - (BOOL)isEqual:(id)a0;
@@ -1414,8 +1414,8 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 
 - (void)getObjects:(id *)a0
 {
-    // unresolved
-
+    id enumerator = [self objectEnumerator];
+    for (id object = [enumerator nextObject]; object != nil; object = [enumerator nextObject]) *a0++ = object;
 }
 
 - (BOOL)__getValue:(id *)a0 forObj:(id)a1
@@ -1425,10 +1425,10 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
     return value != nil;
 }
 
-- (void)__applyValues:(void * *)a0 context:(void *)a1
+- (void)__applyValues:(void (*)(id, void *))a0 context:(void *)a1
 {
-    // unresolved
-
+    id enumerator = [self objectEnumerator];
+    for (id object = [enumerator nextObject]; object != nil; object = [enumerator nextObject]) a0(object, a1);
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
@@ -1446,8 +1446,17 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == self) return 1;
+    if (a0 == nil) return 0;
+    if (![a0 isKindOfClass:[NSSet class]]) return 0;
+    if ([a0 count] != [self count]) return 0;
+    id enumerator = [self objectEnumerator];
+    id member = nil;
+    for (id object = [enumerator nextObject]; object != nil; object = [enumerator nextObject]) {
+        member = [a0 member:object];
+        if (member == nil) return 0;
+    }
+    return 1;
 }
 
 - (unsigned long)hash
@@ -1462,8 +1471,25 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 
 - (unsigned long)countByEnumeratingWithState:(NSFastEnumerationState *)a0 objects:(id *)a1 count:(unsigned long)a2
 {
-    // unresolved
-    return 0;
+    CFArrayRef snapshot;
+    if (a0->state == 0) {
+        id enumerator = [self objectEnumerator];
+        CFMutableArrayRef objects = CFArrayCreateMutable(kCFAllocatorSystemDefault, 0, &kCFTypeArrayCallBacks);
+        for (id object = [enumerator nextObject]; object != nil; object = [enumerator nextObject]) CFArrayAppendValue(objects, object);
+        if (objects) objc_autorelease((id)objects);
+        snapshot = objects;
+        a0->mutationsPtr = (unsigned long *)&a0->extra[0];
+        a0->extra[1] = (unsigned long)snapshot;
+    } else {
+        snapshot = (CFArrayRef)a0->extra[1];
+    }
+    long remaining = CFArrayGetCount(snapshot) - (long)a0->state;
+    if (remaining <= 0) return 0;
+    unsigned long n = remaining < (long)a2 ? remaining : a2;
+    CFArrayGetValues(snapshot, CFRangeMake(a0->state, n), (const void **)a1);
+    a0->itemsPtr = a1;
+    a0->state += n;
+    return n;
 }
 
 @end
