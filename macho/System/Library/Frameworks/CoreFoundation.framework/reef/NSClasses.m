@@ -4814,8 +4814,13 @@ static ReefNumberValue reefNumberValue(id number) {
 
 - (id)description
 {
-    // unresolved
-    return nil;
+    const char *type = [self objCType];
+    ReefNumberValue v = reefNumberValue(self);
+    CFStringRef text;
+    if (v.kind == 1) text = CFStringCreateWithFormat(kCFAllocatorSystemDefault, NULL, CFSTR("%llu"), v.value.u);
+    else if (v.kind == 2) text = CFStringCreateWithFormat(kCFAllocatorSystemDefault, NULL, type && *type == 'f' ? CFSTR("%.7g") : CFSTR("%.16g"), v.value.d);
+    else text = CFStringCreateWithFormat(kCFAllocatorSystemDefault, NULL, CFSTR("%lld"), v.value.s);
+    return text ? objc_autorelease((id)text) : nil;
 }
 
 - (long)_cfNumberType
@@ -4832,20 +4837,23 @@ static ReefNumberValue reefNumberValue(id number) {
 
 - (long)compare:(id)a0
 {
-    // unresolved
-    return 0;
+    double mine = [self doubleValue];
+    double other = [a0 doubleValue];
+    if (mine < other) return -1;
+    return mine > other;
 }
 
 - (long)_reverseCompare:(id)a0
 {
-    // unresolved
-    return 0;
+    return -[self compare:a0];
 }
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == self) return 1;
+    if (a0 == nil) return 0;
+    if (![a0 isKindOfClass:[NSNumber class]]) return 0;
+    return [self compare:a0] == 0;
 }
 
 - (unsigned long)hash
@@ -4856,8 +4864,7 @@ static ReefNumberValue reefNumberValue(id number) {
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return objc_retain(self);
 }
 
 - (unsigned long)_cfTypeID
