@@ -18,8 +18,11 @@ import Metal
 import os
 
 class AttributedTextStorage: SwiftUI.AnyTextStorage {
-    let attributed: Foundation.AttributedString = _skeletonValue()
-    override var plainString: Swift.String { _skeleton() }
-    init(_ a0: Foundation.AttributedString) { _skeleton() }
+    let attributed: Foundation.AttributedString
+    override var plainString: Swift.String { Swift.String(attributed.characters) }
+    init(_ a0: Foundation.AttributedString) {
+        attributed = a0
+        super.init()
+    }
     deinit {}
 }

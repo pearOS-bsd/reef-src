@@ -17,6 +17,8 @@ import DeveloperToolsSupport
 import Metal
 import os
 
+/// the metrics of the environment's control size
 struct ControlSizes {
-    init(_ a0: SwiftUI.EnvironmentValues) { _skeleton() }
+    var size: SwiftUI.ControlSize
+    init(_ a0: SwiftUI.EnvironmentValues) { size = a0.controlSize }
 }

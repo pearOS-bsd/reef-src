@@ -70,6 +70,7 @@ func selftestBuild() {
     print("rebuild", third[0] === first[0], third[0].sizeThatFits(.unspecified), "runs", node.bodyRuns)
     selftestStacks(host)
     selftestFonts()
+    selftestTextBuilder()
 }
 
 /// a leaf as wide as 10, or 20 when enabled
@@ -133,4 +134,19 @@ func selftestFonts() {
     print("line", [10, 13, 17, 20, 26].map { SwiftUI.FontResolver.lineHeight($0) }, [10, 15, 20].map { SwiftUI.FontResolver.lineAdvance($0) })
     let ns = SwiftUI.FontResolver.nsFont(traits(.headline))
     print("nsfont", ns.pointSize, ns.fontDescriptor.symbolicTraits.contains(.bold))
+}
+
+func selftestTextBuilder() {
+    var env = SwiftUI.EnvironmentValues()
+    let text = SwiftUI.Text(verbatim: "Hello, ") + SwiftUI.Text("world" as Swift.Substring)
+    let (string, style) = SwiftUI.TextBuilder.string(text, env)
+    let font = string.attribute(.font, at: 0, effectiveRange: nil) as? NSFont
+    let paragraph = string.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
+    print("text", string.string, string.length, font?.pointSize as Any, style.traits.size, paragraph?.minimumLineHeight as Any,
+          paragraph?.alignment.rawValue as Any, paragraph?.lineBreakMode.rawValue as Any)
+    if case .color(let c) = style.paint { print("text paint", c.opacity > 0) } else { print("text paint none") }
+    env.textCase = .uppercase
+    env.multilineTextAlignment = .center
+    let (upper, _) = SwiftUI.TextBuilder.string(SwiftUI.Text(verbatim: "ab") + SwiftUI.Text(verbatim: "c"), env)
+    print("text case", upper.string, (upper.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle)?.alignment.rawValue as Any)
 }

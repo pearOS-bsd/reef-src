@@ -18,7 +18,8 @@ import Metal
 import os
 
 open class AnyTextStorage {
-    var plainString: Swift.String { _skeleton() }
-    init() { _skeleton() }
+    var plainString: Swift.String { "" }
+    init() {
+    }
     deinit {}
 }

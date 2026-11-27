@@ -21,10 +21,24 @@ public struct Text {
     public var storage: SwiftUI.Text.Storage
     public var modifiers: [SwiftUI.Text.Modifier]
     public init(_ a0: SwiftUI.LocalizedStringKey, tableName a1: Swift.String?, bundle a2: Bundle?, comment a3: Swift.StaticString?) { _skeleton() }
-    public init<A>(_ a0: A) where A: Swift.StringProtocol { _skeleton() }
-    public init(verbatim a0: Swift.String) { _skeleton() }
+    public init<A>(_ a0: A) where A: Swift.StringProtocol {
+        storage = .verbatim(Swift.String(a0))
+        modifiers = []
+    }
+    public init(verbatim a0: Swift.String) {
+        storage = .verbatim(a0)
+        modifiers = []
+    }
     func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] { _skeleton() }
-    public static func + (_ a0: SwiftUI.Text, _ a1: SwiftUI.Text) -> SwiftUI.Text { _skeleton() }
+    public static func + (_ a0: SwiftUI.Text, _ a1: SwiftUI.Text) -> SwiftUI.Text {
+        // two plain unmodified texts join into one string, others into a concatenated storage
+        if case .verbatim(let s0) = a0.storage, case .verbatim(let s1) = a1.storage, a0.modifiers.isEmpty, a1.modifiers.isEmpty {
+            return Text(verbatim: s0 + s1)
+        }
+        var text = Text(verbatim: "")
+        text.storage = .anyTextStorage(SwiftUI.ConcatenatedTextStorage(a0, a1))
+        return text
+    }
     public func bold() -> SwiftUI.Text { _skeleton() }
     public func italic() -> SwiftUI.Text { _skeleton() }
     public func tracking(_ a0: CoreGraphics.CGFloat) -> SwiftUI.Text { _skeleton() }

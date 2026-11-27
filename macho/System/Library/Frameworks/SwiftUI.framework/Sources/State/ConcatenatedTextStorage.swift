@@ -18,9 +18,21 @@ import Metal
 import os
 
 class ConcatenatedTextStorage: SwiftUI.AnyTextStorage {
-    let first: SwiftUI.Text = _skeletonValue()
-    let second: SwiftUI.Text = _skeletonValue()
-    override var plainString: Swift.String { _skeleton() }
-    init(_ a0: SwiftUI.Text, _ a1: SwiftUI.Text) { _skeleton() }
+    let first: SwiftUI.Text
+    let second: SwiftUI.Text
+    override var plainString: Swift.String {
+        func plain(_ text: SwiftUI.Text) -> Swift.String {
+            switch text.storage {
+            case .verbatim(let string): return string
+            case .anyTextStorage(let storage): return storage.plainString
+            }
+        }
+        return plain(first) + plain(second)
+    }
+    init(_ a0: SwiftUI.Text, _ a1: SwiftUI.Text) {
+        first = a0
+        second = a1
+        super.init()
+    }
     deinit {}
 }

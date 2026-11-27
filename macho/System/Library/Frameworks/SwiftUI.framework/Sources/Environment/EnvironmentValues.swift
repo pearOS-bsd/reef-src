@@ -54,19 +54,19 @@ public struct EnvironmentValues {
         get { self[SwiftUI.ControlSizeKey.self] }
         set { self[SwiftUI.ControlSizeKey.self] = newValue }
     }
-    var labelsHidden: Swift.Bool { _skeleton() }
-    var toggleStyleBox: Any? { _skeleton() }
+    var labelsHidden: Swift.Bool { self[SwiftUI.LabelsHiddenKey.self] }
+    var toggleStyleBox: Any? { self[SwiftUI.ToggleStyleBoxKey.self] }
     public var font: SwiftUI.Font? {
         get { self[SwiftUI.FontKey.self] }
         set { self[SwiftUI.FontKey.self] = newValue }
     }
-    var buttonSizing: SwiftUI.ButtonSizing { _skeleton() }
+    var buttonSizing: SwiftUI.ButtonSizing { self[SwiftUI.ButtonSizingKey.self] }
     public var _buttonBorderShape: SwiftUI.ButtonBorderShape {
         get { _skeleton() }
         set { _skeleton() }
     }
-    var horizontalRadioGroup: Swift.Bool { _skeleton() }
-    var progressStyle: Any? { _skeleton() }
+    var horizontalRadioGroup: Swift.Bool { self[SwiftUI.HorizontalRadioGroupKey.self] }
+    var progressStyle: Any? { self[SwiftUI.ProgressStyleKey.self] }
     public var menuIndicatorVisibility: SwiftUI.Visibility {
         get { self[SwiftUI.MenuIndicatorKey.self] }
         set { self[SwiftUI.MenuIndicatorKey.self] = newValue }
@@ -79,13 +79,13 @@ public struct EnvironmentValues {
         get { self[SwiftUI.TextAlignmentKey.self] }
         set { self[SwiftUI.TextAlignmentKey.self] = newValue }
     }
-    var toggleButtonIsOn: Swift.Bool { _skeleton() }
-    var labelStyle: Any? { _skeleton() }
+    var toggleButtonIsOn: Swift.Bool { self[SwiftUI.ToggleButtonIsOnKey.self] }
+    var labelStyle: Any? { self[SwiftUI.LabelStyleKey.self] }
     public var imageScale: SwiftUI.Image.Scale {
         get { self[SwiftUI.ImageScaleKey.self] }
         set { self[SwiftUI.ImageScaleKey.self] = newValue }
     }
-    var labelIconToTitleSpacing: CoreGraphics.CGFloat? { _skeleton() }
+    var labelIconToTitleSpacing: CoreGraphics.CGFloat? { self[SwiftUI.LabelIconToTitleSpacingKey.self] }
     public var openURL: SwiftUI.OpenURLAction {
         get { _skeleton() }
         set { _skeleton() }
@@ -102,17 +102,17 @@ public struct EnvironmentValues {
     func pushStyle(_ a0: Any, kind a1: SwiftUI.StyleKind) { _skeleton() }
     func popStyle(_ a0: SwiftUI.StyleKind) { _skeleton() }
     var symbolRenderingModeValue: SwiftUI.SymbolRenderingMode? { _skeleton() }
-    var lineLimitMinimum: Swift.Int? { _skeleton() }
-    var alternatesRowBackgrounds: Swift.Bool? { _skeleton() }
-    var tableColumnHeadersHidden: Swift.Bool { _skeleton() }
-    var textBold: Swift.Bool { _skeleton() }
-    var textItalic: Swift.Bool { _skeleton() }
-    var textMonospacedDigit: Swift.Bool { _skeleton() }
-    var textWeight: SwiftUI.Font.Weight? { _skeleton() }
-    var textDesign: SwiftUI.Font.Design? { _skeleton() }
-    var textFieldStyle: Any? { _skeleton() }
-    var textSelectable: Swift.Bool { _skeleton() }
-    var dimsDisabledText: Swift.Bool { _skeleton() }
+    var lineLimitMinimum: Swift.Int? { self[SwiftUI.LineLimitMinimumKey.self] }
+    var alternatesRowBackgrounds: Swift.Bool? { self[SwiftUI.AlternatesRowBackgroundsKey.self] }
+    var tableColumnHeadersHidden: Swift.Bool { self[SwiftUI.TableColumnHeadersHiddenKey.self] }
+    var textBold: Swift.Bool { self[SwiftUI.TextBoldKey.self] }
+    var textItalic: Swift.Bool { self[SwiftUI.TextItalicKey.self] }
+    var textMonospacedDigit: Swift.Bool { self[SwiftUI.TextMonospacedDigitKey.self] }
+    var textWeight: SwiftUI.Font.Weight? { self[SwiftUI.TextWeightKey.self] }
+    var textDesign: SwiftUI.Font.Design? { self[SwiftUI.TextDesignKey.self] }
+    var textFieldStyle: Any? { self[SwiftUI.TextFieldStyleKey.self] }
+    var textSelectable: Swift.Bool { self[SwiftUI.TextSelectableKey.self] }
+    var dimsDisabledText: Swift.Bool { self[SwiftUI.DimsDisabledTextKey.self] }
     public var symbolVariants: SwiftUI.SymbolVariants {
         get { self[SwiftUI.SymbolVariantsKey.self] }
         set { self[SwiftUI.SymbolVariantsKey.self] = newValue }
@@ -123,13 +123,13 @@ public struct EnvironmentValues {
         get { self[SwiftUI.LineLimitKey.self] }
         set { self[SwiftUI.LineLimitKey.self] = newValue }
     }
-    var scrollAnchors: SwiftUI.ScrollAnchors { _skeleton() }
-    var scrollContentMargins: SwiftUI.EdgeInsets { _skeleton() }
-    var scrollTargetBehavior: (any SwiftUI.ScrollTargetBehavior)? { _skeleton() }
-    var verticalScrollIndicators: SwiftUI.ScrollIndicatorVisibility { _skeleton() }
-    var horizontalScrollIndicators: SwiftUI.ScrollIndicatorVisibility { _skeleton() }
-    var fileDialogURLEnabled: (Foundation.Predicate<(Foundation.URL)>)? { _skeleton() }
-    var textScale: SwiftUI.Text.Scale? { _skeleton() }
+    var scrollAnchors: SwiftUI.ScrollAnchors { self[SwiftUI.ScrollAnchorsKey.self] }
+    var scrollContentMargins: SwiftUI.EdgeInsets { self[SwiftUI.ScrollContentMarginsKey.self] }
+    var scrollTargetBehavior: (any SwiftUI.ScrollTargetBehavior)? { self[SwiftUI.ScrollTargetBehaviorKey.self] }
+    var verticalScrollIndicators: SwiftUI.ScrollIndicatorVisibility { self[SwiftUI.VerticalScrollIndicatorsKey.self] }
+    var horizontalScrollIndicators: SwiftUI.ScrollIndicatorVisibility { self[SwiftUI.HorizontalScrollIndicatorsKey.self] }
+    var fileDialogURLEnabled: (Foundation.Predicate<(Foundation.URL)>)? { self[SwiftUI.FileDialogURLEnabledKey.self] }
+    var textScale: SwiftUI.Text.Scale? { self[SwiftUI.TextScaleKey.self] }
     public var layoutDirection: SwiftUI.LayoutDirection {
         get { self[SwiftUI.LayoutDirectionKey.self] }
         set { self[SwiftUI.LayoutDirectionKey.self] = newValue }

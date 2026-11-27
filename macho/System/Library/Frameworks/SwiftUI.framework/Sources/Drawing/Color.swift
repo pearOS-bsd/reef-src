@@ -65,10 +65,18 @@ public struct Color {
         public var opacity: Swift.Float
         public var cgColor: CGColor { _skeleton() }
         public init(colorSpace a0: SwiftUI.Color.RGBColorSpace, red a1: Swift.Float, green a2: Swift.Float, blue a3: Swift.Float, opacity a4: Swift.Float) { _skeleton() }
-        var nsColor: NSColor { _skeleton() }
-        public var red: Swift.Float { _skeleton() }
-        public var green: Swift.Float { _skeleton() }
-        public var blue: Swift.Float { _skeleton() }
+        /// a linear component in sRGB
+        static func encoded(_ a0: Swift.Float) -> Swift.Float {
+            a0 <= 0.0031308 ? a0 * 12.92 : 1.055 * powf(a0, 1 / 2.4) - 0.055
+        }
+
+        var nsColor: NSColor {
+            NSColor(srgbRed: CoreGraphics.CGFloat(Self.encoded(linearRed)), green: CoreGraphics.CGFloat(Self.encoded(linearGreen)),
+                    blue: CoreGraphics.CGFloat(Self.encoded(linearBlue)), alpha: CoreGraphics.CGFloat(opacity))
+        }
+        public var red: Swift.Float { Self.encoded(linearRed) }
+        public var green: Swift.Float { Self.encoded(linearGreen) }
+        public var blue: Swift.Float { Self.encoded(linearBlue) }
         public static func == (_ a0: SwiftUI.Color.Resolved, _ a1: SwiftUI.Color.Resolved) -> Swift.Bool { _skeleton() }
         public func hash(into a0: inout Swift.Hasher) { _skeleton() }
         public var hashValue: Swift.Int { _skeleton() }
