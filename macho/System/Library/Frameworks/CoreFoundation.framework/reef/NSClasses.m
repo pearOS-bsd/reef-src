@@ -995,8 +995,8 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 - (unsigned long)countForObject:(id)a0;
 - (BOOL)containsObject:(id)a0;
 - (BOOL)__getValue:(id *)a0 forKey:(id)a1;
-- (void)__apply:(void * *)a0 context:(void *)a1;
-- (void)enumerateKeysAndObjectsWithOptions:(unsigned long)a0 usingBlock:(void (^)(void))a1;
+- (void)__apply:(void (*)(id, id, void *))a0 context:(void *)a1;
+- (void)enumerateKeysAndObjectsWithOptions:(unsigned long)a0 usingBlock:(void (^)(id, id, BOOL *))a1;
 - (id)_cfMutableCopy;
 - (id)copyWithZone:(struct _NSZone *)a0;
 - (id)mutableCopyWithZone:(struct _NSZone *)a0;
@@ -1027,8 +1027,12 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 
 - (void)getObjects:(id *)a0 andKeys:(id *)a1
 {
-    // unresolved
-
+    id enumerator = [self keyEnumerator];
+    unsigned long idx = 0;
+    for (id key = [enumerator nextObject]; key != nil; key = [enumerator nextObject], idx++) {
+        if (a1) a1[idx] = key;
+        if (a0) a0[idx] = [self objectForKey:key];
+    }
 }
 
 - (BOOL)containsKey:(id)a0
@@ -1043,8 +1047,12 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
 
 - (unsigned long)countForObject:(id)a0
 {
-    // unresolved
-    return 0;
+    unsigned long count = 0;
+    id enumerator = [self keyEnumerator];
+    for (id key = [enumerator nextObject]; key != nil; key = [enumerator nextObject]) {
+        if ([[self objectForKey:key] isEqual:a0]) count++;
+    }
+    return count;
 }
 
 - (BOOL)containsObject:(id)a0
@@ -1059,22 +1067,28 @@ static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
     return value != nil;
 }
 
-- (void)__apply:(void * *)a0 context:(void *)a1
+- (void)__apply:(void (*)(id, id, void *))a0 context:(void *)a1
 {
-    // unresolved
-
+    id enumerator = [self keyEnumerator];
+    for (id key = [enumerator nextObject]; key != nil; key = [enumerator nextObject]) a0(key, [self objectForKey:key], a1);
 }
 
-- (void)enumerateKeysAndObjectsWithOptions:(unsigned long)a0 usingBlock:(void (^)(void))a1
+- (void)enumerateKeysAndObjectsWithOptions:(unsigned long)a0 usingBlock:(void (^)(id, id, BOOL *))a1
 {
-    // unresolved
-
+    BOOL stop = NO;
+    id enumerator = [self keyEnumerator];
+    for (id key = [enumerator nextObject]; key != nil; key = [enumerator nextObject]) {
+        a1(key, [self objectForKey:key], &stop);
+        if (stop) break;
+    }
 }
 
 - (id)_cfMutableCopy
 {
-    // unresolved
-    return nil;
+    CFMutableDictionaryRef copy = CFDictionaryCreateMutable(kCFAllocatorSystemDefault, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    id enumerator = [self keyEnumerator];
+    for (id key = [enumerator nextObject]; key != nil; key = [enumerator nextObject]) CFDictionarySetValue(copy, key, [self objectForKey:key]);
+    return (id)copy;
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
