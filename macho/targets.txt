@@ -48,3 +48,4 @@ System/Library/Frameworks/ForceFeedback.framework
 System/Library/Frameworks/CoreMediaIO.framework
 System/Library/Frameworks/MediaAccessibility.framework
 System/Library/Frameworks/CoreDisplay.framework
+usr/lib/libsandbox.1
