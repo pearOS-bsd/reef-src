@@ -19,9 +19,9 @@ import os
 
 public struct ToolbarPlacement {
     let rawValue: Swift.Int
-    public static var automatic: SwiftUI.ToolbarPlacement { _skeleton() }
+    public static var automatic: SwiftUI.ToolbarPlacement { SwiftUI.ToolbarPlacement(rawValue: 0) }
     public static var windowToolbar: SwiftUI.ToolbarPlacement { _skeleton() }
-    public static func == (_ a0: SwiftUI.ToolbarPlacement, _ a1: SwiftUI.ToolbarPlacement) -> Swift.Bool { _skeleton() }
+    public static func == (_ a0: SwiftUI.ToolbarPlacement, _ a1: SwiftUI.ToolbarPlacement) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.ToolbarPlacement: Swift.Equatable {

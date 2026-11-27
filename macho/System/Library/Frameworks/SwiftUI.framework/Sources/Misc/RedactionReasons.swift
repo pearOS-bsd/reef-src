@@ -20,9 +20,9 @@ import os
 public struct RedactionReasons {
     public let rawValue: Swift.Int
     public init(rawValue a0: Swift.Int) { rawValue = a0 }
-    public static var placeholder: SwiftUI.RedactionReasons { _skeleton() }
-    public static var privacy: SwiftUI.RedactionReasons { _skeleton() }
-    public static var invalidated: SwiftUI.RedactionReasons { _skeleton() }
+    public static var placeholder: SwiftUI.RedactionReasons { SwiftUI.RedactionReasons(rawValue: 1) }
+    public static var privacy: SwiftUI.RedactionReasons { SwiftUI.RedactionReasons(rawValue: 2) }
+    public static var invalidated: SwiftUI.RedactionReasons { SwiftUI.RedactionReasons(rawValue: 4) }
 }
 
 extension SwiftUI.RedactionReasons: Swift.OptionSet {

@@ -18,7 +18,7 @@ import Metal
 import os
 
 enum ProgressStyleKey {
-    static var defaultValue: Any? { _skeleton() }
+    static var defaultValue: Any? { nil }
 }
 
 extension SwiftUI.ProgressStyleKey: SwiftUI.EnvironmentKey {

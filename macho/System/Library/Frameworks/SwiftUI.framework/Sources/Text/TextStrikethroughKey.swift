@@ -22,5 +22,5 @@ enum TextStrikethroughKey {
 
 extension SwiftUI.TextStrikethroughKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.TextLineDecoration?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

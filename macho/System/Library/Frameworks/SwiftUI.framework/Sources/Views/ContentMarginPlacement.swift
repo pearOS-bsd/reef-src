@@ -19,7 +19,7 @@ import os
 
 public struct ContentMarginPlacement {
     let rawValue: Swift.Int
-    public static var automatic: SwiftUI.ContentMarginPlacement { _skeleton() }
+    public static var automatic: SwiftUI.ContentMarginPlacement { SwiftUI.ContentMarginPlacement(rawValue: 0) }
     public static var scrollContent: SwiftUI.ContentMarginPlacement { _skeleton() }
-    public static var scrollIndicators: SwiftUI.ContentMarginPlacement { _skeleton() }
+    public static var scrollIndicators: SwiftUI.ContentMarginPlacement { SwiftUI.ContentMarginPlacement(rawValue: 2) }
 }

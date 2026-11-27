@@ -18,7 +18,7 @@ import Metal
 import os
 
 enum LocaleKey {
-    static var defaultValue: Foundation.Locale { _skeleton() }
+    static var defaultValue: Foundation.Locale { Foundation.Locale.autoupdatingCurrent }
 }
 
 extension SwiftUI.LocaleKey: SwiftUI.EnvironmentKey {

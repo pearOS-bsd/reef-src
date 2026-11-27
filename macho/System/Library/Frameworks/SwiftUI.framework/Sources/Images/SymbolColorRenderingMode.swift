@@ -19,11 +19,11 @@ import os
 
 public struct SymbolColorRenderingMode {
     let rawValue: Swift.Int
-    public static var flat: SwiftUI.SymbolColorRenderingMode { _skeleton() }
-    public static var gradient: SwiftUI.SymbolColorRenderingMode { _skeleton() }
-    public var hashValue: Swift.Int { _skeleton() }
-    public static func == (_ a0: SwiftUI.SymbolColorRenderingMode, _ a1: SwiftUI.SymbolColorRenderingMode) -> Swift.Bool { _skeleton() }
-    public func hash(into a0: inout Swift.Hasher) { _skeleton() }
+    public static var flat: SwiftUI.SymbolColorRenderingMode { SwiftUI.SymbolColorRenderingMode(rawValue: 0) }
+    public static var gradient: SwiftUI.SymbolColorRenderingMode { SwiftUI.SymbolColorRenderingMode(rawValue: 1) }
+    public var hashValue: Swift.Int { _hashValue(for: self) }
+    public static func == (_ a0: SwiftUI.SymbolColorRenderingMode, _ a1: SwiftUI.SymbolColorRenderingMode) -> Swift.Bool { a0.rawValue == a1.rawValue }
+    public func hash(into a0: inout Swift.Hasher) { a0.combine(rawValue) }
 }
 
 extension SwiftUI.SymbolColorRenderingMode: Swift.Hashable {

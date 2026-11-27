@@ -19,12 +19,12 @@ import os
 
 public struct ScrollEdgeEffectStyle {
     let rawValue: Swift.Int
-    public static var automatic: SwiftUI.ScrollEdgeEffectStyle { _skeleton() }
-    public static var hard: SwiftUI.ScrollEdgeEffectStyle { _skeleton() }
-    public static var soft: SwiftUI.ScrollEdgeEffectStyle { _skeleton() }
-    public var hashValue: Swift.Int { _skeleton() }
-    public static func == (_ a0: SwiftUI.ScrollEdgeEffectStyle, _ a1: SwiftUI.ScrollEdgeEffectStyle) -> Swift.Bool { _skeleton() }
-    public func hash(into a0: inout Swift.Hasher) { _skeleton() }
+    public static var automatic: SwiftUI.ScrollEdgeEffectStyle { SwiftUI.ScrollEdgeEffectStyle(rawValue: 0) }
+    public static var hard: SwiftUI.ScrollEdgeEffectStyle { SwiftUI.ScrollEdgeEffectStyle(rawValue: 1) }
+    public static var soft: SwiftUI.ScrollEdgeEffectStyle { SwiftUI.ScrollEdgeEffectStyle(rawValue: 2) }
+    public var hashValue: Swift.Int { _hashValue(for: self) }
+    public static func == (_ a0: SwiftUI.ScrollEdgeEffectStyle, _ a1: SwiftUI.ScrollEdgeEffectStyle) -> Swift.Bool { a0.rawValue == a1.rawValue }
+    public func hash(into a0: inout Swift.Hasher) { a0.combine(rawValue) }
 }
 
 extension SwiftUI.ScrollEdgeEffectStyle: Swift.Hashable {

@@ -19,9 +19,9 @@ import os
 
 public struct DatePickerComponents {
     public let rawValue: Swift.UInt
-    public static var hourAndMinute: SwiftUI.DatePickerComponents { _skeleton() }
-    public static var date: SwiftUI.DatePickerComponents { _skeleton() }
-    public static var hourMinuteAndSecond: SwiftUI.DatePickerComponents { _skeleton() }
+    public static var hourAndMinute: SwiftUI.DatePickerComponents { SwiftUI.DatePickerComponents(rawValue: 12) }
+    public static var date: SwiftUI.DatePickerComponents { SwiftUI.DatePickerComponents(rawValue: 224) }
+    public static var hourMinuteAndSecond: SwiftUI.DatePickerComponents { SwiftUI.DatePickerComponents(rawValue: 14) }
     public init(rawValue a0: Swift.UInt) { rawValue = a0 }
 }
 

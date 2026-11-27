@@ -26,7 +26,7 @@ extension SwiftUI.View {
     public func listRowSeparator(_ a0: SwiftUI.Visibility, edges a1: SwiftUI.VerticalEdge.Set) -> some SwiftUI.View { self }
     public func refreshable(action a0: @escaping @Sendable () async -> ()) -> some SwiftUI.View { self }
     public func scrollBounceBehavior(_ a0: SwiftUI.ScrollBounceBehavior, axes a1: SwiftUI.Axis.Set) -> some SwiftUI.View { self }
-    public func scrollIndicators(_ a0: SwiftUI.ScrollIndicatorVisibility, axes a1: SwiftUI.Axis.Set) -> some SwiftUI.View { self }
+    public func scrollIndicators(_ a0: SwiftUI.ScrollIndicatorVisibility, axes a1: SwiftUI.Axis.Set) -> some SwiftUI.View { modifier(SwiftUI.EnvironmentSetModifier { if a1.contains(.vertical) { $0[SwiftUI.VerticalScrollIndicatorsKey.self] = a0 }; if a1.contains(.horizontal) { $0[SwiftUI.HorizontalScrollIndicatorsKey.self] = a0 } }) }
     public func onScrollVisibilityChange(threshold a0: Swift.Double, _ a1: @escaping (Swift.Bool) -> ()) -> some SwiftUI.View { self }
     public func onScrollPhaseChange(_ a0: @escaping (SwiftUI.ScrollPhase, SwiftUI.ScrollPhase, SwiftUI.ScrollPhaseChangeContext) -> ()) -> some SwiftUI.View { self }
     public func onScrollPhaseChange(_ a0: @escaping (SwiftUI.ScrollPhase, SwiftUI.ScrollPhase) -> ()) -> some SwiftUI.View { self }

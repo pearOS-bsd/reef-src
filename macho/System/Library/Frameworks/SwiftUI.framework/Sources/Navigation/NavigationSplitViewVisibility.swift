@@ -19,13 +19,14 @@ import os
 
 public struct NavigationSplitViewVisibility {
     let rawValue: Swift.Int
+    init(rawValue a0: Swift.Int) { rawValue = a0 }
     public func encode(to a0: any Swift.Encoder) throws { _skeleton() }
     public init(from a0: any Swift.Decoder) throws { _skeleton() }
-    public static var detailOnly: SwiftUI.NavigationSplitViewVisibility { _skeleton() }
-    public static var doubleColumn: SwiftUI.NavigationSplitViewVisibility { _skeleton() }
-    public static var all: SwiftUI.NavigationSplitViewVisibility { _skeleton() }
-    public static var automatic: SwiftUI.NavigationSplitViewVisibility { _skeleton() }
-    public static func == (_ a0: SwiftUI.NavigationSplitViewVisibility, _ a1: SwiftUI.NavigationSplitViewVisibility) -> Swift.Bool { _skeleton() }
+    public static var detailOnly: SwiftUI.NavigationSplitViewVisibility { SwiftUI.NavigationSplitViewVisibility(rawValue: 0) }
+    public static var doubleColumn: SwiftUI.NavigationSplitViewVisibility { SwiftUI.NavigationSplitViewVisibility(rawValue: 1) }
+    public static var all: SwiftUI.NavigationSplitViewVisibility { SwiftUI.NavigationSplitViewVisibility(rawValue: 2) }
+    public static var automatic: SwiftUI.NavigationSplitViewVisibility { SwiftUI.NavigationSplitViewVisibility(rawValue: 3) }
+    public static func == (_ a0: SwiftUI.NavigationSplitViewVisibility, _ a1: SwiftUI.NavigationSplitViewVisibility) -> Swift.Bool { a0.rawValue == a1.rawValue }
     enum CodingKeys {
         case rawValue
     }

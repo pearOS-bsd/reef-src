@@ -18,7 +18,7 @@ import Metal
 import os
 
 enum SubmitActionsKey {
-    static var defaultValue: [() -> ()] { _skeleton() }
+    static var defaultValue: [() -> ()] { [] }
 }
 
 extension SwiftUI.SubmitActionsKey: SwiftUI.EnvironmentKey {

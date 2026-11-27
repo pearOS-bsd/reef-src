@@ -18,7 +18,7 @@ import Metal
 import os
 
 public struct PreferredColorSchemeKey {
-    public static var defaultValue: SwiftUI.ColorScheme? { _skeleton() }
+    public static var defaultValue: SwiftUI.ColorScheme? { nil }
     public static func reduce(value a0: inout SwiftUI.ColorScheme?, nextValue a1: () -> SwiftUI.ColorScheme?) { _skeleton() }
 }
 

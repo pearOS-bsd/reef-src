@@ -18,7 +18,7 @@ import Metal
 import os
 
 public struct IsMoveDisabledTraitKey {
-    public static var defaultValue: Swift.Bool { _skeleton() }
+    public static var defaultValue: Swift.Bool { false }
 }
 
 extension SwiftUI.IsMoveDisabledTraitKey: SwiftUI._ViewTraitKey {

@@ -19,10 +19,10 @@ import os
 
 public struct SceneLaunchBehavior {
     let rawValue: Swift.Int
-    public static var presented: SwiftUI.SceneLaunchBehavior { _skeleton() }
-    public static var suppressed: SwiftUI.SceneLaunchBehavior { _skeleton() }
-    public static var automatic: SwiftUI.SceneLaunchBehavior { _skeleton() }
-    public static func == (_ a0: SwiftUI.SceneLaunchBehavior, _ a1: SwiftUI.SceneLaunchBehavior) -> Swift.Bool { _skeleton() }
+    public static var presented: SwiftUI.SceneLaunchBehavior { SwiftUI.SceneLaunchBehavior(rawValue: 1) }
+    public static var suppressed: SwiftUI.SceneLaunchBehavior { SwiftUI.SceneLaunchBehavior(rawValue: 2) }
+    public static var automatic: SwiftUI.SceneLaunchBehavior { SwiftUI.SceneLaunchBehavior(rawValue: 0) }
+    public static func == (_ a0: SwiftUI.SceneLaunchBehavior, _ a1: SwiftUI.SceneLaunchBehavior) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.SceneLaunchBehavior: Swift.Equatable {

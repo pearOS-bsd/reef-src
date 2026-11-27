@@ -18,7 +18,10 @@ import Metal
 import os
 
 class PrimitiveButtonStyleBox: SwiftUI.ButtonStyleBox {
-    let make: (SwiftUI.PrimitiveButtonStyleConfiguration) -> any SwiftUI.View = _skeletonValue()
-    init<A>(_ a0: A) where A: SwiftUI.PrimitiveButtonStyle { _skeleton() }
+    let make: (SwiftUI.PrimitiveButtonStyleConfiguration) -> any SwiftUI.View
+    init<A>(_ a0: A) where A: SwiftUI.PrimitiveButtonStyle {
+        make = { a0.makeBody(configuration: $0) }
+        super.init(style: a0)
+    }
     deinit {}
 }

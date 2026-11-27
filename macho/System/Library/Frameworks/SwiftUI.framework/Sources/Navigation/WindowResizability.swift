@@ -19,10 +19,10 @@ import os
 
 public struct WindowResizability {
     let rawValue: Swift.Int
-    public static var automatic: SwiftUI.WindowResizability { _skeleton() }
-    public static var contentSize: SwiftUI.WindowResizability { _skeleton() }
-    public static var contentMinSize: SwiftUI.WindowResizability { _skeleton() }
-    public static func == (_ a0: SwiftUI.WindowResizability, _ a1: SwiftUI.WindowResizability) -> Swift.Bool { _skeleton() }
+    public static var automatic: SwiftUI.WindowResizability { SwiftUI.WindowResizability(rawValue: 0) }
+    public static var contentSize: SwiftUI.WindowResizability { SwiftUI.WindowResizability(rawValue: 1) }
+    public static var contentMinSize: SwiftUI.WindowResizability { SwiftUI.WindowResizability(rawValue: 2) }
+    public static func == (_ a0: SwiftUI.WindowResizability, _ a1: SwiftUI.WindowResizability) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.WindowResizability: Swift.Equatable {

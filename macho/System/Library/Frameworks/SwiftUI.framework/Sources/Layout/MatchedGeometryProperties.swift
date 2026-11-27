@@ -20,9 +20,9 @@ import os
 public struct MatchedGeometryProperties {
     public let rawValue: Swift.UInt32
     public init(rawValue a0: Swift.UInt32) { rawValue = a0 }
-    public static var position: SwiftUI.MatchedGeometryProperties { _skeleton() }
-    public static var size: SwiftUI.MatchedGeometryProperties { _skeleton() }
-    public static var frame: SwiftUI.MatchedGeometryProperties { _skeleton() }
+    public static var position: SwiftUI.MatchedGeometryProperties { SwiftUI.MatchedGeometryProperties(rawValue: 1) }
+    public static var size: SwiftUI.MatchedGeometryProperties { SwiftUI.MatchedGeometryProperties(rawValue: 2) }
+    public static var frame: SwiftUI.MatchedGeometryProperties { SwiftUI.MatchedGeometryProperties(rawValue: 3) }
 }
 
 extension SwiftUI.MatchedGeometryProperties: Swift.OptionSet {

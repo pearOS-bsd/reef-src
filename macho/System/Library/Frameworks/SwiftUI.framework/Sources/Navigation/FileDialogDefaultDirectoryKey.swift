@@ -18,7 +18,7 @@ import Metal
 import os
 
 enum FileDialogDefaultDirectoryKey {
-    static var defaultValue: Foundation.URL? { _skeleton() }
+    static var defaultValue: Foundation.URL? { nil }
 }
 
 extension SwiftUI.FileDialogDefaultDirectoryKey: SwiftUI.EnvironmentKey {

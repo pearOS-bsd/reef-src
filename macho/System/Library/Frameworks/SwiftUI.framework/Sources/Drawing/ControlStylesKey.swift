@@ -18,7 +18,7 @@ import Metal
 import os
 
 enum ControlStylesKey {
-    static var defaultValue: [Swift.ObjectIdentifier: Any] { _skeleton() }
+    static var defaultValue: [Swift.ObjectIdentifier: Any] { [:] }
 }
 
 extension SwiftUI.ControlStylesKey: SwiftUI.EnvironmentKey {

@@ -22,5 +22,5 @@ struct BadgeTraitKey {
 
 extension SwiftUI.BadgeTraitKey: SwiftUI._ViewTraitKey {
     typealias Value = SwiftUI.Text?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

@@ -22,7 +22,12 @@ struct EnvironmentSetModifier {
 }
 
 extension SwiftUI.EnvironmentSetModifier: SwiftUI.PrimitiveModifier {
-    func _apply(_ a0: SwiftUI.BuildContext, content a1: @escaping (SwiftUI.BuildContext) -> [SwiftUI.Element]) -> [SwiftUI.Element] { _skeleton() }
+    func _apply(_ a0: SwiftUI.BuildContext, content a1: @escaping (SwiftUI.BuildContext) -> [SwiftUI.Element]) -> [SwiftUI.Element] {
+        // the content built in a copy of the context whose environment the closure changed
+        var context = a0
+        apply(&context.environment)
+        return a1(context)
+    }
 }
 
 extension SwiftUI.EnvironmentSetModifier: SwiftUI.ViewModifier {

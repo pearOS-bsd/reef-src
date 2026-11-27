@@ -22,5 +22,5 @@ enum ListSelectionKey {
 
 extension SwiftUI.ListSelectionKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.ListSelection?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

@@ -21,8 +21,8 @@ public struct NSHostingSceneBridgingOptions {
     public let rawValue: Swift.Int
     public static var all: SwiftUI.NSHostingSceneBridgingOptions { _skeleton() }
     public init(rawValue a0: Swift.Int) { rawValue = a0 }
-    public static var title: SwiftUI.NSHostingSceneBridgingOptions { _skeleton() }
-    public static var toolbars: SwiftUI.NSHostingSceneBridgingOptions { _skeleton() }
+    public static var title: SwiftUI.NSHostingSceneBridgingOptions { SwiftUI.NSHostingSceneBridgingOptions(rawValue: 1) }
+    public static var toolbars: SwiftUI.NSHostingSceneBridgingOptions { SwiftUI.NSHostingSceneBridgingOptions(rawValue: 2) }
 }
 
 extension SwiftUI.NSHostingSceneBridgingOptions: Swift.OptionSet {

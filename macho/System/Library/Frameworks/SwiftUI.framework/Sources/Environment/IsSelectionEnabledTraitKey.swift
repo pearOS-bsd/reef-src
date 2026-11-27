@@ -18,7 +18,7 @@ import Metal
 import os
 
 public struct IsSelectionEnabledTraitKey {
-    public static var defaultValue: Swift.Bool { _skeleton() }
+    public static var defaultValue: Swift.Bool { true }
 }
 
 extension SwiftUI.IsSelectionEnabledTraitKey: SwiftUI._ViewTraitKey {

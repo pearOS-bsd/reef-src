@@ -18,8 +18,8 @@ import Metal
 import os
 
 class ButtonStyleBox {
-    let style: Any = _skeletonValue()
-    init(style a0: Any) { _skeleton() }
+    let style: Any
+    init(style a0: Any) { style = a0 }
     deinit {}
 }
 

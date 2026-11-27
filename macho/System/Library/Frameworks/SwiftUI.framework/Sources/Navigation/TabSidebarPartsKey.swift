@@ -22,5 +22,5 @@ enum TabSidebarPartsKey {
 
 extension SwiftUI.TabSidebarPartsKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.TabSidebarParts
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { SwiftUI.TabSidebarParts(header: nil, footer: nil, bottomBar: nil) }
 }

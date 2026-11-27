@@ -20,8 +20,8 @@ import os
 public struct SubmitTriggers {
     public let rawValue: Swift.Int
     public init(rawValue a0: Swift.Int) { rawValue = a0 }
-    public static var text: SwiftUI.SubmitTriggers { _skeleton() }
-    public static var search: SwiftUI.SubmitTriggers { _skeleton() }
+    public static var text: SwiftUI.SubmitTriggers { SwiftUI.SubmitTriggers(rawValue: 1) }
+    public static var search: SwiftUI.SubmitTriggers { SwiftUI.SubmitTriggers(rawValue: 2) }
 }
 
 extension SwiftUI.SubmitTriggers: Swift.OptionSet {

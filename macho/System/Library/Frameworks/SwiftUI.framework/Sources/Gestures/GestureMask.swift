@@ -19,11 +19,11 @@ import os
 
 public struct GestureMask {
     public let rawValue: Swift.UInt32
-    public static var all: SwiftUI.GestureMask { _skeleton() }
+    public static var all: SwiftUI.GestureMask { SwiftUI.GestureMask(rawValue: 3) }
     public init(rawValue a0: Swift.UInt32) { rawValue = a0 }
-    public static var none: SwiftUI.GestureMask { _skeleton() }
-    public static var gesture: SwiftUI.GestureMask { _skeleton() }
-    public static var subviews: SwiftUI.GestureMask { _skeleton() }
+    public static var none: SwiftUI.GestureMask { SwiftUI.GestureMask(rawValue: 0) }
+    public static var gesture: SwiftUI.GestureMask { SwiftUI.GestureMask(rawValue: 1) }
+    public static var subviews: SwiftUI.GestureMask { SwiftUI.GestureMask(rawValue: 2) }
 }
 
 extension SwiftUI.GestureMask: Swift.OptionSet {

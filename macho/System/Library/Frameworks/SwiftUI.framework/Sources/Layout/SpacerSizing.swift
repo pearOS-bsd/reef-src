@@ -19,9 +19,9 @@ import os
 
 public struct SpacerSizing {
     let rawValue: Swift.Int
-    public static var flexible: SwiftUI.SpacerSizing { _skeleton() }
-    public static var fixed: SwiftUI.SpacerSizing { _skeleton() }
-    public static func == (_ a0: SwiftUI.SpacerSizing, _ a1: SwiftUI.SpacerSizing) -> Swift.Bool { _skeleton() }
+    public static var flexible: SwiftUI.SpacerSizing { SwiftUI.SpacerSizing(rawValue: 0) }
+    public static var fixed: SwiftUI.SpacerSizing { SwiftUI.SpacerSizing(rawValue: 1) }
+    public static func == (_ a0: SwiftUI.SpacerSizing, _ a1: SwiftUI.SpacerSizing) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.SpacerSizing: Swift.Equatable {

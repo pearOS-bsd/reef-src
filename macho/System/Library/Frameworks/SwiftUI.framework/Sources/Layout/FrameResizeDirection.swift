@@ -35,9 +35,9 @@ public enum FrameResizeDirection {
     }
     public struct Set {
         public let rawValue: Swift.Int8
-        public static var inward: SwiftUI.FrameResizeDirection.Set { _skeleton() }
-        public static var outward: SwiftUI.FrameResizeDirection.Set { _skeleton() }
-        public static var all: SwiftUI.FrameResizeDirection.Set { _skeleton() }
+        public static var inward: SwiftUI.FrameResizeDirection.Set { SwiftUI.FrameResizeDirection.Set(rawValue: 1) }
+        public static var outward: SwiftUI.FrameResizeDirection.Set { SwiftUI.FrameResizeDirection.Set(rawValue: 2) }
+        public static var all: SwiftUI.FrameResizeDirection.Set { SwiftUI.FrameResizeDirection.Set(rawValue: 3) }
         public init(rawValue a0: Swift.Int8) { rawValue = a0 }
     }
 }

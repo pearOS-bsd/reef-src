@@ -26,5 +26,5 @@ struct ListRowSeparatorTraitKey {
 
 extension SwiftUI.ListRowSeparatorTraitKey: SwiftUI._ViewTraitKey {
     typealias Value = SwiftUI.ListRowSeparatorTraitKey.Separator?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

@@ -19,8 +19,8 @@ import os
 
 public struct ScrollDismissesKeyboardMode {
     let rawValue: Swift.Int
-    public static var automatic: SwiftUI.ScrollDismissesKeyboardMode { _skeleton() }
-    public static var immediately: SwiftUI.ScrollDismissesKeyboardMode { _skeleton() }
-    public static var interactively: SwiftUI.ScrollDismissesKeyboardMode { _skeleton() }
-    public static var never: SwiftUI.ScrollDismissesKeyboardMode { _skeleton() }
+    public static var automatic: SwiftUI.ScrollDismissesKeyboardMode { SwiftUI.ScrollDismissesKeyboardMode(rawValue: 0) }
+    public static var immediately: SwiftUI.ScrollDismissesKeyboardMode { SwiftUI.ScrollDismissesKeyboardMode(rawValue: 1) }
+    public static var interactively: SwiftUI.ScrollDismissesKeyboardMode { SwiftUI.ScrollDismissesKeyboardMode(rawValue: 2) }
+    public static var never: SwiftUI.ScrollDismissesKeyboardMode { SwiftUI.ScrollDismissesKeyboardMode(rawValue: 3) }
 }

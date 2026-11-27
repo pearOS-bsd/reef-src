@@ -31,12 +31,12 @@ public struct SensoryFeedback {
     public func hash(into a0: inout Swift.Hasher) { _skeleton() }
     public struct Flexibility {
         let rawValue: Swift.Int
-        public static var rigid: SwiftUI.SensoryFeedback.Flexibility { _skeleton() }
-        public static var solid: SwiftUI.SensoryFeedback.Flexibility { _skeleton() }
-        public static var soft: SwiftUI.SensoryFeedback.Flexibility { _skeleton() }
-        public var hashValue: Swift.Int { _skeleton() }
-        public static func == (_ a0: SwiftUI.SensoryFeedback.Flexibility, _ a1: SwiftUI.SensoryFeedback.Flexibility) -> Swift.Bool { _skeleton() }
-        public func hash(into a0: inout Swift.Hasher) { _skeleton() }
+        public static var rigid: SwiftUI.SensoryFeedback.Flexibility { SwiftUI.SensoryFeedback.Flexibility(rawValue: 0) }
+        public static var solid: SwiftUI.SensoryFeedback.Flexibility { SwiftUI.SensoryFeedback.Flexibility(rawValue: 1) }
+        public static var soft: SwiftUI.SensoryFeedback.Flexibility { SwiftUI.SensoryFeedback.Flexibility(rawValue: 2) }
+        public var hashValue: Swift.Int { _hashValue(for: self) }
+        public static func == (_ a0: SwiftUI.SensoryFeedback.Flexibility, _ a1: SwiftUI.SensoryFeedback.Flexibility) -> Swift.Bool { a0.rawValue == a1.rawValue }
+        public func hash(into a0: inout Swift.Hasher) { a0.combine(rawValue) }
     }
 }
 

@@ -18,7 +18,7 @@ import Metal
 import os
 
 extension SwiftUI.View {
-    public func buttonStyle<A1>(_ a0: A1) -> some SwiftUI.View where A1: SwiftUI.ButtonStyle { self }
+    public func buttonStyle<A1>(_ a0: A1) -> some SwiftUI.View where A1: SwiftUI.ButtonStyle { modifier(SwiftUI.EnvironmentSetModifier { $0[SwiftUI.ButtonStyleBoxKey.self] = SwiftUI.CustomButtonStyleBox(a0) }) }
     public func clipShape<A1>(_ a0: A1, style a1: SwiftUI.FillStyle) -> some SwiftUI.View where A1: SwiftUI.Shape { self }
     public func scaleEffect(_ a0: CoreGraphics.CGFloat, anchor a1: SwiftUI.UnitPoint) -> some SwiftUI.View { self }
     public func foregroundColor(_ a0: SwiftUI.Color?) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.foregroundColor, value: a0)) }
@@ -37,9 +37,9 @@ extension SwiftUI.View {
     public func opacity(_ a0: Swift.Double) -> some SwiftUI.View { self }
     public func blur(radius a0: CoreGraphics.CGFloat, opaque a1: Swift.Bool) -> some SwiftUI.View { self }
     public func contentShape<A1>(_ a0: A1, eoFill a1: Swift.Bool) -> some SwiftUI.View where A1: SwiftUI.Shape { self }
-    public func buttonStyle<A1>(_ a0: A1) -> some SwiftUI.View where A1: SwiftUI.PrimitiveButtonStyle { self }
-    public func toggleStyle<A1>(_ a0: A1) -> some SwiftUI.View where A1: SwiftUI.ToggleStyle { self }
-    public func progressViewStyle<A1>(_ a0: A1) -> some SwiftUI.View where A1: SwiftUI.ProgressViewStyle { self }
+    public func buttonStyle<A1>(_ a0: A1) -> some SwiftUI.View where A1: SwiftUI.PrimitiveButtonStyle { modifier(SwiftUI.EnvironmentSetModifier { $0[SwiftUI.ButtonStyleBoxKey.self] = SwiftUI.PrimitiveButtonStyleBox(a0) }) }
+    public func toggleStyle<A1>(_ a0: A1) -> some SwiftUI.View where A1: SwiftUI.ToggleStyle { modifier(SwiftUI.EnvironmentSetModifier { $0[SwiftUI.ToggleStyleBoxKey.self] = a0 }) }
+    public func progressViewStyle<A1>(_ a0: A1) -> some SwiftUI.View where A1: SwiftUI.ProgressViewStyle { modifier(SwiftUI.EnvironmentSetModifier { $0[SwiftUI.ProgressStyleKey.self] = a0 }) }
     public func mask<A1>(_ a0: A1) -> some SwiftUI.View where A1: SwiftUI.View { self }
     public func scaleEffect(x a0: CoreGraphics.CGFloat, y a1: CoreGraphics.CGFloat, anchor a2: SwiftUI.UnitPoint) -> some SwiftUI.View { self }
     public func mask<A1>(alignment a0: SwiftUI.Alignment, _ a1: () -> A1) -> some SwiftUI.View where A1: SwiftUI.View { self }
@@ -55,7 +55,7 @@ extension SwiftUI.View {
     public func colorEffect(_ a0: SwiftUI.Shader, isEnabled a1: Swift.Bool) -> some SwiftUI.View { self }
     public func distortionEffect(_ a0: SwiftUI.Shader, maxSampleOffset a1: CGSize, isEnabled a2: Swift.Bool) -> some SwiftUI.View { self }
     public func layerEffect(_ a0: SwiftUI.Shader, maxSampleOffset a1: CGSize, isEnabled a2: Swift.Bool) -> some SwiftUI.View { self }
-    public func buttonBorderShape(_ a0: SwiftUI.ButtonBorderShape) -> some SwiftUI.View { self }
+    public func buttonBorderShape(_ a0: SwiftUI.ButtonBorderShape) -> some SwiftUI.View { modifier(SwiftUI.EnvironmentSetModifier { $0[SwiftUI.ButtonBorderShapeKey.self] = a0 }) }
     public func tabViewStyle<A1>(_ a0: A1) -> some SwiftUI.View where A1: SwiftUI.TabViewStyle { self }
     public func focusEffectDisabled(_ a0: Swift.Bool) -> some SwiftUI.View { self }
     public func scrollClipDisabled(_ a0: Swift.Bool) -> some SwiftUI.View { self }

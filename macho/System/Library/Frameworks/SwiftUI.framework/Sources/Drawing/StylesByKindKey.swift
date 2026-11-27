@@ -18,7 +18,7 @@ import Metal
 import os
 
 enum StylesByKindKey {
-    static var defaultValue: [SwiftUI.StyleKind: Any] { _skeleton() }
+    static var defaultValue: [SwiftUI.StyleKind: Any] { [:] }
 }
 
 extension SwiftUI.StylesByKindKey: SwiftUI.EnvironmentKey {

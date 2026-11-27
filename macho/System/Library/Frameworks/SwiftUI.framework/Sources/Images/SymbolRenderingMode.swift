@@ -19,11 +19,11 @@ import os
 
 public struct SymbolRenderingMode {
     let rawValue: Swift.Int
-    public static var monochrome: SwiftUI.SymbolRenderingMode { _skeleton() }
-    public static var multicolor: SwiftUI.SymbolRenderingMode { _skeleton() }
-    public static var hierarchical: SwiftUI.SymbolRenderingMode { _skeleton() }
-    public static var palette: SwiftUI.SymbolRenderingMode { _skeleton() }
-    public static func == (_ a0: SwiftUI.SymbolRenderingMode, _ a1: SwiftUI.SymbolRenderingMode) -> Swift.Bool { _skeleton() }
+    public static var monochrome: SwiftUI.SymbolRenderingMode { SwiftUI.SymbolRenderingMode(rawValue: 0) }
+    public static var multicolor: SwiftUI.SymbolRenderingMode { SwiftUI.SymbolRenderingMode(rawValue: 1) }
+    public static var hierarchical: SwiftUI.SymbolRenderingMode { SwiftUI.SymbolRenderingMode(rawValue: 2) }
+    public static var palette: SwiftUI.SymbolRenderingMode { SwiftUI.SymbolRenderingMode(rawValue: 3) }
+    public static func == (_ a0: SwiftUI.SymbolRenderingMode, _ a1: SwiftUI.SymbolRenderingMode) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.SymbolRenderingMode: Swift.Equatable {

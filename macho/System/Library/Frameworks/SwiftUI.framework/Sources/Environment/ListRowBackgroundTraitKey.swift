@@ -18,7 +18,7 @@ import Metal
 import os
 
 public struct ListRowBackgroundTraitKey {
-    public static var defaultValue: SwiftUI.AnyView? { _skeleton() }
+    public static var defaultValue: SwiftUI.AnyView? { nil }
 }
 
 extension SwiftUI.ListRowBackgroundTraitKey: SwiftUI._ViewTraitKey {

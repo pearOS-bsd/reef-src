@@ -18,7 +18,7 @@ import Metal
 import os
 
 public struct OnMoveTraitKey {
-    public static var defaultValue: ((Foundation.IndexSet, Swift.Int) -> ())? { _skeleton() }
+    public static var defaultValue: ((Foundation.IndexSet, Swift.Int) -> ())? { nil }
 }
 
 extension SwiftUI.OnMoveTraitKey: SwiftUI._ViewTraitKey {

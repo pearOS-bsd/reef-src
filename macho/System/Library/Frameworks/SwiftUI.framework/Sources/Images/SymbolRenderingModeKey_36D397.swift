@@ -22,5 +22,5 @@ enum SymbolRenderingModeKey_36D397 {
 
 extension SwiftUI.SymbolRenderingModeKey_36D397: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.SymbolRenderingMode?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

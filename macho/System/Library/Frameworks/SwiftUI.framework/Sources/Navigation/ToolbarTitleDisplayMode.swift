@@ -19,8 +19,8 @@ import os
 
 public struct ToolbarTitleDisplayMode {
     let rawValue: Swift.Int
-    public static var automatic: SwiftUI.ToolbarTitleDisplayMode { _skeleton() }
-    public static var large: SwiftUI.ToolbarTitleDisplayMode { _skeleton() }
-    public static var inlineLarge: SwiftUI.ToolbarTitleDisplayMode { _skeleton() }
-    public static var inline: SwiftUI.ToolbarTitleDisplayMode { _skeleton() }
+    public static var automatic: SwiftUI.ToolbarTitleDisplayMode { SwiftUI.ToolbarTitleDisplayMode(rawValue: 0) }
+    public static var large: SwiftUI.ToolbarTitleDisplayMode { SwiftUI.ToolbarTitleDisplayMode(rawValue: 1) }
+    public static var inlineLarge: SwiftUI.ToolbarTitleDisplayMode { SwiftUI.ToolbarTitleDisplayMode(rawValue: 2) }
+    public static var inline: SwiftUI.ToolbarTitleDisplayMode { SwiftUI.ToolbarTitleDisplayMode(rawValue: 3) }
 }

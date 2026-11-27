@@ -28,9 +28,9 @@ public struct KeyPress {
         public static var all: SwiftUI.KeyPress.Phases { _skeleton() }
         public var description: Swift.String { _skeleton() }
         public init(rawValue a0: Swift.Int) { _skeleton() }
-        public static var down: SwiftUI.KeyPress.Phases { _skeleton() }
-        public static var `repeat`: SwiftUI.KeyPress.Phases { _skeleton() }
-        public static var up: SwiftUI.KeyPress.Phases { _skeleton() }
+        public static var down: SwiftUI.KeyPress.Phases { SwiftUI.KeyPress.Phases(rawValue: 1) }
+        public static var `repeat`: SwiftUI.KeyPress.Phases { SwiftUI.KeyPress.Phases(rawValue: 2) }
+        public static var up: SwiftUI.KeyPress.Phases { SwiftUI.KeyPress.Phases(rawValue: 4) }
     }
     public enum Result {
         case handled

@@ -19,9 +19,9 @@ import os
 
 public struct ToolbarDefaultItemKind {
     let rawValue: Swift.Int
-    public static var sidebarToggle: SwiftUI.ToolbarDefaultItemKind { _skeleton() }
-    public static var title: SwiftUI.ToolbarDefaultItemKind { _skeleton() }
-    public static func == (_ a0: SwiftUI.ToolbarDefaultItemKind, _ a1: SwiftUI.ToolbarDefaultItemKind) -> Swift.Bool { _skeleton() }
+    public static var sidebarToggle: SwiftUI.ToolbarDefaultItemKind { SwiftUI.ToolbarDefaultItemKind(rawValue: 0) }
+    public static var title: SwiftUI.ToolbarDefaultItemKind { SwiftUI.ToolbarDefaultItemKind(rawValue: 1) }
+    public static func == (_ a0: SwiftUI.ToolbarDefaultItemKind, _ a1: SwiftUI.ToolbarDefaultItemKind) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.ToolbarDefaultItemKind: Swift.Equatable {

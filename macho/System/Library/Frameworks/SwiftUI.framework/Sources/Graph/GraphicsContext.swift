@@ -45,9 +45,9 @@ public struct GraphicsContext {
     public struct GradientOptions {
         public let rawValue: Swift.UInt32
         public init(rawValue a0: Swift.UInt32) { _skeleton() }
-        public static var `repeat`: SwiftUI.GraphicsContext.GradientOptions { _skeleton() }
-        public static var mirror: SwiftUI.GraphicsContext.GradientOptions { _skeleton() }
-        public static var linearColor: SwiftUI.GraphicsContext.GradientOptions { _skeleton() }
+        public static var `repeat`: SwiftUI.GraphicsContext.GradientOptions { SwiftUI.GraphicsContext.GradientOptions(rawValue: 1) }
+        public static var mirror: SwiftUI.GraphicsContext.GradientOptions { SwiftUI.GraphicsContext.GradientOptions(rawValue: 2) }
+        public static var linearColor: SwiftUI.GraphicsContext.GradientOptions { SwiftUI.GraphicsContext.GradientOptions(rawValue: 4) }
     }
     public struct Shading {
         let style: SwiftUI.AnyShapeStyle
@@ -64,58 +64,58 @@ public struct GraphicsContext {
     public struct ClipOptions {
         public let rawValue: Swift.UInt32
         public init(rawValue a0: Swift.UInt32) { _skeleton() }
-        public static var inverse: SwiftUI.GraphicsContext.ClipOptions { _skeleton() }
+        public static var inverse: SwiftUI.GraphicsContext.ClipOptions { SwiftUI.GraphicsContext.ClipOptions(rawValue: 1) }
     }
     public struct BlendMode {
         public let rawValue: Swift.Int32
-        public static var normal: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
+        public static var normal: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 0) }
         public init(rawValue a0: Swift.Int32) { _skeleton() }
-        public static var multiply: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var screen: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var overlay: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var darken: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var lighten: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var colorDodge: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var colorBurn: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var softLight: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var hardLight: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var difference: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var exclusion: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var hue: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var saturation: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var color: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var luminosity: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var clear: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var copy: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var sourceIn: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var sourceOut: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var sourceAtop: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var destinationOver: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var destinationIn: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var destinationOut: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var destinationAtop: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var xor: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var plusDarker: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
-        public static var plusLighter: SwiftUI.GraphicsContext.BlendMode { _skeleton() }
+        public static var multiply: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 1) }
+        public static var screen: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 2) }
+        public static var overlay: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 3) }
+        public static var darken: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 4) }
+        public static var lighten: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 5) }
+        public static var colorDodge: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 6) }
+        public static var colorBurn: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 7) }
+        public static var softLight: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 8) }
+        public static var hardLight: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 9) }
+        public static var difference: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 10) }
+        public static var exclusion: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 11) }
+        public static var hue: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 12) }
+        public static var saturation: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 13) }
+        public static var color: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 14) }
+        public static var luminosity: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 15) }
+        public static var clear: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 16) }
+        public static var copy: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 17) }
+        public static var sourceIn: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 18) }
+        public static var sourceOut: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 19) }
+        public static var sourceAtop: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 20) }
+        public static var destinationOver: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 21) }
+        public static var destinationIn: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 22) }
+        public static var destinationOut: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 23) }
+        public static var destinationAtop: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 24) }
+        public static var xor: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 25) }
+        public static var plusDarker: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 26) }
+        public static var plusLighter: SwiftUI.GraphicsContext.BlendMode { SwiftUI.GraphicsContext.BlendMode(rawValue: 27) }
     }
     public struct BlurOptions {
         public let rawValue: Swift.UInt32
         public init(rawValue a0: Swift.UInt32) { _skeleton() }
-        public static var opaque: SwiftUI.GraphicsContext.BlurOptions { _skeleton() }
-        public static var dithersResult: SwiftUI.GraphicsContext.BlurOptions { _skeleton() }
+        public static var opaque: SwiftUI.GraphicsContext.BlurOptions { SwiftUI.GraphicsContext.BlurOptions(rawValue: 1) }
+        public static var dithersResult: SwiftUI.GraphicsContext.BlurOptions { SwiftUI.GraphicsContext.BlurOptions(rawValue: 2) }
     }
     public struct ShadowOptions {
         public let rawValue: Swift.UInt32
-        public static var invertsAlpha: SwiftUI.GraphicsContext.ShadowOptions { _skeleton() }
-        public static var disablesGroup: SwiftUI.GraphicsContext.ShadowOptions { _skeleton() }
+        public static var invertsAlpha: SwiftUI.GraphicsContext.ShadowOptions { SwiftUI.GraphicsContext.ShadowOptions(rawValue: 4) }
+        public static var disablesGroup: SwiftUI.GraphicsContext.ShadowOptions { SwiftUI.GraphicsContext.ShadowOptions(rawValue: 8) }
         public init(rawValue a0: Swift.UInt32) { _skeleton() }
-        public static var shadowAbove: SwiftUI.GraphicsContext.ShadowOptions { _skeleton() }
-        public static var shadowOnly: SwiftUI.GraphicsContext.ShadowOptions { _skeleton() }
+        public static var shadowAbove: SwiftUI.GraphicsContext.ShadowOptions { SwiftUI.GraphicsContext.ShadowOptions(rawValue: 1) }
+        public static var shadowOnly: SwiftUI.GraphicsContext.ShadowOptions { SwiftUI.GraphicsContext.ShadowOptions(rawValue: 2) }
     }
     public struct FilterOptions {
         public let rawValue: Swift.UInt32
         public init(rawValue a0: Swift.UInt32) { _skeleton() }
-        public static var linearColor: SwiftUI.GraphicsContext.FilterOptions { _skeleton() }
+        public static var linearColor: SwiftUI.GraphicsContext.FilterOptions { SwiftUI.GraphicsContext.FilterOptions(rawValue: 1) }
     }
     public struct Filter {
         let kind: SwiftUI.GraphicsContext.Filter.Kind

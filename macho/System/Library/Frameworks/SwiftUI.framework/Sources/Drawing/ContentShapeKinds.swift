@@ -20,12 +20,12 @@ import os
 public struct ContentShapeKinds {
     public let rawValue: Swift.Int
     public init(rawValue a0: Swift.Int) { rawValue = a0 }
-    public static var interaction: SwiftUI.ContentShapeKinds { _skeleton() }
-    public static var dragPreview: SwiftUI.ContentShapeKinds { _skeleton() }
-    public static var contextMenuPreview: SwiftUI.ContentShapeKinds { _skeleton() }
-    public static var hoverEffect: SwiftUI.ContentShapeKinds { _skeleton() }
-    public static var focusEffect: SwiftUI.ContentShapeKinds { _skeleton() }
-    public static var accessibility: SwiftUI.ContentShapeKinds { _skeleton() }
+    public static var interaction: SwiftUI.ContentShapeKinds { SwiftUI.ContentShapeKinds(rawValue: 1) }
+    public static var dragPreview: SwiftUI.ContentShapeKinds { SwiftUI.ContentShapeKinds(rawValue: 2) }
+    public static var contextMenuPreview: SwiftUI.ContentShapeKinds { SwiftUI.ContentShapeKinds(rawValue: 4) }
+    public static var hoverEffect: SwiftUI.ContentShapeKinds { SwiftUI.ContentShapeKinds(rawValue: 8) }
+    public static var focusEffect: SwiftUI.ContentShapeKinds { SwiftUI.ContentShapeKinds(rawValue: 16) }
+    public static var accessibility: SwiftUI.ContentShapeKinds { SwiftUI.ContentShapeKinds(rawValue: 32) }
 }
 
 extension SwiftUI.ContentShapeKinds: Swift.OptionSet {

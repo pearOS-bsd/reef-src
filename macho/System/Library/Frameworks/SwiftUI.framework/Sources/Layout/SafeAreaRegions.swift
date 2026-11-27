@@ -21,8 +21,8 @@ public struct SafeAreaRegions {
     public let rawValue: Swift.UInt
     public static var all: SwiftUI.SafeAreaRegions { _skeleton() }
     public init(rawValue a0: Swift.UInt) { rawValue = a0 }
-    public static var container: SwiftUI.SafeAreaRegions { _skeleton() }
-    public static var keyboard: SwiftUI.SafeAreaRegions { _skeleton() }
+    public static var container: SwiftUI.SafeAreaRegions { SwiftUI.SafeAreaRegions(rawValue: 1) }
+    public static var keyboard: SwiftUI.SafeAreaRegions { SwiftUI.SafeAreaRegions(rawValue: 2) }
 }
 
 extension SwiftUI.SafeAreaRegions: Swift.OptionSet {

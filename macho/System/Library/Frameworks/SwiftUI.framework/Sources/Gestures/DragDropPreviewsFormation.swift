@@ -19,13 +19,13 @@ import os
 
 public struct DragDropPreviewsFormation {
     let rawValue: Swift.Int
-    public static var automatic: SwiftUI.DragDropPreviewsFormation { _skeleton() }
-    public static var list: SwiftUI.DragDropPreviewsFormation { _skeleton() }
-    public static var pile: SwiftUI.DragDropPreviewsFormation { _skeleton() }
-    public static var stack: SwiftUI.DragDropPreviewsFormation { _skeleton() }
-    public var hashValue: Swift.Int { _skeleton() }
-    public static func == (_ a0: SwiftUI.DragDropPreviewsFormation, _ a1: SwiftUI.DragDropPreviewsFormation) -> Swift.Bool { _skeleton() }
-    public func hash(into a0: inout Swift.Hasher) { _skeleton() }
+    public static var automatic: SwiftUI.DragDropPreviewsFormation { SwiftUI.DragDropPreviewsFormation(rawValue: 0) }
+    public static var list: SwiftUI.DragDropPreviewsFormation { SwiftUI.DragDropPreviewsFormation(rawValue: 1) }
+    public static var pile: SwiftUI.DragDropPreviewsFormation { SwiftUI.DragDropPreviewsFormation(rawValue: 2) }
+    public static var stack: SwiftUI.DragDropPreviewsFormation { SwiftUI.DragDropPreviewsFormation(rawValue: 3) }
+    public var hashValue: Swift.Int { _hashValue(for: self) }
+    public static func == (_ a0: SwiftUI.DragDropPreviewsFormation, _ a1: SwiftUI.DragDropPreviewsFormation) -> Swift.Bool { a0.rawValue == a1.rawValue }
+    public func hash(into a0: inout Swift.Hasher) { a0.combine(rawValue) }
 }
 
 extension SwiftUI.DragDropPreviewsFormation: Swift.Hashable {

@@ -18,7 +18,7 @@ import Metal
 import os
 
 enum TextFieldStyleKey {
-    static var defaultValue: Any? { _skeleton() }
+    static var defaultValue: Any? { nil }
 }
 
 extension SwiftUI.TextFieldStyleKey: SwiftUI.EnvironmentKey {

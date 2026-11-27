@@ -19,13 +19,13 @@ import os
 
 public struct WritingToolsBehavior {
     let rawValue: Swift.Int
-    public static var automatic: SwiftUI.WritingToolsBehavior { _skeleton() }
-    public static var complete: SwiftUI.WritingToolsBehavior { _skeleton() }
-    public static var limited: SwiftUI.WritingToolsBehavior { _skeleton() }
-    public static var disabled: SwiftUI.WritingToolsBehavior { _skeleton() }
-    public var hashValue: Swift.Int { _skeleton() }
-    public static func == (_ a0: SwiftUI.WritingToolsBehavior, _ a1: SwiftUI.WritingToolsBehavior) -> Swift.Bool { _skeleton() }
-    public func hash(into a0: inout Swift.Hasher) { _skeleton() }
+    public static var automatic: SwiftUI.WritingToolsBehavior { SwiftUI.WritingToolsBehavior(rawValue: 0) }
+    public static var complete: SwiftUI.WritingToolsBehavior { SwiftUI.WritingToolsBehavior(rawValue: 1) }
+    public static var limited: SwiftUI.WritingToolsBehavior { SwiftUI.WritingToolsBehavior(rawValue: 2) }
+    public static var disabled: SwiftUI.WritingToolsBehavior { SwiftUI.WritingToolsBehavior(rawValue: 3) }
+    public var hashValue: Swift.Int { _hashValue(for: self) }
+    public static func == (_ a0: SwiftUI.WritingToolsBehavior, _ a1: SwiftUI.WritingToolsBehavior) -> Swift.Bool { a0.rawValue == a1.rawValue }
+    public func hash(into a0: inout Swift.Hasher) { a0.combine(rawValue) }
 }
 
 extension SwiftUI.WritingToolsBehavior: Swift.Hashable {

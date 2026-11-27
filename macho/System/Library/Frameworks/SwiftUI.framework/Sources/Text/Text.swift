@@ -119,19 +119,19 @@ public struct Text {
     public struct LineStyle {
         public let pattern: SwiftUI.Text.LineStyle.Pattern
         public let color: SwiftUI.Color?
-        public init(pattern a0: SwiftUI.Text.LineStyle.Pattern, color a1: SwiftUI.Color?) { _skeleton() }
-        public static var single: SwiftUI.Text.LineStyle { _skeleton() }
-        public static func == (_ a0: SwiftUI.Text.LineStyle, _ a1: SwiftUI.Text.LineStyle) -> Swift.Bool { _skeleton() }
-        public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-        public var hashValue: Swift.Int { _skeleton() }
+        public init(pattern a0: SwiftUI.Text.LineStyle.Pattern, color a1: SwiftUI.Color?) { pattern = a0; color = a1 }
+        public static var single: SwiftUI.Text.LineStyle { SwiftUI.Text.LineStyle(pattern: .solid, color: nil) }
+        public static func == (_ a0: SwiftUI.Text.LineStyle, _ a1: SwiftUI.Text.LineStyle) -> Swift.Bool { a0.pattern == a1.pattern && a0.color == a1.color }
+        public func hash(into a0: inout Swift.Hasher) { a0.combine(pattern); a0.combine(color) }
+        public var hashValue: Swift.Int { _hashValue(for: self) }
         public struct Pattern {
             let rawValue: Swift.Int
-            public static var solid: SwiftUI.Text.LineStyle.Pattern { _skeleton() }
-            public static var dot: SwiftUI.Text.LineStyle.Pattern { _skeleton() }
-            public static var dash: SwiftUI.Text.LineStyle.Pattern { _skeleton() }
-            public var hashValue: Swift.Int { _skeleton() }
-            public static func == (_ a0: SwiftUI.Text.LineStyle.Pattern, _ a1: SwiftUI.Text.LineStyle.Pattern) -> Swift.Bool { _skeleton() }
-            public func hash(into a0: inout Swift.Hasher) { _skeleton() }
+            public static var solid: SwiftUI.Text.LineStyle.Pattern { SwiftUI.Text.LineStyle.Pattern(rawValue: 0) }
+            public static var dot: SwiftUI.Text.LineStyle.Pattern { SwiftUI.Text.LineStyle.Pattern(rawValue: 1) }
+            public static var dash: SwiftUI.Text.LineStyle.Pattern { SwiftUI.Text.LineStyle.Pattern(rawValue: 2) }
+            public var hashValue: Swift.Int { _hashValue(for: self) }
+            public static func == (_ a0: SwiftUI.Text.LineStyle.Pattern, _ a1: SwiftUI.Text.LineStyle.Pattern) -> Swift.Bool { a0.rawValue == a1.rawValue }
+            public func hash(into a0: inout Swift.Hasher) { a0.combine(rawValue) }
         }
     }
     public enum TruncationMode {

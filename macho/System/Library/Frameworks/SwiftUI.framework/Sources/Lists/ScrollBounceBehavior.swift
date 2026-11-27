@@ -19,7 +19,7 @@ import os
 
 public struct ScrollBounceBehavior {
     let rawValue: Swift.Int
-    public static var automatic: SwiftUI.ScrollBounceBehavior { _skeleton() }
-    public static var always: SwiftUI.ScrollBounceBehavior { _skeleton() }
-    public static var basedOnSize: SwiftUI.ScrollBounceBehavior { _skeleton() }
+    public static var automatic: SwiftUI.ScrollBounceBehavior { SwiftUI.ScrollBounceBehavior(rawValue: 0) }
+    public static var always: SwiftUI.ScrollBounceBehavior { SwiftUI.ScrollBounceBehavior(rawValue: 1) }
+    public static var basedOnSize: SwiftUI.ScrollBounceBehavior { SwiftUI.ScrollBounceBehavior(rawValue: 2) }
 }

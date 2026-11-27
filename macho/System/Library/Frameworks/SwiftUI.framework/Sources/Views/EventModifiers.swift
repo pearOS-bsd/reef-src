@@ -20,14 +20,14 @@ import os
 public struct EventModifiers {
     public let rawValue: Swift.Int
     public init(rawValue a0: Swift.Int) { rawValue = a0 }
-    public static var capsLock: SwiftUI.EventModifiers { _skeleton() }
-    public static var shift: SwiftUI.EventModifiers { _skeleton() }
-    public static var control: SwiftUI.EventModifiers { _skeleton() }
-    public static var option: SwiftUI.EventModifiers { _skeleton() }
-    public static var command: SwiftUI.EventModifiers { _skeleton() }
-    public static var numericPad: SwiftUI.EventModifiers { _skeleton() }
-    public static var function: SwiftUI.EventModifiers { _skeleton() }
-    public static var all: SwiftUI.EventModifiers { _skeleton() }
+    public static var capsLock: SwiftUI.EventModifiers { SwiftUI.EventModifiers(rawValue: 1) }
+    public static var shift: SwiftUI.EventModifiers { SwiftUI.EventModifiers(rawValue: 2) }
+    public static var control: SwiftUI.EventModifiers { SwiftUI.EventModifiers(rawValue: 4) }
+    public static var option: SwiftUI.EventModifiers { SwiftUI.EventModifiers(rawValue: 8) }
+    public static var command: SwiftUI.EventModifiers { SwiftUI.EventModifiers(rawValue: 16) }
+    public static var numericPad: SwiftUI.EventModifiers { SwiftUI.EventModifiers(rawValue: 32) }
+    public static var function: SwiftUI.EventModifiers { SwiftUI.EventModifiers(rawValue: 128) }
+    public static var all: SwiftUI.EventModifiers { SwiftUI.EventModifiers(rawValue: 191) }
     init(_ a0: NSEvent.ModifierFlags) { _skeleton() }
 }
 

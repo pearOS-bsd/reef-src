@@ -20,12 +20,12 @@ import os
 public struct KeyboardShortcut {
     public var key: SwiftUI.KeyEquivalent
     public var modifiers: SwiftUI.EventModifiers
-    public init(_ a0: SwiftUI.KeyEquivalent, modifiers a1: SwiftUI.EventModifiers) { _skeleton() }
-    public static var defaultAction: SwiftUI.KeyboardShortcut { _skeleton() }
-    public static var cancelAction: SwiftUI.KeyboardShortcut { _skeleton() }
-    public static func == (_ a0: SwiftUI.KeyboardShortcut, _ a1: SwiftUI.KeyboardShortcut) -> Swift.Bool { _skeleton() }
-    public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-    public var hashValue: Swift.Int { _skeleton() }
+    public init(_ a0: SwiftUI.KeyEquivalent, modifiers a1: SwiftUI.EventModifiers) { key = a0; modifiers = a1 }
+    public static var defaultAction: SwiftUI.KeyboardShortcut { SwiftUI.KeyboardShortcut(.return, modifiers: []) }
+    public static var cancelAction: SwiftUI.KeyboardShortcut { SwiftUI.KeyboardShortcut(.escape, modifiers: []) }
+    public static func == (_ a0: SwiftUI.KeyboardShortcut, _ a1: SwiftUI.KeyboardShortcut) -> Swift.Bool { a0.key == a1.key && a0.modifiers == a1.modifiers }
+    public func hash(into a0: inout Swift.Hasher) { a0.combine(key.character); a0.combine(modifiers.rawValue) }
+    public var hashValue: Swift.Int { _hashValue(for: self) }
 }
 
 extension SwiftUI.KeyboardShortcut: Swift.Hashable {

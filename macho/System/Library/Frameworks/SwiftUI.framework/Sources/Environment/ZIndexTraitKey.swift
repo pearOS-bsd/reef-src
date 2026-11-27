@@ -18,7 +18,7 @@ import Metal
 import os
 
 public struct ZIndexTraitKey {
-    public static var defaultValue: Swift.Double { _skeleton() }
+    public static var defaultValue: Swift.Double { 0 }
 }
 
 extension SwiftUI.ZIndexTraitKey: SwiftUI._ViewTraitKey {

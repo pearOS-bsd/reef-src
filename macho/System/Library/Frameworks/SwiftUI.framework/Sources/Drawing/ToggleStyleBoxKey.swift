@@ -18,7 +18,7 @@ import Metal
 import os
 
 enum ToggleStyleBoxKey {
-    static var defaultValue: Any? { _skeleton() }
+    static var defaultValue: Any? { nil }
 }
 
 extension SwiftUI.ToggleStyleBoxKey: SwiftUI.EnvironmentKey {

@@ -18,7 +18,7 @@ import Metal
 import os
 
 public struct ListRowInsetsTraitKey {
-    public static var defaultValue: SwiftUI.EdgeInsets? { _skeleton() }
+    public static var defaultValue: SwiftUI.EdgeInsets? { nil }
 }
 
 extension SwiftUI.ListRowInsetsTraitKey: SwiftUI._ViewTraitKey {

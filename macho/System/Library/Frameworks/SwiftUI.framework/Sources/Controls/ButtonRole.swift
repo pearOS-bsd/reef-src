@@ -19,13 +19,13 @@ import os
 
 public struct ButtonRole {
     let rawValue: Swift.Int
-    public static var destructive: SwiftUI.ButtonRole { _skeleton() }
-    public static var cancel: SwiftUI.ButtonRole { _skeleton() }
-    public static var confirm: SwiftUI.ButtonRole { _skeleton() }
-    public static var close: SwiftUI.ButtonRole { _skeleton() }
-    public static func == (_ a0: SwiftUI.ButtonRole, _ a1: SwiftUI.ButtonRole) -> Swift.Bool { _skeleton() }
-    public func hash(into a0: inout Swift.Hasher) { _skeleton() }
-    public var hashValue: Swift.Int { _skeleton() }
+    public static var destructive: SwiftUI.ButtonRole { SwiftUI.ButtonRole(rawValue: 1) }
+    public static var cancel: SwiftUI.ButtonRole { SwiftUI.ButtonRole(rawValue: 2) }
+    public static var confirm: SwiftUI.ButtonRole { SwiftUI.ButtonRole(rawValue: 3) }
+    public static var close: SwiftUI.ButtonRole { SwiftUI.ButtonRole(rawValue: 4) }
+    public static func == (_ a0: SwiftUI.ButtonRole, _ a1: SwiftUI.ButtonRole) -> Swift.Bool { a0.rawValue == a1.rawValue }
+    public func hash(into a0: inout Swift.Hasher) { a0.combine(rawValue) }
+    public var hashValue: Swift.Int { _hashValue(for: self) }
 }
 
 extension SwiftUI.ButtonRole: Swift.Equatable {

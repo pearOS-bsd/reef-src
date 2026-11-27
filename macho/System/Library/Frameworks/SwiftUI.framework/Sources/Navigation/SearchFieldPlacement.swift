@@ -19,7 +19,7 @@ import os
 
 public struct SearchFieldPlacement {
     let rawValue: Swift.Int
-    public static var automatic: SwiftUI.SearchFieldPlacement { _skeleton() }
-    public static var toolbar: SwiftUI.SearchFieldPlacement { _skeleton() }
-    public static var sidebar: SwiftUI.SearchFieldPlacement { _skeleton() }
+    public static var automatic: SwiftUI.SearchFieldPlacement { SwiftUI.SearchFieldPlacement(rawValue: 0) }
+    public static var toolbar: SwiftUI.SearchFieldPlacement { SwiftUI.SearchFieldPlacement(rawValue: 1) }
+    public static var sidebar: SwiftUI.SearchFieldPlacement { SwiftUI.SearchFieldPlacement(rawValue: 2) }
 }

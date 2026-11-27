@@ -19,10 +19,10 @@ import os
 
 public struct PresentationContentInteraction {
     let rawValue: Swift.Int
-    public static var automatic: SwiftUI.PresentationContentInteraction { _skeleton() }
-    public static var resizes: SwiftUI.PresentationContentInteraction { _skeleton() }
-    public static var scrolls: SwiftUI.PresentationContentInteraction { _skeleton() }
-    public static func == (_ a0: SwiftUI.PresentationContentInteraction, _ a1: SwiftUI.PresentationContentInteraction) -> Swift.Bool { _skeleton() }
+    public static var automatic: SwiftUI.PresentationContentInteraction { SwiftUI.PresentationContentInteraction(rawValue: 0) }
+    public static var resizes: SwiftUI.PresentationContentInteraction { SwiftUI.PresentationContentInteraction(rawValue: 1) }
+    public static var scrolls: SwiftUI.PresentationContentInteraction { SwiftUI.PresentationContentInteraction(rawValue: 2) }
+    public static func == (_ a0: SwiftUI.PresentationContentInteraction, _ a1: SwiftUI.PresentationContentInteraction) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.PresentationContentInteraction: Swift.Equatable {

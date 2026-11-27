@@ -20,8 +20,8 @@ import os
 public struct PinnedScrollableViews {
     public let rawValue: Swift.UInt32
     public init(rawValue a0: Swift.UInt32) { rawValue = a0 }
-    public static var sectionHeaders: SwiftUI.PinnedScrollableViews { _skeleton() }
-    public static var sectionFooters: SwiftUI.PinnedScrollableViews { _skeleton() }
+    public static var sectionHeaders: SwiftUI.PinnedScrollableViews { SwiftUI.PinnedScrollableViews(rawValue: 1) }
+    public static var sectionFooters: SwiftUI.PinnedScrollableViews { SwiftUI.PinnedScrollableViews(rawValue: 2) }
 }
 
 extension SwiftUI.PinnedScrollableViews: Swift.OptionSet {

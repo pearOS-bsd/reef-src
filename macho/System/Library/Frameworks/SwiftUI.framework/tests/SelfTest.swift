@@ -76,6 +76,7 @@ func selftestBuild() {
     selftestForEach(host)
     selftestTextEnvironment(host)
     selftestColors()
+    selftestEnvironmentModifiers(host)
 }
 
 /// a leaf as wide as 10, or 20 when enabled
@@ -292,4 +293,48 @@ func selftestColors() {
           rgb(SwiftUI.Color.black.mix(with: .white, by: 0.5, in: .perceptual)), rgb(SwiftUI.Color(provider: SwiftUI.MixedColorBox(base: SwiftUI.Color.black.provider, white: 0.9))))
     let resolved = SwiftUI.Color.Resolved(colorSpace: .sRGB, red: 0.5, green: 0.5, blue: 0.5, opacity: 1)
     print("color resolved", resolved == resolved.resolve(in: env), (resolved.cgColor.components ?? []).map { ($0 * 1000).rounded() / 1000 })
+}
+
+/// a leaf that keeps the environment it was built in
+var selftestSeenEnvironment = SwiftUI.EnvironmentValues()
+struct SelfTestEnvironmentProbe: SwiftUI.View, SwiftUI.PrimitiveView {
+    typealias Body = Never
+    var body: Never { fatalError() }
+    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] {
+        selftestSeenEnvironment = a0.environment
+        return [SwiftUI.Element()]
+    }
+}
+
+struct SelfTestEnvironmentModifiers: SwiftUI.View {
+    var body: some SwiftUI.View {
+        SelfTestEnvironmentProbe()
+            .kerning(1.5).tracking(2).baselineOffset(-3).bold(true).italic(true).monospacedDigit().labelsHidden()
+            .lineLimit(2...4).labelsVisibility(.visible).monospaced(true).scrollIndicators(.never, axes: .vertical)
+            .contentMargins([.top, .trailing], 7, for: .automatic).defaultScrollAnchor(.center)
+            .defaultScrollAnchor(.bottom, for: .sizeChanges).scrollEdgeEffectStyle(.hard, for: [.top, .bottom])
+            .scrollEdgeEffectStyle(nil, for: .top).tableColumnHeaders(.hidden).keyboardShortcut("k", modifiers: .command)
+            .underline(true, pattern: .solid, color: .red).textScale(.secondary, isEnabled: true)
+            .fileDialogMessage(SwiftUI.Text(verbatim: "message")).onSubmit(of: .text) {}.onSubmit(of: .text) {}
+            .tabViewSidebarFooter { SwiftUI.Text(verbatim: "footer") }
+    }
+}
+
+func selftestEnvironmentModifiers(_ host: SwiftUI.ViewHost) {
+    let context = SwiftUI.BuildContext(host: host, scope: host.root, path: [], environment: SwiftUI.EnvironmentValues(),
+        canvas: nil, modifierContents: [:], styleLabels: [:], stackAxis: nil, container: .none, scrollAxes: [])
+    _ = SwiftUI.ViewBuild.build(SelfTestEnvironmentModifiers(), context)
+    let e = selftestSeenEnvironment
+    print("env text", e[SwiftUI.TextKerningKey.self], e[SwiftUI.TextTrackingKey.self], e[SwiftUI.TextBaselineOffsetKey.self],
+          e.textBold, e.textItalic, e.textMonospacedDigit, e[SwiftUI.TextScaleKey.self] as Any,
+          e[SwiftUI.TextUnderlineKey.self]?.isActive as Any, e[SwiftUI.FontKey.self] != nil)
+    print("env limits", e[SwiftUI.LineLimitKey.self] as Any, e.lineLimitMinimum as Any, e[SwiftUI.LabelsHiddenKey.self],
+          e[SwiftUI.LabelsVisibilityKey.self], e.tableColumnHeadersHidden)
+    print("env scroll", e[SwiftUI.VerticalScrollIndicatorsKey.self] == .never, e[SwiftUI.HorizontalScrollIndicatorsKey.self] == .never,
+          e.scrollContentMargins, e.scrollAnchors.initialOffset as Any, e.scrollAnchors.sizeChanges as Any,
+          e[SwiftUI.HardScrollEdgesKey.self].rawValue)
+    print("env other", e[SwiftUI.KeyboardShortcutValueKey.self]?.key.character as Any,
+          e[SwiftUI.KeyboardShortcutValueKey.self]?.modifiers.rawValue as Any, e[SwiftUI.FileDialogMessageKey.self] as Any,
+          e[SwiftUI.SubmitActionsKey.self].count, e[SwiftUI.TabSidebarPartsKey.self].footer != nil,
+          e[SwiftUI.TabSidebarPartsKey.self].header != nil)
 }

@@ -20,8 +20,8 @@ import os
 public struct FileDialogBrowserOptions {
     public let rawValue: Swift.Int
     public init(rawValue a0: Swift.Int) { rawValue = a0 }
-    public static var enumeratePackages: SwiftUI.FileDialogBrowserOptions { _skeleton() }
-    public static var includeHiddenFiles: SwiftUI.FileDialogBrowserOptions { _skeleton() }
+    public static var enumeratePackages: SwiftUI.FileDialogBrowserOptions { SwiftUI.FileDialogBrowserOptions(rawValue: 1) }
+    public static var includeHiddenFiles: SwiftUI.FileDialogBrowserOptions { SwiftUI.FileDialogBrowserOptions(rawValue: 2) }
     public static var displayFileExtensions: SwiftUI.FileDialogBrowserOptions { _skeleton() }
 }
 

@@ -19,11 +19,11 @@ import os
 
 public struct ScrollIndicatorVisibility {
     let rawValue: Swift.Int
-    public static var automatic: SwiftUI.ScrollIndicatorVisibility { _skeleton() }
-    public static var visible: SwiftUI.ScrollIndicatorVisibility { _skeleton() }
-    public static var hidden: SwiftUI.ScrollIndicatorVisibility { _skeleton() }
-    public static var never: SwiftUI.ScrollIndicatorVisibility { _skeleton() }
-    public static func == (_ a0: SwiftUI.ScrollIndicatorVisibility, _ a1: SwiftUI.ScrollIndicatorVisibility) -> Swift.Bool { _skeleton() }
+    public static var automatic: SwiftUI.ScrollIndicatorVisibility { SwiftUI.ScrollIndicatorVisibility(rawValue: 0) }
+    public static var visible: SwiftUI.ScrollIndicatorVisibility { SwiftUI.ScrollIndicatorVisibility(rawValue: 1) }
+    public static var hidden: SwiftUI.ScrollIndicatorVisibility { SwiftUI.ScrollIndicatorVisibility(rawValue: 2) }
+    public static var never: SwiftUI.ScrollIndicatorVisibility { SwiftUI.ScrollIndicatorVisibility(rawValue: 3) }
+    public static func == (_ a0: SwiftUI.ScrollIndicatorVisibility, _ a1: SwiftUI.ScrollIndicatorVisibility) -> Swift.Bool { a0.rawValue == a1.rawValue }
 }
 
 extension SwiftUI.ScrollIndicatorVisibility: Swift.Equatable {

@@ -24,5 +24,5 @@ struct TabItemTraitKey {
 }
 
 extension SwiftUI.TabItemTraitKey: SwiftUI._ViewTraitKey {
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { Value(label: nil) }
 }

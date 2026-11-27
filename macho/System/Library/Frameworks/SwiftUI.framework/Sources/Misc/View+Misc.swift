@@ -34,7 +34,7 @@ extension SwiftUI.View {
     public func _untagged() -> some SwiftUI.View { self }
     public func zIndex(_ a0: Swift.Double) -> some SwiftUI.View { self }
     public func minimumScaleFactor(_ a0: CoreGraphics.CGFloat) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.minimumScaleFactor, value: a0)) }
-    public func underline(_ a0: Swift.Bool, pattern a1: SwiftUI.Text.LineStyle.Pattern, color a2: SwiftUI.Color?) -> some SwiftUI.View { self }
+    public func underline(_ a0: Swift.Bool, pattern a1: SwiftUI.Text.LineStyle.Pattern, color a2: SwiftUI.Color?) -> some SwiftUI.View { modifier(SwiftUI.EnvironmentSetModifier { $0[SwiftUI.TextUnderlineKey.self] = SwiftUI.TextLineDecoration(isActive: a0, color: a2) }) }
     public func border<A1>(_ a0: A1, width a1: CoreGraphics.CGFloat) -> some SwiftUI.View where A1: SwiftUI.ShapeStyle { self }
     public func cornerRadius(_ a0: CoreGraphics.CGFloat, antialiased a1: Swift.Bool) -> some SwiftUI.View { self }
     public func grayscale(_ a0: Swift.Double) -> some SwiftUI.View { self }
@@ -43,19 +43,19 @@ extension SwiftUI.View {
     public func hidden() -> some SwiftUI.View { self }
     public func onChange<A1>(of a0: A1, perform a1: @escaping (A1) -> ()) -> some SwiftUI.View where A1: Swift.Equatable { self }
     public func onChange<A1>(of a0: A1, initial a1: Swift.Bool, _ a2: @escaping (A1, A1) -> ()) -> some SwiftUI.View where A1: Swift.Equatable { self }
-    public func italic(_ a0: Swift.Bool) -> some SwiftUI.View { self }
-    public func strikethrough(_ a0: Swift.Bool, pattern a1: SwiftUI.Text.LineStyle.Pattern, color a2: SwiftUI.Color?) -> some SwiftUI.View { self }
+    public func italic(_ a0: Swift.Bool) -> some SwiftUI.View { modifier(SwiftUI.EnvironmentSetModifier { $0[SwiftUI.TextItalicKey.self] = a0 }) }
+    public func strikethrough(_ a0: Swift.Bool, pattern a1: SwiftUI.Text.LineStyle.Pattern, color a2: SwiftUI.Color?) -> some SwiftUI.View { modifier(SwiftUI.EnvironmentSetModifier { $0[SwiftUI.TextStrikethroughKey.self] = SwiftUI.TextLineDecoration(isActive: a0, color: a2) }) }
     public func allowsTightening(_ a0: Swift.Bool) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.allowsTightening, value: a0)) }
-    public func monospacedDigit() -> some SwiftUI.View { self }
-    public func monospaced(_ a0: Swift.Bool) -> some SwiftUI.View { self }
+    public func monospacedDigit() -> some SwiftUI.View { modifier(SwiftUI.EnvironmentSetModifier { $0[SwiftUI.TextMonospacedDigitKey.self] = true }) }
+    public func monospaced(_ a0: Swift.Bool) -> some SwiftUI.View { modifier(SwiftUI.EnvironmentSetModifier { if a0 { $0[SwiftUI.FontKey.self] = ($0[SwiftUI.FontKey.self] ?? .body).monospaced() } }) }
     public func task(name a0: Swift.String, executorPreference a1: (any Swift.TaskExecutor)?, priority a2: Swift.TaskPriority, _ a3: __owned @escaping @isolated(any) () async -> ()) -> some SwiftUI.View { self }
     public func task<A1>(id a0: A1, name a1: Swift.String, executorPreference a2: (any Swift.TaskExecutor)?, priority a3: Swift.TaskPriority, _ a4: __owned @escaping @isolated(any) () async -> ()) -> some SwiftUI.View where A1: Swift.Equatable { self }
-    public func bold(_ a0: Swift.Bool) -> some SwiftUI.View { self }
+    public func bold(_ a0: Swift.Bool) -> some SwiftUI.View { modifier(SwiftUI.EnvironmentSetModifier { $0[SwiftUI.TextBoldKey.self] = a0 }) }
     public func onKeyPress(_ a0: SwiftUI.KeyEquivalent, phases a1: SwiftUI.KeyPress.Phases, action a2: @escaping (SwiftUI.KeyPress) -> SwiftUI.KeyPress.Result) -> some SwiftUI.View { self }
     public func scaledToFit() -> some SwiftUI.View { self }
     public func onKeyPress(_ a0: SwiftUI.KeyEquivalent, action a1: @escaping () -> SwiftUI.KeyPress.Result) -> some SwiftUI.View { self }
     public func onKeyPress(keys a0: Swift.Set<SwiftUI.KeyEquivalent>, phases a1: SwiftUI.KeyPress.Phases, action a2: @escaping (SwiftUI.KeyPress) -> SwiftUI.KeyPress.Result) -> some SwiftUI.View { self }
-    public func headerProminence(_ a0: SwiftUI.Prominence) -> some SwiftUI.View { self }
+    public func headerProminence(_ a0: SwiftUI.Prominence) -> some SwiftUI.View { modifier(SwiftUI.EnvironmentSetModifier { $0[SwiftUI.HeaderProminenceKey.self] = a0 }) }
     public func task<A1>(id a0: A1, priority a1: Swift.TaskPriority, _ a2: @escaping @Sendable () async -> ()) -> some SwiftUI.View where A1: Swift.Equatable { self }
     public func sensoryFeedback<A1>(_ a0: SwiftUI.SensoryFeedback, trigger a1: A1) -> some SwiftUI.View where A1: Swift.Equatable { self }
     public func privacySensitive(_ a0: Swift.Bool) -> some SwiftUI.View { self }

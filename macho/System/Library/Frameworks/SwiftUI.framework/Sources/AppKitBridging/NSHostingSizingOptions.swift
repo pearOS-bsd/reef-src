@@ -21,10 +21,10 @@ public struct NSHostingSizingOptions {
     public let rawValue: Swift.Int
     public static var standardBounds: SwiftUI.NSHostingSizingOptions { _skeleton() }
     public init(rawValue a0: Swift.Int) { rawValue = a0 }
-    public static var minSize: SwiftUI.NSHostingSizingOptions { _skeleton() }
-    public static var intrinsicContentSize: SwiftUI.NSHostingSizingOptions { _skeleton() }
-    public static var maxSize: SwiftUI.NSHostingSizingOptions { _skeleton() }
-    public static var preferredContentSize: SwiftUI.NSHostingSizingOptions { _skeleton() }
+    public static var minSize: SwiftUI.NSHostingSizingOptions { SwiftUI.NSHostingSizingOptions(rawValue: 1) }
+    public static var intrinsicContentSize: SwiftUI.NSHostingSizingOptions { SwiftUI.NSHostingSizingOptions(rawValue: 2) }
+    public static var maxSize: SwiftUI.NSHostingSizingOptions { SwiftUI.NSHostingSizingOptions(rawValue: 4) }
+    public static var preferredContentSize: SwiftUI.NSHostingSizingOptions { SwiftUI.NSHostingSizingOptions(rawValue: 8) }
 }
 
 extension SwiftUI.NSHostingSizingOptions: Swift.OptionSet {

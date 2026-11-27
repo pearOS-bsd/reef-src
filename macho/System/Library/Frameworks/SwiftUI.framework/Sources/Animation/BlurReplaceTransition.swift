@@ -23,9 +23,9 @@ public struct BlurReplaceTransition {
     public func body(content a0: SwiftUI.PlaceholderContentView<SwiftUI.BlurReplaceTransition>, phase a1: SwiftUI.TransitionPhase) -> SwiftUI.PlaceholderContentView<SwiftUI.BlurReplaceTransition> { _skeleton() }
     public struct Configuration {
         let rawValue: Swift.Int
-        public static var downUp: SwiftUI.BlurReplaceTransition.Configuration { _skeleton() }
-        public static var upUp: SwiftUI.BlurReplaceTransition.Configuration { _skeleton() }
-        public static func == (_ a0: SwiftUI.BlurReplaceTransition.Configuration, _ a1: SwiftUI.BlurReplaceTransition.Configuration) -> Swift.Bool { _skeleton() }
+        public static var downUp: SwiftUI.BlurReplaceTransition.Configuration { SwiftUI.BlurReplaceTransition.Configuration(rawValue: 0) }
+        public static var upUp: SwiftUI.BlurReplaceTransition.Configuration { SwiftUI.BlurReplaceTransition.Configuration(rawValue: 1) }
+        public static func == (_ a0: SwiftUI.BlurReplaceTransition.Configuration, _ a1: SwiftUI.BlurReplaceTransition.Configuration) -> Swift.Bool { a0.rawValue == a1.rawValue }
     }
 }
 

@@ -22,5 +22,5 @@ enum ScrollAnchorsKey {
 
 extension SwiftUI.ScrollAnchorsKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.ScrollAnchors
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { SwiftUI.ScrollAnchors(initialOffset: nil, sizeChanges: nil, alignment: nil) }
 }

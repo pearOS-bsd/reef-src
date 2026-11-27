@@ -22,5 +22,5 @@ enum KeyboardShortcutValueKey {
 
 extension SwiftUI.KeyboardShortcutValueKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.KeyboardShortcut?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }
