@@ -70,3 +70,17 @@
 }
 - (BOOL)getObjectValue:(id *)obj forString:(NSString *)string errorDescription:(NSString **)error { *obj = @([string doubleValue]); return YES; }
 @end
+
+#import <objc/runtime.h>
+// Reef's AVAsset names the getters of its boolean properties playable, readable, exportable; the SDK's are isPlayable, ...
+__attribute__((constructor)) static void ReefAVAssetGetters(void) {
+    Class c = NSClassFromString(@"AVAsset");
+    if (!c) return;
+    NSDictionary *map = @{@"isPlayable": @"playable", @"isReadable": @"readable", @"isExportable": @"exportable"};
+    for (NSString *n in map) {
+        SEL to = NSSelectorFromString(map[n]);
+        if (!class_getInstanceMethod(c, to)) continue;
+        IMP target = class_getMethodImplementation(c, to);
+        class_addMethod(c, NSSelectorFromString(n), target, "c@:");
+    }
+}
