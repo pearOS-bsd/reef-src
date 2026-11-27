@@ -65,3 +65,4 @@ System/Library/Frameworks/AVKit.framework
 System/Library/Frameworks/MetalPerformanceShaders.framework
 System/Library/Frameworks/SafariServices.framework
 System/Library/Frameworks/OSLog.framework
+System/Library/Frameworks/Accessibility.framework
