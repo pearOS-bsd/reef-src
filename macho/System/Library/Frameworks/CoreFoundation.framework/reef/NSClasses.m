@@ -157,8 +157,8 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 @implementation NSEnumerator
 - (id)nextObject
 {
-    // unresolved
-    return nil;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (unsigned long)countByEnumeratingWithState:(NSFastEnumerationState *)a0 objects:(id *)a1 count:(unsigned long)a2
@@ -276,8 +276,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (id)description
 {
-    // unresolved
-    return nil;
+    return (id)CFSTR("<null>");
 }
 
 @end
@@ -429,14 +428,14 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 @implementation NSArray
 - (unsigned long)count
 {
-    // unresolved
+    [self doesNotRecognizeSelector:_cmd];
     return 0;
 }
 
 - (id)objectAtIndex:(unsigned long)a0
 {
-    // unresolved
-    return nil;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (void)getObjects:(id *)a0 range:(NSRange)a1
@@ -465,8 +464,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return [self count];
 }
 
 - (unsigned long)_cfTypeID
@@ -740,20 +738,20 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 @implementation NSDictionary
 - (unsigned long)count
 {
-    // unresolved
+    [self doesNotRecognizeSelector:_cmd];
     return 0;
 }
 
 - (id)objectForKey:(id)a0
 {
-    // unresolved
-    return nil;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (id)keyEnumerator
 {
-    // unresolved
-    return nil;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (void)getObjects:(id *)a0 andKeys:(id *)a1
@@ -818,8 +816,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (id)mutableCopyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return [self _cfMutableCopy];
 }
 
 - (BOOL)isEqual:(id)a0
@@ -830,8 +827,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return [self count];
 }
 
 - (unsigned long)_cfTypeID
@@ -889,8 +885,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (void)__setObject:(id)a0 forKey:(id)a1
 {
-    // unresolved
-
+    [self setObject:a0 forKey:a1];
 }
 
 @end
@@ -1098,20 +1093,20 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 @implementation NSSet
 - (unsigned long)count
 {
-    // unresolved
+    [self doesNotRecognizeSelector:_cmd];
     return 0;
 }
 
 - (id)member:(id)a0
 {
-    // unresolved
-    return nil;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (id)objectEnumerator
 {
-    // unresolved
-    return nil;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (BOOL)containsObject:(id)a0
@@ -1164,8 +1159,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    return [self count];
 }
 
 - (unsigned long)_cfTypeID
@@ -1406,8 +1400,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return 0xffffffffffffffff;
 }
 
 - (unsigned long)count
@@ -1457,8 +1450,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return 0xffffffffffffffff;
 }
 
 - (unsigned long)count
@@ -1516,8 +1508,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return 0xffffffffffffffff;
 }
 
 - (unsigned long)count
@@ -1574,8 +1565,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return 0xffffffffffffffff;
 }
 
 - (unsigned long)count
@@ -1732,8 +1722,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (Class)classForCoder
 {
-    // unresolved
-    return nil;
+    return [NSDate class];
 }
 
 - (double)timeIntervalSinceReferenceDate
@@ -2030,14 +2019,14 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 @implementation NSLocale
 - (id)objectForKey:(id)a0
 {
-    // unresolved
-    return nil;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (id)displayNameForKey:(id)a0 value:(id)a1
 {
-    // unresolved
-    return nil;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (id)localeIdentifier
@@ -2145,8 +2134,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (Class)classForCoder
 {
-    // unresolved
-    return nil;
+    return [NSLocale class];
 }
 
 - (id)objectForKey:(id)a0
@@ -2185,32 +2173,32 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 @implementation NSTimeZone
 - (id)name
 {
-    // unresolved
-    return nil;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (id)data
 {
-    // unresolved
-    return nil;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (long)secondsFromGMTForDate:(id)a0
 {
-    // unresolved
+    [self doesNotRecognizeSelector:_cmd];
     return 0;
 }
 
 - (id)abbreviationForDate:(id)a0
 {
-    // unresolved
-    return nil;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (BOOL)isDaylightSavingTimeForDate:(id)a0
 {
-    // unresolved
-    return NO;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (double)daylightSavingTimeOffsetForDate:(id)a0
@@ -2324,8 +2312,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (Class)classForCoder
 {
-    // unresolved
-    return nil;
+    return [NSTimeZone class];
 }
 
 - (id)name
@@ -2384,8 +2371,8 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 @implementation NSCalendar
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (unsigned long)_cfTypeID
@@ -2458,8 +2445,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (Class)classForCoder
 {
-    // unresolved
-    return nil;
+    return [NSCalendar class];
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
@@ -3253,13 +3239,13 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 @implementation NSString
 - (unsigned long)length
 {
-    // unresolved
+    [self doesNotRecognizeSelector:_cmd];
     return 0;
 }
 
 - (unsigned short)characterAtIndex:(unsigned long)a0
 {
-    // unresolved
+    [self doesNotRecognizeSelector:_cmd];
     return 0;
 }
 
@@ -3315,8 +3301,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (unsigned int)_fastestEncodingInCFStringEncoding
 {
-    // unresolved
-    return 0;
+    return 0x100;
 }
 
 - (unsigned int)_smallestEncodingInCFStringEncoding
@@ -3601,8 +3586,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return 0xffffffffffffffff;
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
@@ -3831,8 +3815,8 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (BOOL)isValid
 {
-    // unresolved
-    return NO;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (double)timeInterval
@@ -3860,8 +3844,8 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (id)fireDate
 {
-    // unresolved
-    return nil;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (void)setFireDate:(id)a0
@@ -4031,13 +4015,13 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 @implementation NSData
 - (unsigned long)length
 {
-    // unresolved
+    [self doesNotRecognizeSelector:_cmd];
     return 0;
 }
 
 - (void *)bytes
 {
-    // unresolved
+    [self doesNotRecognizeSelector:_cmd];
     return 0;
 }
 
@@ -4090,7 +4074,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 @implementation NSMutableData
 - (void *)mutableBytes
 {
-    // unresolved
+    [self doesNotRecognizeSelector:_cmd];
     return 0;
 }
 
@@ -4102,8 +4086,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (void *)bytes
 {
-    // unresolved
-    return 0;
+    return [self mutableBytes];
 }
 
 - (void)increaseLengthBy:(unsigned long)a0
@@ -4259,7 +4242,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 @implementation NSValue
 - (char *)objCType
 {
-    // unresolved
+    [self doesNotRecognizeSelector:_cmd];
     return 0;
 }
 
@@ -4339,8 +4322,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (unsigned long)unsignedIntegerValue
 {
-    // unresolved
-    return 0;
+    return [self unsignedLongLongValue];
 }
 
 - (float)floatValue
@@ -4479,8 +4461,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (Class)classForCoder
 {
-    // unresolved
-    return nil;
+    return [NSNumber class];
 }
 
 - (char *)objCType
@@ -4591,8 +4572,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (Class)classForCoder
 {
-    // unresolved
-    return nil;
+    return [NSNumber class];
 }
 
 - (char *)objCType
@@ -4615,8 +4595,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (long)_cfNumberType
 {
-    // unresolved
-    return 0;
+    return 7;
 }
 
 - (id)description
@@ -4642,8 +4621,8 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 @implementation NSCharacterSet
 - (BOOL)characterIsMember:(unsigned short)a0
 {
-    // unresolved
-    return NO;
+    [self doesNotRecognizeSelector:_cmd];
+    return 0;
 }
 
 - (BOOL)longCharacterIsMember:(unsigned int)a0
@@ -5080,8 +5059,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (Class)classForCoder
 {
-    // unresolved
-    return nil;
+    return [NSError class];
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
@@ -5158,8 +5136,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return 0xffffffffffffffff;
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
@@ -5212,8 +5189,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return 0xffffffffffffffff;
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
@@ -5266,8 +5242,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (unsigned long)retainCount
 {
-    // unresolved
-    return 0;
+    return 0xffffffffffffffff;
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
@@ -5517,8 +5492,7 @@ extern long reefCall_CFEqual(long, long) __asm__("_CFEqual");
 
 - (void)invokeUsingIMP:(void * *)a0
 {
-    // unresolved
-
+    [self _invokeUsingIMP:a0];
 }
 
 - (void)_invokeUsingIMP:(void * *)a0
