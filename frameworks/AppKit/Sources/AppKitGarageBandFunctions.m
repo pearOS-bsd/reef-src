@@ -390,3 +390,86 @@ __attribute__((constructor)) static void cellNumbersToObjectValue(void) {
     method_setImplementation(class_getInstanceMethod([NSCell class], @selector(setIntValue:)), (IMP)cellSetInt);
     method_setImplementation(class_getInstanceMethod([NSCell class], @selector(setIntegerValue:)), (IMP)cellSetInteger);
 }
+
+// Test aid: REEF_MENU="seconds:Menu>Item;..." performs that item of the main menu; REEF_MENU_LIST=seconds prints the menus.
+static void ReefListMenu(NSMenu *menu, int depth) {
+    for (NSMenuItem *item in menu.itemArray) {
+        if (item.isSeparatorItem) continue;
+        fprintf(stderr, "%*smenu '%s' key '%s' action=%s\n", depth * 2, "", item.title.UTF8String, item.keyEquivalent.UTF8String, sel_getName(item.action));
+        if (item.submenu && depth < 2) ReefListMenu(item.submenu, depth + 1);
+    }
+}
+__attribute__((constructor)) static void ReefMenus(void) {
+    const char *list = getenv("REEF_MENU_LIST");
+    if (list) ReefOnMain(atof(list), ^{
+        static BOOL done; if (done) return; done = YES;
+        ReefListMenu(NSApp.mainMenu, 0);
+    });
+    const char *menus = getenv("REEF_MENU");
+    if (!menus) return;
+    for (NSString *entry in [[NSString stringWithUTF8String:menus] componentsSeparatedByString:@";"]) {
+        NSRange colon = [entry rangeOfString:@":"];
+        if (colon.location == NSNotFound) continue;
+        double seconds = [[entry substringToIndex:colon.location] doubleValue];
+        NSArray *path = [[entry substringFromIndex:colon.location + 1] componentsSeparatedByString:@">"];
+        __block BOOL done = NO;
+        ReefOnMain(seconds, ^{
+            if (done) return;
+            done = YES;
+            NSMenu *menu = NSApp.mainMenu;
+            NSMenuItem *item = nil;
+            for (NSString *title in path) {
+                item = [menu itemWithTitle:title];
+                if (!item) break;
+                menu = item.submenu;
+            }
+            if (!item) { fprintf(stderr, "menu: no item %s\n", [path componentsJoinedByString:@">"].UTF8String); return; }
+            fprintf(stderr, "menu: %s\n", [path componentsJoinedByString:@">"].UTF8String);
+            NSMenu *parent = item.menu;
+            [parent update];
+            [parent performActionForItemAtIndex:[parent indexOfItem:item]];
+        });
+    }
+}
+
+// Test aid: REEF_WCLICK="seconds:x,y;..." clicks at a point of the key window in its base coordinates (origin at the
+// bottom left of the frame, toolbars included): the release is queued before the press is delivered.
+__attribute__((constructor)) static void ReefWindowClicks(void) {
+    const char *clicks = getenv("REEF_WCLICK");
+    if (!clicks) return;
+    for (NSString *entry in [[NSString stringWithUTF8String:clicks] componentsSeparatedByString:@";"]) {
+        NSRange colon = [entry rangeOfString:@":"];
+        if (colon.location == NSNotFound) continue;
+        double seconds = [[entry substringToIndex:colon.location] doubleValue];
+        NSArray *xy = [[entry substringFromIndex:colon.location + 1] componentsSeparatedByString:@","];
+        if (xy.count != 2) continue;
+        NSPoint p = NSMakePoint([xy[0] doubleValue], [xy[1] doubleValue]);
+        __block BOOL done = NO;
+        ReefOnMain(seconds, ^{
+            if (done) return;
+            done = YES;
+            NSWindow *w = NSApp.keyWindow ?: NSApp.mainWindow;
+            fprintf(stderr, "wclick: %g,%g in '%s'\n", p.x, p.y, w.title.UTF8String);
+            NSEvent *up = [NSEvent mouseEventWithType:NSEventTypeLeftMouseUp location:p modifierFlags:0 timestamp:NSProcessInfo.processInfo.systemUptime
+                                         windowNumber:w.windowNumber context:nil eventNumber:0 clickCount:1 pressure:0];
+            NSEvent *down = [NSEvent mouseEventWithType:NSEventTypeLeftMouseDown location:p modifierFlags:0 timestamp:NSProcessInfo.processInfo.systemUptime
+                                           windowNumber:w.windowNumber context:nil eventNumber:0 clickCount:1 pressure:1];
+            [NSApp postEvent:up atStart:NO];
+            [NSApp sendEvent:down];
+        });
+    }
+}
+
+// -[NSWindow trackEventsMatchingMask:timeout:mode:handler:]: events matching the mask go to the handler until it sets
+// stop; when the timeout passes without an event the handler gets nil (and tracking goes on until it stops it).
+static void windowTrackEvents(NSWindow *self, SEL _cmd, NSEventMask mask, NSTimeInterval timeout, NSRunLoopMode mode, void (^handler)(NSEvent *, BOOL *)) {
+    BOOL stop = NO;
+    while (!stop) {
+        NSEvent *event = [NSApp nextEventMatchingMask:mask untilDate:[NSDate dateWithTimeIntervalSinceNow:timeout]
+                                               inMode:mode ?: NSEventTrackingRunLoopMode dequeue:YES];
+        handler(event, &stop);
+    }
+}
+__attribute__((constructor)) static void addWindowTracking(void) {
+    add([NSWindow class], "trackEventsMatchingMask:timeout:mode:handler:", (IMP)windowTrackEvents, "v@:Qd@@?");
+}
