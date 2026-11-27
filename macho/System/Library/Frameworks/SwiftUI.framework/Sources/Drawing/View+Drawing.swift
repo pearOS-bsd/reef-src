@@ -21,10 +21,10 @@ extension SwiftUI.View {
     public func buttonStyle<A1>(_ a0: A1) -> some SwiftUI.View where A1: SwiftUI.ButtonStyle { self }
     public func clipShape<A1>(_ a0: A1, style a1: SwiftUI.FillStyle) -> some SwiftUI.View where A1: SwiftUI.Shape { self }
     public func scaleEffect(_ a0: CoreGraphics.CGFloat, anchor a1: SwiftUI.UnitPoint) -> some SwiftUI.View { self }
-    public func foregroundColor(_ a0: SwiftUI.Color?) -> some SwiftUI.View { self }
+    public func foregroundColor(_ a0: SwiftUI.Color?) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.foregroundColor, value: a0)) }
     public func glassEffectID<A1>(_ a0: A1?, `in` a1: SwiftUI.Namespace.ID) -> some SwiftUI.View where A1: Swift.Hashable, A1: Swift.Sendable { self }
     public func colorMultiply(_ a0: SwiftUI.Color) -> some SwiftUI.View { self }
-    public func tint(_ a0: SwiftUI.Color?) -> some SwiftUI.View { self }
+    public func tint(_ a0: SwiftUI.Color?) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.tintColor, value: a0)) }
     public func tint<A1>(_ a0: A1?) -> some SwiftUI.View where A1: SwiftUI.ShapeStyle { self }
     public func shadow(color a0: SwiftUI.Color, radius a1: CoreGraphics.CGFloat, x a2: CoreGraphics.CGFloat, y a3: CoreGraphics.CGFloat) -> some SwiftUI.View { self }
     public func clipped(antialiased a0: Swift.Bool) -> some SwiftUI.View { self }

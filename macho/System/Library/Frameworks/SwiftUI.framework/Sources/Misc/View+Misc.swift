@@ -24,7 +24,10 @@ extension SwiftUI.View {
     public func id<A1>(_ a0: A1) -> some SwiftUI.View where A1: Swift.Hashable { self }
     public func onAppear(perform a0: (() -> ())?) -> some SwiftUI.View { self }
     public func onDisappear(perform a0: (() -> ())?) -> some SwiftUI.View { self }
-    public func disabled(_ a0: Swift.Bool) -> some SwiftUI.View { self }
+    /// isEnabled stays true only where it was and a0 is false
+    public func disabled(_ a0: Swift.Bool) -> some SwiftUI.View {
+        modifier(SwiftUI._EnvironmentKeyTransformModifier(keyPath: \.isEnabled, transform: { $0 = $0 && !a0 }))
+    }
     public func allowsHitTesting(_ a0: Swift.Bool) -> some SwiftUI.View { self }
     public func tag<A1>(_ a0: A1) -> some SwiftUI.View where A1: Swift.Hashable { self }
     public func _trait<A1>(_ a0: A1.Type, _ a1: A1.Value) -> some SwiftUI.View where A1: SwiftUI._ViewTraitKey { self }

@@ -71,6 +71,15 @@ func selftestBuild() {
     selftestStacks(host)
 }
 
+/// a leaf as wide as 10, or 20 when enabled
+struct SelfTestEnv: SwiftUI.View, SwiftUI.PrimitiveView {
+    typealias Body = Never
+    var body: Never { fatalError() }
+    func _buildElements(_ a0: SwiftUI.BuildContext) -> [SwiftUI.Element] {
+        [SwiftUI.FrameElement(SwiftUI.Element(), width: a0.environment.isEnabled ? 20 : 10, height: 1, alignment: .center)]
+    }
+}
+
 /// a body of stacks, a spacer, a condition and a tuple
 struct SelfTestStacks: SwiftUI.View {
     var wide: Bool
@@ -86,6 +95,7 @@ struct SelfTestStacks: SwiftUI.View {
                 .padding(3)
                 .frame(width: 60, height: nil, alignment: .trailing)
                 .environment(\.isEnabled, false)
+            SelfTestEnv().disabled(true).font(nil)
         }
         .padding(.horizontal, nil)
     }

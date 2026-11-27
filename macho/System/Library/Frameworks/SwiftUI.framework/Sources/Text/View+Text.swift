@@ -22,7 +22,7 @@ extension SwiftUI.View {
     public func accessibilityLabel(_ a0: SwiftUI.Text, isEnabled a1: Swift.Bool) -> SwiftUI.ModifiedContent<Self, SwiftUI.AccessibilityAttachmentModifier> { _skeleton() }
     public func textEditorStyle<A1>(_ a0: A1) -> some SwiftUI.View where A1: SwiftUI.TextEditorStyle { self }
     public func textSelection<A1>(_ a0: A1) -> some SwiftUI.View where A1: SwiftUI.TextSelectability { self }
-    public func font(_ a0: SwiftUI.Font?) -> some SwiftUI.View { self }
+    public func font(_ a0: SwiftUI.Font?) -> some SwiftUI.View { modifier(SwiftUI._EnvironmentKeyWritingModifier(keyPath: \.font, value: a0)) }
     public func textCase(_ a0: SwiftUI.Text.Case?) -> some SwiftUI.View { self }
     public func kerning(_ a0: CoreGraphics.CGFloat) -> some SwiftUI.View { self }
     public func tracking(_ a0: CoreGraphics.CGFloat) -> some SwiftUI.View { self }

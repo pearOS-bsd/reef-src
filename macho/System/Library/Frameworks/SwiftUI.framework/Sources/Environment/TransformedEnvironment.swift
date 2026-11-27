@@ -18,9 +18,9 @@ import Metal
 import os
 
 class TransformedEnvironment {
-    var input: SwiftUI.EnvironmentValues? = _skeletonValue()
-    var output: SwiftUI.EnvironmentValues? = _skeletonValue()
-    var modifier: Any? = _skeletonValue()
-    init() { _skeleton() }
+    var input: SwiftUI.EnvironmentValues? = nil
+    var output: SwiftUI.EnvironmentValues? = nil
+    var modifier: Any? = nil
+    init() {}
     deinit {}
 }
