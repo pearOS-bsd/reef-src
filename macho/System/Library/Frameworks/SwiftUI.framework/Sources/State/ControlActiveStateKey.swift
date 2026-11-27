@@ -22,5 +22,5 @@ enum ControlActiveStateKey {
 
 extension SwiftUI.ControlActiveStateKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.ControlActiveState
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .key }
 }

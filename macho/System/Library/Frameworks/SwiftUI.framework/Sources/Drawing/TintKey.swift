@@ -22,5 +22,5 @@ enum TintKey {
 
 extension SwiftUI.TintKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.AnyShapeStyle?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

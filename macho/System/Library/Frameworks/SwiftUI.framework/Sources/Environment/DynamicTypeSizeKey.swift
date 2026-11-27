@@ -22,5 +22,5 @@ enum DynamicTypeSizeKey {
 
 extension SwiftUI.DynamicTypeSizeKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.DynamicTypeSize
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .large }
 }

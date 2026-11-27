@@ -22,5 +22,5 @@ enum DismissHandlerKey {
 
 extension SwiftUI.DismissHandlerKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.DismissHandler?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

@@ -22,5 +22,5 @@ enum LegibilityWeightKey {
 
 extension SwiftUI.LegibilityWeightKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.LegibilityWeight?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .regular }
 }

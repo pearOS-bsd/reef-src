@@ -22,5 +22,5 @@ enum HeaderProminenceKey {
 
 extension SwiftUI.HeaderProminenceKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.Prominence
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .standard }
 }

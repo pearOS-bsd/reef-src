@@ -22,5 +22,5 @@ enum LineSpacingKey {
 
 extension SwiftUI.LineSpacingKey: SwiftUI.EnvironmentKey {
     typealias Value = CoreGraphics.CGFloat
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { 0 }
 }

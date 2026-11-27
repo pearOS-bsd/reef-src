@@ -22,5 +22,5 @@ enum LayoutDirectionKey {
 
 extension SwiftUI.LayoutDirectionKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.LayoutDirection
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .leftToRight }
 }

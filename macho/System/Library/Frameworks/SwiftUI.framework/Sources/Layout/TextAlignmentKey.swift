@@ -22,5 +22,5 @@ enum TextAlignmentKey {
 
 extension SwiftUI.TextAlignmentKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.TextAlignment
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .leading }
 }

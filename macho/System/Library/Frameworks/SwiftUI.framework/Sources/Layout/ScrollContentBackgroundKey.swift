@@ -22,5 +22,5 @@ enum ScrollContentBackgroundKey {
 
 extension SwiftUI.ScrollContentBackgroundKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.Visibility
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .automatic }
 }

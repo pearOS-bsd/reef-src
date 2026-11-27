@@ -22,5 +22,5 @@ struct SplitColumnWidthTraitKey {
 
 extension SwiftUI.SplitColumnWidthTraitKey: SwiftUI._ViewTraitKey {
     typealias Value = CoreGraphics.CGFloat?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

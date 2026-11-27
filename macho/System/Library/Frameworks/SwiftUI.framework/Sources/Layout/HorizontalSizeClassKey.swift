@@ -22,5 +22,5 @@ enum HorizontalSizeClassKey {
 
 extension SwiftUI.HorizontalSizeClassKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.UserInterfaceSizeClass?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .regular }
 }

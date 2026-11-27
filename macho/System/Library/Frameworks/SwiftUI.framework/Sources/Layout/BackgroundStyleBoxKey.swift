@@ -22,5 +22,5 @@ enum BackgroundStyleBoxKey {
 
 extension SwiftUI.BackgroundStyleBoxKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.ShapeStyleBox?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

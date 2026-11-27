@@ -22,5 +22,5 @@ enum SizeCategoryKey {
 
 extension SwiftUI.SizeCategoryKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.ContentSizeCategory
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .large }
 }

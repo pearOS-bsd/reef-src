@@ -22,5 +22,5 @@ enum TabBarPlacementKey {
 
 extension SwiftUI.TabBarPlacementKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.TabBarPlacement?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

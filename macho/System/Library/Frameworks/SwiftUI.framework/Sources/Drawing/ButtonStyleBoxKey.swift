@@ -22,5 +22,5 @@ enum ButtonStyleBoxKey {
 
 extension SwiftUI.ButtonStyleBoxKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.ButtonStyleBox?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

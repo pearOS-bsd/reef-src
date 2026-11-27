@@ -22,5 +22,5 @@ enum TextWeightKey {
 
 extension SwiftUI.TextWeightKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.Font.Weight?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

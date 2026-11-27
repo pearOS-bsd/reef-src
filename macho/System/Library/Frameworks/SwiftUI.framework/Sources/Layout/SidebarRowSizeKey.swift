@@ -22,5 +22,5 @@ enum SidebarRowSizeKey {
 
 extension SwiftUI.SidebarRowSizeKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.SidebarRowSize
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .medium }
 }

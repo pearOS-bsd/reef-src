@@ -22,5 +22,5 @@ enum TextScaleKey {
 
 extension SwiftUI.TextScaleKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.Text.Scale?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

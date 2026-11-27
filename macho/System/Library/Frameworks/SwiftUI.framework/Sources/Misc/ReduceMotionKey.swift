@@ -22,5 +22,5 @@ enum ReduceMotionKey {
 
 extension SwiftUI.ReduceMotionKey: SwiftUI.EnvironmentKey {
     typealias Value = Swift.Bool
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { false }
 }

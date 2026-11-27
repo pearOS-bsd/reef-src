@@ -22,5 +22,5 @@ enum LineLimitMinimumKey {
 
 extension SwiftUI.LineLimitMinimumKey: SwiftUI.EnvironmentKey {
     typealias Value = Swift.Int?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }

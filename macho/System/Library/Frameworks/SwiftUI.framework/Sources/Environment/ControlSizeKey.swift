@@ -22,5 +22,5 @@ enum ControlSizeKey {
 
 extension SwiftUI.ControlSizeKey: SwiftUI.EnvironmentKey {
     typealias Value = SwiftUI.ControlSize
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { .regular }
 }

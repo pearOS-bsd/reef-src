@@ -22,5 +22,5 @@ enum UndoManagerKey {
 
 extension SwiftUI.UndoManagerKey: SwiftUI.EnvironmentKey {
     typealias Value = UndoManager?
-    static var defaultValue: Self.Value { _skeleton() }
+    static var defaultValue: Self.Value { nil }
 }
