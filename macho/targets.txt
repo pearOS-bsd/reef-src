@@ -80,3 +80,4 @@ System/Library/Frameworks/FileProvider.framework
 System/Library/Frameworks/OSAKit.framework
 System/Library/Frameworks/QuickLookThumbnailing.framework
 System/Library/Frameworks/Vision.framework
+System/Library/Frameworks/Speech.framework
