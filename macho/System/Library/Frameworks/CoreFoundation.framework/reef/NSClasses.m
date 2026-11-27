@@ -4172,14 +4172,12 @@ extern NSString *const NSRangeException;
 
 - (void)getBytes:(void *)a0 range:(NSRange)a1
 {
-    // unresolved
-
+    memmove(a0, (const char *)[self bytes] + a1.location, a1.length);
 }
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return (id)CFDataCreate(kCFAllocatorSystemDefault, [self bytes], [self length]);
 }
 
 - (id)mutableCopyWithZone:(struct _NSZone *)a0
@@ -4189,14 +4187,19 @@ extern NSString *const NSRangeException;
 
 - (BOOL)isEqual:(id)a0
 {
-    // unresolved
-    return NO;
+    if (a0 == self) return 1;
+    if (a0 == nil) return 0;
+    if (![a0 isKindOfClass:[NSData class]]) return 0;
+    if ([a0 length] != [self length]) return 0;
+    return memcmp([self bytes], [a0 bytes], [self length]) == 0;
 }
 
 - (unsigned long)hash
 {
-    // unresolved
-    return 0;
+    CFDataRef copy = CFDataCreate(kCFAllocatorSystemDefault, [self bytes], [self length]);
+    unsigned long hash = CFHash(copy);
+    CFRelease(copy);
+    return hash;
 }
 
 - (unsigned long)_cfTypeID
@@ -4234,20 +4237,26 @@ extern NSString *const NSRangeException;
 
 - (void)increaseLengthBy:(unsigned long)a0
 {
-    // unresolved
-
+    [self setLength:[self length] + a0];
 }
 
 - (void)appendBytes:(void *)a0 length:(unsigned long)a1
 {
-    // unresolved
-
+    unsigned long length = [self length];
+    [self setLength:length + a1];
+    memmove((char *)[self mutableBytes] + length, a0, a1);
 }
 
 - (void)replaceBytesInRange:(NSRange)a0 withBytes:(void *)a1 length:(unsigned long)a2
 {
-    // unresolved
-
+    unsigned long length = [self length];
+    unsigned long tail = length - a0.length - a0.location;
+    if (a2 > a0.length) [self setLength:length + (a2 - a0.length)];
+    char *base = (char *)[self mutableBytes] + a0.location;
+    memmove(base + a2, base + a0.length, tail);
+    if (a1) memmove(base, a1, a2);
+    else memset(base, 0, a2);
+    if (a2 < a0.length) [self setLength:a2 - a0.length + length];
 }
 
 @end
