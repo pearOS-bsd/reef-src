@@ -18,7 +18,10 @@ import Metal
 import os
 
 class TransactionValues: SwiftUI.PropertyListElement {
-    let values: [Swift.ObjectIdentifier: Any] = _skeletonValue()
-    init(_ a0: [Swift.ObjectIdentifier: Any]) { _skeleton() }
+    let values: [Swift.ObjectIdentifier: Any]
+    init(_ a0: [Swift.ObjectIdentifier: Any]) {
+        values = a0
+        super.init()
+    }
     deinit {}
 }

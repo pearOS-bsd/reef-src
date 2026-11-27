@@ -18,6 +18,6 @@ import Metal
 import os
 
 open class PropertyListElement {
-    init() { _skeleton() }
+    init() {}
     deinit {}
 }

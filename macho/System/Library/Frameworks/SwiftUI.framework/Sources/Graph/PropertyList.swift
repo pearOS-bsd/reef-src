@@ -19,5 +19,5 @@ import os
 
 public struct PropertyList {
     public var elements: SwiftUI.PropertyListElement?
-    public init() { _skeleton() }
+    public init() { elements = nil }
 }
