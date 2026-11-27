@@ -368,9 +368,20 @@ static void reefOutOfBounds(id object, SEL selector) {
 
 @end
 
+
+// The entries of an NSCache: a list from the newest to the oldest, also indexed by key in a dictionary.
+struct CacheEntry {
+    id key;
+    id value;
+    unsigned long cost;
+    struct CacheEntry *newer;
+    struct CacheEntry *older;
+};
+
 @interface NSCache : NSObject
 {
-    void * _lock;
+@public
+    pthread_mutex_t _lock;
     struct __CFDictionary * _entries;
     struct CacheEntry * _newest;
     struct CacheEntry * _oldest;
@@ -400,47 +411,174 @@ static void reefOutOfBounds(id object, SEL selector) {
 - (void)setDelegate:(id)a0;
 @end
 
+static void reefCacheUnlink(NSCache *cache, struct CacheEntry *entry) {
+    if (entry->newer) entry->newer->older = entry->older; else cache->_newest = entry->older;
+    if (entry->older) entry->older->newer = entry->newer; else cache->_oldest = entry->newer;
+    entry->newer = NULL;
+    entry->older = NULL;
+}
+
+static void reefCacheInsert(NSCache *cache, struct CacheEntry *entry) {
+    entry->older = cache->_newest;
+    entry->newer = NULL;
+    if (cache->_newest) cache->_newest->newer = entry;
+    cache->_newest = entry;
+    if (cache->_oldest == NULL) cache->_oldest = entry;
+}
+
+// Removes the oldest entries while a limit is exceeded; returns them as a list (by `older`), still to be discarded after the lock is dropped.
+static struct CacheEntry *reefCacheTrim(NSCache *cache) {
+    struct CacheEntry *evicted = NULL;
+    while (cache->_oldest) {
+        BOOL over = (cache->_countLimit != 0 && (unsigned long)CFDictionaryGetCount(cache->_entries) > cache->_countLimit) || (cache->_totalCostLimit != 0 && cache->_totalCost > cache->_totalCostLimit);
+        if (!over) break;
+        struct CacheEntry *entry = cache->_oldest;
+        reefCacheUnlink(cache, entry);
+        CFDictionaryRemoveValue(cache->_entries, entry->key);
+        cache->_totalCost -= entry->cost;
+        entry->older = evicted;
+        evicted = entry;
+    }
+    return evicted;
+}
+
+// Tells the delegate about each entry of the list (cache:willEvictObject:), then frees it.
+static void reefCacheDiscard(NSCache *cache, struct CacheEntry *entry) {
+    while (entry) {
+        struct CacheEntry *next = entry->older;
+        id delegate = cache->_delegate;
+        if (delegate && [delegate respondsToSelector:@selector(cache:willEvictObject:)]) [delegate cache:cache willEvictObject:entry->value];
+        objc_release(entry->value);
+        objc_release(entry->key);
+        free(entry);
+        entry = next;
+    }
+}
+
 @implementation NSCache
 - (id)init
 {
-    // unresolved
-    return nil;
+    self = [super init];
+    if (self) {
+        pthread_mutexattr_t attributes;
+        pthread_mutexattr_init(&attributes);
+        pthread_mutexattr_settype(&attributes, PTHREAD_MUTEX_RECURSIVE);
+        pthread_mutex_init(&_lock, &attributes);
+        pthread_mutexattr_destroy(&attributes);
+        _entries = (struct __CFDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
+        _evictsObjectsWithDiscardedContent = YES;
+        _name = (NSString *)CFRetain(CFSTR(""));
+    }
+    return self;
 }
 
 - (void)dealloc
 {
-    // unresolved
-
+    for (struct CacheEntry *entry = _newest; entry != NULL;) {
+        struct CacheEntry *older = entry->older;
+        objc_release(entry->value);
+        objc_release(entry->key);
+        free(entry);
+        entry = older;
+    }
+    CFRelease(_entries);
+    pthread_mutex_destroy(&_lock);
+    objc_release((id)_name);
+    [super dealloc];
 }
 
 - (id)objectForKey:(id)a0
 {
-    // unresolved
-    return nil;
+    if (a0 == nil) return nil;
+    pthread_mutex_lock(&_lock);
+    struct CacheEntry *entry = (struct CacheEntry *)CFDictionaryGetValue(_entries, a0);
+    id result = nil;
+    if (entry) {
+        if (_evictsObjectsWithDiscardedContent && [entry->value respondsToSelector:@selector(isContentDiscarded)] && [entry->value isContentDiscarded]) {
+            reefCacheUnlink(self, entry);
+            CFDictionaryRemoveValue(_entries, entry->key);
+            _totalCost -= entry->cost;
+            pthread_mutex_unlock(&_lock);
+            reefCacheDiscard(self, entry);
+            return nil;
+        }
+        reefCacheUnlink(self, entry);
+        reefCacheInsert(self, entry);
+        result = objc_autorelease(objc_retain(entry->value));
+    }
+    pthread_mutex_unlock(&_lock);
+    return result;
 }
 
 - (void)setObject:(id)a0 forKey:(id)a1
 {
-    // unresolved
-
+    [self setObject:a0 forKey:a1 cost:0];
 }
 
 - (void)setObject:(id)a0 forKey:(id)a1 cost:(unsigned long)a2
 {
-    // unresolved
-
+    if (a1 == nil) return;
+    if (a0 == nil) {
+        [self removeObjectForKey:a1];
+        return;
+    }
+    pthread_mutex_lock(&_lock);
+    struct CacheEntry *entry = (struct CacheEntry *)CFDictionaryGetValue(_entries, a1);
+    struct CacheEntry *replaced = NULL;
+    if (entry && entry->value == a0) {
+        _totalCost = _totalCost + a2 - entry->cost;
+        entry->cost = a2;
+        reefCacheUnlink(self, entry);
+        reefCacheInsert(self, entry);
+    } else {
+        if (entry) {
+            reefCacheUnlink(self, entry);
+            CFDictionaryRemoveValue(_entries, entry->key);
+            _totalCost -= entry->cost;
+            replaced = entry;
+        }
+        entry = calloc(1, sizeof(struct CacheEntry));
+        entry->key = objc_retain(a1);
+        entry->value = objc_retain(a0);
+        entry->cost = a2;
+        reefCacheInsert(self, entry);
+        CFDictionarySetValue(_entries, a1, entry);
+        _totalCost += a2;
+    }
+    struct CacheEntry *evicted = reefCacheTrim(self);
+    pthread_mutex_unlock(&_lock);
+    reefCacheDiscard(self, replaced);
+    reefCacheDiscard(self, evicted);
 }
 
 - (void)removeObjectForKey:(id)a0
 {
-    // unresolved
-
+    if (a0 == nil) return;
+    pthread_mutex_lock(&_lock);
+    struct CacheEntry *entry = (struct CacheEntry *)CFDictionaryGetValue(_entries, a0);
+    if (entry) {
+        reefCacheUnlink(self, entry);
+        CFDictionaryRemoveValue(_entries, entry->key);
+        _totalCost -= entry->cost;
+    }
+    pthread_mutex_unlock(&_lock);
+    reefCacheDiscard(self, entry);
 }
 
 - (void)removeAllObjects
 {
-    // unresolved
-
+    pthread_mutex_lock(&_lock);
+    struct CacheEntry *removed = NULL;
+    while (_oldest) {
+        struct CacheEntry *entry = _oldest;
+        reefCacheUnlink(self, entry);
+        CFDictionaryRemoveValue(_entries, entry->key);
+        _totalCost -= entry->cost;
+        entry->older = removed;
+        removed = entry;
+    }
+    pthread_mutex_unlock(&_lock);
+    reefCacheDiscard(self, removed);
 }
 
 - (unsigned long)totalCostLimit
@@ -450,8 +588,11 @@ static void reefOutOfBounds(id object, SEL selector) {
 
 - (void)setTotalCostLimit:(unsigned long)a0
 {
-    // unresolved
-
+    pthread_mutex_lock(&_lock);
+    _totalCostLimit = a0;
+    struct CacheEntry *evicted = reefCacheTrim(self);
+    pthread_mutex_unlock(&_lock);
+    reefCacheDiscard(self, evicted);
 }
 
 - (unsigned long)countLimit
@@ -461,8 +602,11 @@ static void reefOutOfBounds(id object, SEL selector) {
 
 - (void)setCountLimit:(unsigned long)a0
 {
-    // unresolved
-
+    pthread_mutex_lock(&_lock);
+    _countLimit = a0;
+    struct CacheEntry *evicted = reefCacheTrim(self);
+    pthread_mutex_unlock(&_lock);
+    reefCacheDiscard(self, evicted);
 }
 
 - (BOOL)evictsObjectsWithDiscardedContent
@@ -477,14 +621,20 @@ static void reefOutOfBounds(id object, SEL selector) {
 
 - (id)name
 {
-    // unresolved
-    return nil;
+    pthread_mutex_lock(&_lock);
+    id name = objc_autorelease(objc_retain((id)_name));
+    pthread_mutex_unlock(&_lock);
+    return name;
 }
 
 - (void)setName:(id)a0
 {
-    // unresolved
-
+    NSString *name = a0 ? (NSString *)CFStringCreateCopy(kCFAllocatorDefault, (CFStringRef)a0) : (NSString *)CFRetain(CFSTR(""));
+    pthread_mutex_lock(&_lock);
+    NSString *old = _name;
+    _name = name;
+    pthread_mutex_unlock(&_lock);
+    objc_release((id)old);
 }
 
 - (id)delegate
@@ -494,8 +644,7 @@ static void reefOutOfBounds(id object, SEL selector) {
 
 - (void)setDelegate:(id)a0
 {
-    // unresolved
-
+    _delegate = a0;
 }
 
 @end
