@@ -61,11 +61,65 @@ static id classForwardingTarget(id self, SEL _cmd, SEL sel) {
     return target ? target : targetFor(self, sel, YES);
 }
 
+// Receivers that answer forwardingTargetForSelector: themselves reach the forwarding with no signature: they get one
+// ("@@:", the arguments are not looked at) and NSObject's forwardInvocation: answers zero for those messages.
+static IMP originalSignature, originalClassSignature, originalForward, originalClassForward;
+static NSMutableSet *faked;
+
+static void printIgnored(id self, SEL sel) {
+    Class cls = object_getClass(self);
+    BOOL isClass = class_isMetaClass(cls);
+    @synchronized ([ReefIgnoredMessageSink class]) {
+        static NSMutableSet *printed;
+        if (!printed) printed = [NSMutableSet set];
+        NSString *key = [NSString stringWithFormat:@"%c[%s %s]", isClass ? '+' : '-', class_getName(isClass ? (Class)self : cls), sel_getName(sel)];
+        if (![printed containsObject:key]) {
+            [printed addObject:key];
+            fprintf(stderr, "reef: ignored %s\n", key.UTF8String);
+        }
+    }
+}
+
+static NSMethodSignature *signatureFor(id self, SEL _cmd, SEL sel, IMP original) {
+    NSMethodSignature *s = ((NSMethodSignature * (*)(id, SEL, SEL))original)(self, _cmd, sel);
+    if (s) return s;
+    @synchronized ([ReefIgnoredMessageSink class]) { [faked addObject:NSStringFromSelector(sel)]; }
+    return [NSMethodSignature signatureWithObjCTypes:"@@:"];
+}
+static NSMethodSignature *instanceSignature(id self, SEL _cmd, SEL sel) { return signatureFor(self, _cmd, sel, originalSignature); }
+static NSMethodSignature *classSignature(id self, SEL _cmd, SEL sel) { return signatureFor(self, _cmd, sel, originalClassSignature); }
+
+static void forwardFor(id self, SEL _cmd, NSInvocation *invocation, IMP original) {
+    BOOL ours;
+    @synchronized ([ReefIgnoredMessageSink class]) { ours = [faked containsObject:NSStringFromSelector(invocation.selector)]; }
+    if (!ours) { ((void (*)(id, SEL, NSInvocation *))original)(self, _cmd, invocation); return; }
+    printIgnored(self, invocation.selector);
+    id zero = nil;
+    [invocation setReturnValue:&zero];
+}
+static void instanceForward(id self, SEL _cmd, NSInvocation *i) { forwardFor(self, _cmd, i, originalForward); }
+static void classForward(id self, SEL _cmd, NSInvocation *i) { forwardFor(self, _cmd, i, originalClassForward); }
+
+static void swizzle(Class c, SEL s, IMP replacement, IMP *original) {
+    Method m = class_getInstanceMethod(c, s);
+    if (m) *original = method_setImplementation(m, replacement);
+}
+
 __attribute__((constructor)) static void installIgnoreUnrecognized(void) {
     if (!getenv("REEF_IGNORE_UNRECOGNIZED"))
         return;
     fprintf(stderr, "reef: unrecognized messages answer zero (REEF_IGNORE_UNRECOGNIZED)\n");
     sink = [ReefIgnoredMessageSink new];
+    faked = [NSMutableSet set];
+    Class root = [NSObject class], rootMeta = object_getClass(root);
+    swizzle(root, @selector(methodSignatureForSelector:), (IMP)instanceSignature, &originalSignature);
+    swizzle(root, @selector(forwardInvocation:), (IMP)instanceForward, &originalForward);
+    // class methods of NSObject (the root metaclass has its own when the runtime defines them)
+    Method cm = class_getClassMethod(root, @selector(methodSignatureForSelector:));
+    if (cm && method_getImplementation(cm) != (IMP)instanceSignature) originalClassSignature = method_setImplementation(cm, (IMP)classSignature);
+    cm = class_getClassMethod(root, @selector(forwardInvocation:));
+    if (cm && method_getImplementation(cm) != (IMP)instanceForward) originalClassForward = method_setImplementation(cm, (IMP)classForward);
+    (void)rootMeta;
     baseForwardInvocation = class_getMethodImplementation([NSObject class], @selector(forwardInvocation:));
     SEL s = @selector(forwardingTargetForSelector:);
     Method m = class_getInstanceMethod([NSObject class], s);
