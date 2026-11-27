@@ -44,6 +44,7 @@ usr/lib/libenchant-2.2
 usr/lib/libsqlite3
 usr/lib/libcurl.4
 usr/lib/libxml2.2
+usr/lib/libxar.1
 System/Library/Frameworks/ForceFeedback.framework
 System/Library/Frameworks/CoreMediaIO.framework
 System/Library/Frameworks/MediaAccessibility.framework
