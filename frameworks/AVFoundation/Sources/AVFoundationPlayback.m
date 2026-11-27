@@ -525,6 +525,7 @@ static char kItemState, kPlayerState, kLayerState;
     NSString *pitchAlgorithm;
     NSMutableArray *outputs;
     BOOL reachedEnd;
+    double pendingSeek; // a seek asked for before the engine existed (NAN: none)
 }
 @end
 
@@ -714,6 +715,16 @@ static void Notify(id object, NSString *key, dispatch_block_t change)
             }
             self->source = s;
             self->engine = [[ReefPlaybackEngine alloc] initWithSource:s owner:self];
+            // what was asked before the engine existed: a seek, the player's rate and volume
+            if (!isnan(self->pendingSeek))
+                [self->engine seekTo:self->pendingSeek];
+            AVPlayer *p = self->player;
+            if (p) {
+                ReefPlayerState *ps = PlayerState(p);
+                [self->engine setVolume:ps->volume muted:ps->muted];
+                [self->engine setRate:ps->rate];
+                [ReefDisplayTimer addPlayer:p];
+            }
         });
     });
 }
@@ -736,6 +747,7 @@ static ReefItemState *SetUpItem(AVPlayerItem *item, AVAsset *asset)
     state->seekHandlers = [NSMutableArray array];
     state->outputs = [NSMutableArray array];
     state->pitchAlgorithm = AVAudioTimePitchAlgorithmSpectral;
+    state->pendingSeek = NAN;
     objc_setAssociatedObject(item, &kItemState, state, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [state start];
     return state;
@@ -892,6 +904,8 @@ static ReefItemState *SetUpItem(AVPlayerItem *item, AVAsset *asset)
 {
     ReefItemState *state = ItemState(self);
     double t = Seconds(time);
+    if (!isnan(t) && !state->engine)
+        state->pendingSeek = t;
     if (!isnan(t) && state->engine) {
         [state->engine seekTo:t];
         state->reachedEnd = NO;
@@ -1173,6 +1187,8 @@ static ReefItemState *SetUpItem(AVPlayerItem *item, AVAsset *asset)
     if (frame)
         statsFrames++;
     double wall = Now();
+    if (statsStart == 0)
+        statsStart = wall;
     if (wall - statsStart >= 2) {
         if (state->rate != 0)
             ReefLog(@"display: %d pictures, %d ticks in %.1f s", statsFrames, statsTicks, wall - statsStart);
