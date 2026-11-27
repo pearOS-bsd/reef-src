@@ -1924,14 +1924,12 @@ extern NSString *const NSRangeException;
 
 - (struct __CFURL *)_cfurl
 {
-    // unresolved
-    return 0;
+    return self;
 }
 
 - (struct __CFString *)_reefPath
 {
-    // unresolved
-    return 0;
+    return (id)CFURLCopyFileSystemPath((CFURLRef)self, kCFURLPOSIXPathStyle);
 }
 
 - (id)baseURL
@@ -1941,8 +1939,8 @@ extern NSString *const NSRangeException;
 
 - (id)absoluteURL
 {
-    // unresolved
-    return nil;
+    id result = (id)CFURLCopyAbsoluteURL((CFURLRef)self);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (id)relativeString
@@ -1952,44 +1950,46 @@ extern NSString *const NSRangeException;
 
 - (id)scheme
 {
-    // unresolved
-    return nil;
+    id result = (id)CFURLCopyScheme((CFURLRef)self);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (id)host
 {
-    // unresolved
-    return nil;
+    id result = (id)CFURLCopyHostName((CFURLRef)self);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (id)port
 {
-    // unresolved
-    return nil;
+    int port = CFURLGetPortNumber((CFURLRef)self);
+    if (port < 0) return nil;
+    id number = (id)CFNumberCreate(kCFAllocatorSystemDefault, kCFNumberSInt32Type, &port);
+    return number ? objc_autorelease(number) : nil;
 }
 
 - (id)user
 {
-    // unresolved
-    return nil;
+    id result = (id)CFURLCopyUserName((CFURLRef)self);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (id)password
 {
-    // unresolved
-    return nil;
+    id result = (id)CFURLCopyPassword((CFURLRef)self);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (id)query
 {
-    // unresolved
-    return nil;
+    id result = (id)CFURLCopyQueryString((CFURLRef)self, NULL);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (id)fragment
 {
-    // unresolved
-    return nil;
+    id result = (id)CFURLCopyFragment((CFURLRef)self, NULL);
+    return result ? objc_autorelease(result) : nil;
 }
 
 - (BOOL)isFileReferenceURL
@@ -1999,14 +1999,17 @@ extern NSString *const NSRangeException;
 
 - (id)copyWithZone:(struct _NSZone *)a0
 {
-    // unresolved
-    return nil;
+    return objc_retain(self);
 }
 
 - (id)description
 {
-    // unresolved
-    return nil;
+    CFURLRef base = CFURLGetBaseURL((CFURLRef)self);
+    if (base) {
+        id text = (id)CFStringCreateWithFormat(kCFAllocatorSystemDefault, NULL, CFSTR("%@ -- %@"), CFURLGetString((CFURLRef)self), base);
+        return text ? objc_autorelease(text) : nil;
+    }
+    return (id)CFURLGetString((CFURLRef)self);
 }
 
 @end
