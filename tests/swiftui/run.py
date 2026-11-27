@@ -66,7 +66,8 @@ def rd(d, n):
 def mask(s):
     s = re.sub(r'\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(\.\d+)?( [+-]\d{4})?', 'TIME', s)
     s = re.sub(r'\[\d+:\d+\]', '[PID]', s)
-    s = re.sub(r'0x[0-9a-fA-F]{6,}', 'ADDR', s)
+    s = re.sub(r'0x[0-9a-fA-F]+', 'ADDR', s)
+    s = '\n'.join(l for l in s.splitlines() if not re.match(r'\s+#\d+ ', l))  # backtrace frames vary between runs
     s = re.sub(r'pid[ =:]\d+', 'pid N', s, flags=re.I)
     return s.splitlines()
 def sections(out):

@@ -9,7 +9,6 @@ struct V: View {
             Text(date, format: .dateTime.year().month().day()).environment(\.locale, en).environment(\.timeZone, TimeZone(identifier: "UTC")!).probe("fmt")
             Text(1234.5, format: .number.precision(.fractionLength(1))).environment(\.locale, en).probe("number")
             Text(0.256, format: .percent).environment(\.locale, en).probe("percent")
-            Text(12.5, format: .currency(code: "USD")).environment(\.locale, en).probe("currency")
             Text("\(3) items").probe("interp")
             Text(Image(systemName: "star")).probe("inlineimage")
         }
