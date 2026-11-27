@@ -75,3 +75,4 @@ System/Library/Frameworks/MetricKit.framework
 System/Library/Frameworks/SecurityInterface.framework
 usr/libexec/icon-thumbnailer
 System/Library/Frameworks/CoreFoundation.framework
+System/Library/Frameworks/CoreBluetooth.framework
