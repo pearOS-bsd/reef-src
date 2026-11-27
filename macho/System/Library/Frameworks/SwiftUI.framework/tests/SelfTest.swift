@@ -237,4 +237,14 @@ func selftestTextEnvironment(_ host: SwiftUI.ViewHost) {
     print("text environment", text.lineLimit as Any, text.lineSpacing, paragraph?.lineBreakMode.rawValue as Any,
           paragraph?.alignment.rawValue as Any, text.style.traits.weight?.value as Any,
           text.measure(SwiftUI.ProposedViewSize(width: 100, height: nil)))
+    var dark = SwiftUI.EnvironmentValues()
+    dark[SwiftUI.ColorSchemeKey.self] = .dark
+    for (label, env) in [("light", SwiftUI.EnvironmentValues()), ("dark", dark)] {
+        let (_, style) = SwiftUI.TextBuilder.string(SwiftUI.Text(verbatim: "c").foregroundColor(.red), env)
+        if case .color(let c) = style.paint {
+            print("color", label, (c.red * 255).rounded(), (c.green * 255).rounded(), (c.blue * 255).rounded(), c.opacity)
+        }
+    }
+    let white = SwiftUI.Color.white.provider.resolve(in: SwiftUI.EnvironmentValues())
+    print("color white", white.linearRed, white.opacity)
 }

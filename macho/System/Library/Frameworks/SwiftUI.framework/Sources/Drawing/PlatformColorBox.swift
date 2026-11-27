@@ -18,9 +18,12 @@ import Metal
 import os
 
 class PlatformColorBox: SwiftUI.AnyColorBox {
-    let color: NSColor = _skeletonValue()
+    let color: NSColor
     override func isEqual(to a0: SwiftUI.AnyColorBox) -> Swift.Bool { _skeleton() }
     override var nsColor: NSColor { _skeleton() }
-    init(_ a0: NSColor) { _skeleton() }
+    init(_ a0: NSColor) {
+        color = a0
+        super.init()
+    }
     deinit {}
 }

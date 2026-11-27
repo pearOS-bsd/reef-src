@@ -22,6 +22,7 @@ open class AnyColorBox {
     func resolve(`in` a0: SwiftUI.EnvironmentValues) -> SwiftUI.Color.Resolved { _skeleton() }
     func hash(into a0: inout Swift.Hasher) { _skeleton() }
     func isEqual(to a0: SwiftUI.AnyColorBox) -> Swift.Bool { _skeleton() }
-    init() { _skeleton() }
+    init() {
+    }
     deinit {}
 }
