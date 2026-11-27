@@ -46,3 +46,4 @@ usr/lib/libcurl.4
 usr/lib/libxml2.2
 System/Library/Frameworks/ForceFeedback.framework
 System/Library/Frameworks/CoreMediaIO.framework
+System/Library/Frameworks/MediaAccessibility.framework
