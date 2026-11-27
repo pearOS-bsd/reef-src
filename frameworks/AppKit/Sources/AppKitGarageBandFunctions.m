@@ -4,6 +4,7 @@
 // AppKit functions GarageBand imports and Reef's AppKit lacks.
 #import <AppKit/AppKit.h>
 #import <objc/runtime.h>
+#import <ctype.h>
 
 void NSAccessibilityUnregisterUniqueIdForUIElement(id element) {}
 
@@ -251,4 +252,90 @@ static void textViewChangeBackground(NSTextView *self, SEL _cmd, id sender) {
 }
 __attribute__((constructor)) static void addTextViewMethods(void) {
     add([NSTextView class], "changeDocumentBackgroundColor:", (IMP)textViewChangeBackground, "v@:@");
+}
+
+// Test aid: REEF_KEYS="seconds:key;seconds:key ..." types into the key window that many seconds after launch.
+// A key is a character, Space, Return, Escape or Delete, with "cmd+", "shift+", "alt+" or "ctrl+" in front for
+// modifiers, and "/milliseconds" behind to hold it (default 120).
+static void ReefPostKeyEvent(NSString *spec) {
+    NSEventModifierFlags flags = 0;
+    double hold = 0.12;
+    NSRange slash = [spec rangeOfString:@"/" options:NSBackwardsSearch];
+    if (slash.location != NSNotFound && slash.location > 0) {
+        hold = [[spec substringFromIndex:slash.location + 1] doubleValue] / 1000.0;
+        spec = [spec substringToIndex:slash.location];
+    }
+    for (;;) {
+        if ([spec hasPrefix:@"cmd+"]) { flags |= NSEventModifierFlagCommand; spec = [spec substringFromIndex:4]; }
+        else if ([spec hasPrefix:@"shift+"]) { flags |= NSEventModifierFlagShift; spec = [spec substringFromIndex:6]; }
+        else if ([spec hasPrefix:@"alt+"]) { flags |= NSEventModifierFlagOption; spec = [spec substringFromIndex:4]; }
+        else if ([spec hasPrefix:@"ctrl+"]) { flags |= NSEventModifierFlagControl; spec = [spec substringFromIndex:5]; }
+        else break;
+    }
+    NSString *chars = spec;
+    unsigned short code = 0;
+    if ([spec isEqualToString:@"Space"]) { chars = @" "; code = 49; }
+    else if ([spec isEqualToString:@"Return"]) { chars = @"\r"; code = 36; }
+    else if ([spec isEqualToString:@"Escape"]) { chars = @"\x1b"; code = 53; }
+    else if ([spec isEqualToString:@"Delete"]) { chars = @"\x7f"; code = 51; }
+    else {
+        static const char *keys = "asdfhgzxcv?bqweryt123465=97-80]ou[ip?lj'k;\\,/nm.";
+        const char *p = strchr(keys, tolower([spec characterAtIndex:0]));
+        if (p && spec.length == 1) code = (unsigned short)(p - keys);
+    }
+    NSWindow *w = NSApp.keyWindow ?: NSApp.mainWindow ?: NSApp.windows.firstObject;
+    fprintf(stderr, "key: %s (%s)\n", spec.UTF8String, w.title.UTF8String);
+    NSEvent *down = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSZeroPoint modifierFlags:flags timestamp:NSProcessInfo.processInfo.systemUptime
+                                 windowNumber:w.windowNumber context:nil characters:chars charactersIgnoringModifiers:chars isARepeat:NO keyCode:code];
+    [NSApp sendEvent:down];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(hold * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        NSEvent *up = [NSEvent keyEventWithType:NSEventTypeKeyUp location:NSZeroPoint modifierFlags:flags timestamp:NSProcessInfo.processInfo.systemUptime
+                                   windowNumber:w.windowNumber context:nil characters:chars charactersIgnoringModifiers:chars isARepeat:NO keyCode:code];
+        [NSApp sendEvent:up];
+    });
+}
+
+__attribute__((constructor)) static void ReefTypeKeys(void) {
+    const char *keys = getenv("REEF_KEYS");
+    if (!keys) return;
+    for (NSString *item in [[NSString stringWithUTF8String:keys] componentsSeparatedByString:@";"]) {
+        NSRange colon = [item rangeOfString:@":"];
+        if (colon.location == NSNotFound) continue;
+        double seconds = [[item substringToIndex:colon.location] doubleValue];
+        NSString *spec = [item substringFromIndex:colon.location + 1];
+        __block BOOL done = NO;
+        ReefOnMain(seconds, ^{
+            if (done) return;
+            done = YES;
+            ReefPostKeyEvent(spec);
+        });
+    }
+}
+
+// NSBrowser's matrix class (deprecated, column views are matrices of that class): kept, NSMatrix by default
+static const void *MatrixClassKey = &MatrixClassKey;
+static void browserSetMatrixClass(NSBrowser *self, SEL _cmd, Class cls) { objc_setAssociatedObject(self, MatrixClassKey, cls, OBJC_ASSOCIATION_ASSIGN); }
+static Class browserMatrixClass(NSBrowser *self, SEL _cmd) { return objc_getAssociatedObject(self, MatrixClassKey) ?: [NSMatrix class]; }
+__attribute__((constructor)) static void addBrowserMatrixClass(void) {
+    add([NSBrowser class], "setMatrixClass:", (IMP)browserSetMatrixClass, "v@:#");
+    add([NSBrowser class], "matrixClass", (IMP)browserMatrixClass, "#@:");
+}
+
+// -[NSTextField setPlaceholderAttributedString:] of Reef's AppKit also sends setPlaceholderString:; a subclass whose
+// setPlaceholderString: sets an attributed placeholder through super (GarageBand's toolkit) loops forever. When the
+// setter is entered again from there, only the cell's placeholder is set.
+static IMP originalSetPlaceholderAttributed;
+static __thread int settingPlaceholder;
+static void textFieldSetPlaceholderAttributed(NSTextField *self, SEL _cmd, NSAttributedString *value) {
+    if (settingPlaceholder) {
+        if ([self.cell respondsToSelector:@selector(setPlaceholderAttributedString:)]) [(NSTextFieldCell *)self.cell setPlaceholderAttributedString:value];
+        return;
+    }
+    settingPlaceholder++;
+    ((void (*)(id, SEL, id))originalSetPlaceholderAttributed)(self, _cmd, value);
+    settingPlaceholder--;
+}
+__attribute__((constructor)) static void guardPlaceholderSetter(void) {
+    Method m = class_getInstanceMethod([NSTextField class], @selector(setPlaceholderAttributedString:));
+    if (m) originalSetPlaceholderAttributed = method_setImplementation(m, (IMP)textFieldSetPlaceholderAttributed);
 }

@@ -24,6 +24,26 @@
     if ((self = [self initWithCapacity:length])) [_data appendBytes:bytes length:length];
     return self;
 }
+- (instancetype)initWithData:(NSData *)data {
+    if ((self = [self initWithCapacity:data.length])) [_data appendData:data];
+    return self;
+}
+- (instancetype)initWithContentsOfURL:(NSURL *)url {
+    NSData *d = [NSData dataWithContentsOfURL:url];
+    return d ? [self initWithData:d] : nil;
+}
+- (instancetype)initWithContentsOfURL:(NSURL *)url options:(NSDataReadingOptions)options error:(NSError **)error {
+    NSData *d = [NSData dataWithContentsOfURL:url options:options error:error];
+    return d ? [self initWithData:d] : nil;
+}
+- (instancetype)initWithContentsOfFile:(NSString *)path {
+    NSData *d = [NSData dataWithContentsOfFile:path];
+    return d ? [self initWithData:d] : nil;
+}
+- (instancetype)initWithContentsOfFile:(NSString *)path options:(NSDataReadingOptions)options error:(NSError **)error {
+    NSData *d = [NSData dataWithContentsOfFile:path options:options error:error];
+    return d ? [self initWithData:d] : nil;
+}
 - (NSUInteger)length { return _data.length; }
 - (void)setLength:(NSUInteger)length { _data.length = length; }
 - (const void *)bytes { return _data.bytes; }
