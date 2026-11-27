@@ -302,6 +302,7 @@ ReefMediaSource *ReefSourceForAsset(AVAsset *asset)
 
 - (void)loadValuesAsynchronouslyForKeys:(NSArray<NSString *> *)keys completionHandler:(void (^)(void))handler
 {
+    ReefLog(@"%s %p load %@", object_getClassName(self), self, [keys componentsJoinedByString:@","]);
     ReefAssetState *state = AssetState(self, YES);
     if (!state) {
         if (handler)
@@ -322,6 +323,8 @@ ReefMediaSource *ReefSourceForAsset(AVAsset *asset)
     pthread_mutex_unlock(&state->lock);
     if (status == AVKeyValueStatusFailed && outError)
         *outError = error;
+    if (status != AVKeyValueStatusLoaded)
+        ReefLog(@"%s %p status of %@: %ld", object_getClassName(self), self, key, (long)status);
     return status;
 }
 
@@ -587,6 +590,7 @@ static AVAssetTrack *SourceTrack(AVAssetTrack *track)
 
 - (void)loadValuesAsynchronouslyForKeys:(NSArray<NSString *> *)keys completionHandler:(void (^)(void))handler
 {
+    ReefLog(@"track %d load %@", self.trackID, [keys componentsJoinedByString:@","]);
     if (handler)
         dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), handler);
 }

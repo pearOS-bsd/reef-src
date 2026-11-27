@@ -708,6 +708,7 @@ static void Notify(id object, NSString *key, dispatch_block_t change)
 
 static ReefItemState *SetUpItem(AVPlayerItem *item, AVAsset *asset)
 {
+    ReefLog(@"item %p for %s %p", item, asset ? object_getClassName(asset) : "nothing", asset);
     ReefItemState *state = [ReefItemState new];
     state->item = item;
     state->asset = asset;
@@ -1145,6 +1146,10 @@ static ReefItemState *SetUpItem(AVPlayerItem *item, AVAsset *asset)
             [CATransaction setDisableActions:YES];
             layer.contents = (__bridge id)image;
             [CATransaction commit];
+            // a view that draws the layer's pictures itself (AVKit's player view) is told
+            id delegate = layer.delegate;
+            if ([delegate respondsToSelector:@selector(reef_playerLayerDidChangeContents:)])
+                ((void (*)(id, SEL, id))objc_msgSend)(delegate, @selector(reef_playerLayerDidChangeContents:), layer);
             ReefLayerState *ls = LayerState(layer);
             if (!ls->ready)
                 Notify(layer, @"readyForDisplay", ^{ ls->ready = YES; });

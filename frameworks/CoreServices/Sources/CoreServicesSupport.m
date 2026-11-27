@@ -42,5 +42,13 @@ const CFStringRef kMDItemTextContent = CFSTR("kMDItemTextContent");
 // Launch Services and Spotlight pieces of the recent-documents code (QuickTime Player).
 CFStringRef _kLSSharedFileListRecentItemsMaxAmount = CFSTR("com.apple.LSSharedFileList.RecentItemsMaxAmount");
 LSSharedFileListItemRef _kLSSharedFileListItemBeforeFirst = (LSSharedFileListItemRef)1;
+// Reef's lists compare with its own sentinel and key (the names without the underscore): the app's names get their values.
+extern LSSharedFileListItemRef ReefItemBeforeFirst __asm__("_kLSSharedFileListItemBeforeFirst");
+extern CFStringRef ReefRecentItemsMaxAmount __asm__("_kLSSharedFileListRecentItemsMaxAmount");
+__attribute__((constructor)) static void ReefSharedFileListNames(void)
+{
+    _kLSSharedFileListItemBeforeFirst = ReefItemBeforeFirst;
+    _kLSSharedFileListRecentItemsMaxAmount = ReefRecentItemsMaxAmount;
+}
 Boolean _CSDeviceSupportsAirDrop(void) { return false; }
 void _MDItemMarkAsUsedWithURL(CFURLRef url) {}

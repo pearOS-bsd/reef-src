@@ -4,20 +4,8 @@
 #import <AppKit/AppKit.h>
 #import <CoreMedia/CoreMedia.h>
 
-// Private AVKit pieces QuickTime Player links against.
-@interface AVPlayerController : NSObject
-@property (strong) id player;
-@end
-@implementation AVPlayerController
-@end
-@interface AVPlayerControllerTimeResolver : NSObject
-@end
-@implementation AVPlayerControllerTimeResolver
-@end
-@interface AVPlayerControlsViewController : NSViewController
-@end
-@implementation AVPlayerControlsViewController
-@end
+// Private AVKit pieces QuickTime Player links against (the player controller, its time resolver, the controls view
+// controller and asset identifiers are in AVKitPlayback.m).
 @interface AVCaptureView : NSView
 @end
 @implementation AVCaptureView
@@ -37,10 +25,6 @@
 @interface AVTouchBarRecordingControlsProvider : NSObject
 @end
 @implementation AVTouchBarRecordingControlsProvider
-@end
-@interface AVAssetIdentifier : NSObject
-@end
-@implementation AVAssetIdentifier
 @end
 @interface AVTimecode : NSObject
 @end
