@@ -72,13 +72,18 @@ What the function match showed:
   CFNotificationCenter, CFUserNotification, CFURL bookmarks and FSRef, CFXML, CFStringTokenizer, `OSAtomic*` ones that CF does not define, `__CFBridgeInitialize`, ...) and about 1000 Objective-C
   methods (`__NSCF*`, `NSString`, `NSURL`, `NSNumber`, `NSInvocation`, `NSCache`, `NSRunLoop` ...). Reef's CF also imports `reef_host_symbol` and `reef_report_unsupported`.
 
-Reef's own CoreFoundation code (`macho/.../CoreFoundation.framework/reef/`, written from the binary and the older decompilation; sizes of the functions match the original almost everywhere):
+Reef's own CoreFoundation code (`macho/.../CoreFoundation.framework/reef/`, written from the binary and the older decompilation; the sizes of the functions match the original almost everywhere):
 CFFileSecurity, CFFileDescriptor (two dispatch sources and a run loop source), CFMachPort (watcher thread, `0x52454546` terminate message), CFMessagePort (remote ports unsupported), CFNotificationCenter
-(forwards to NSNotificationCenter when Foundation is loaded, else its own table; Darwin center ignores object and user info), CFUserNotification (NSAlert on the main queue, else `org.freedesktop.Notifications`
-through `_reefDBusCall`), CFStringTokenizer (ICU break iterator), CFXML escaping, CFURL resource properties and bookmarks (messages to NSURL) with FSRef tokens, bound stream pairs, exception handler slot.
-`CFFileUtilities.c` builds with `DEPLOYMENT_RUNTIME_OBJC=0` (that is what has the XDG paths). Still missing (see the list printed by `llvm-nm` difference): the socket stream pair and its TLS glue (`_advance`,
-`_connectNext`, `_resolveSSL` ...), hyphenation (`_dictionaryFor`), the locale display names (`__reef*`), the NSInvocation forwarding (`_reefForwarding*`, `_reefFrame*`), bundle and locale odds and ends,
-and the Objective-C classes. The function match dropped a little (69.5 %) because new functions are counted.
+(forwards to NSNotificationCenter when Foundation is loaded, else its own table; the Darwin center ignores object and user info), CFUserNotification (NSAlert on the main queue, else `org.freedesktop.Notifications`
+through `_reefDBusCall`; keys `kCFUserNotification*Key`), CFStringTokenizer (ICU break iterator), CFXML escaping, CFURL resource properties and bookmarks (messages to NSURL) with FSRef tokens, bound stream pairs,
+socket stream pairs (`__CFSocketStreamCreatePair`: a state machine over getaddrinfo, a non-blocking connect and TLS through the host's libssl.so.3 by `reef_host_symbol`), hyphenation (host libhyphen.so.0,
+dictionaries in /usr/share/hyphen), the exception handler slot. `reef_host_symbol` and `reef_report_unsupported` are imports of the original (the loader of reef provides them), not definitions.
+Per-file flavour found on the way: `CFFileUtilities.c`, `CFBundle_Executable.c`, `CFBundle_Locale.c` and `CFUtilities.c` build with `DEPLOYMENT_RUNTIME_OBJC=0` (XDG paths, FHS bundle directories).
+2043 of 2443 functions match by name (69.4 % of the bytes, new functions are counted too).
+Still missing: Reef's own changes inside upstream files (the autoupdating calendar and locale in CFCalendar.c and CFLocale.c, the host locale preferences `__CFLocaleReadHostLocked`, `__CFLocaleCopyFileValue`,
+the file descriptor watching of CFRunLoop.c `__CFRunLoopWatchDescriptor`; they need a patch step in `build-macho.py`), the locale display names (`__reef*`, with their data tables), the NSInvocation forwarding
+(`_reefForwarding*`, `_reefFrame*`, `__CFBridgeInitialize`, `__CFExceptionInitialize`), and the 926 Objective-C methods (`__NSCF*`, NSString, NSURL ...). Without the classes the rebuilt file does not run:
+`macho/.../CoreFoundation.framework/tests/cf.c` (strings, tokenizer, notification center, bound pair) passes with the original and crashes in the first `objc_msgSend` with ours (`MACHO_FRAMES=1 tests/macho.py` shows the frames).
 
 ## libdispatch: what was found
 `usr/lib/system/libdispatch.dylib` (636 functions) is built as `__APPLE__` (the Apple branch of `internal.h`: `os/availability.h`, `mach/*`, `mach_msg`, `mach_port_*`) with the epoll backend of
